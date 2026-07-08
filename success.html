@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pembayaran ZO AI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1B29;
+    color: #F5F0E6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .card {
+    background: #26243A;
+    border: 1px solid #322F49;
+    border-radius: 20px;
+    padding: 32px 24px;
+    max-width: 340px;
+    width: 100%;
+  }
+  h1 { font-family: 'Fraunces', serif; font-size: 20px; margin-bottom: 10px; }
+  p { color: #ADA9C4; font-size: 14px; line-height: 1.6; margin-bottom: 18px; }
+  .dots { display: flex; gap: 6px; justify-content: center; margin: 20px 0; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #4FD1C5; animation: breathe 1.2s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: 0.15s; }
+  .dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes breathe { 0%,100% { opacity:.3; transform:scale(.8);} 50%{opacity:1; transform:scale(1.1);} }
+  .code-box {
+    display: none;
+    background: #1C1B29;
+    border: 1px solid #E3B23C;
+    border-radius: 14px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: #E3B23C;
+    margin-bottom: 18px;
+  }
+  button {
+    display: none;
+    width: 100%;
+    background: #E3B23C;
+    color: #1C1B29;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 15px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="waitingState">
+    <h1>Menunggu konfirmasi pembayaran...</h1>
+    <p>Ini biasanya cuma butuh beberapa menit. Jangan tutup halaman ini dulu ya.</p>
+    <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+  </div>
+
+  <div id="successState" style="display:none;">
+    <h1>🎉 Pembayaran berhasil!</h1>
+    <p>Ini kode akses langganan kamu. Kode ini juga otomatis tersimpan di HP kamu.</p>
+    <div class="code-box" id="codeBox"></div>
+    <button id="goChat">Mulai Chat Sekarang</button>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get('order_id');
+  const waitingState = document.getElementById('waitingState');
+  const successState = document.getElementById('successState');
+  const codeBox = document.getElementById('codeBox');
+  const goChat = document.getElementById('goChat');
+
+  if (!orderId) {
+    waitingState.innerHTML = '<h1>Order tidak ditemukan</h1><p>Silakan mulai pembayaran ulang dari halaman langganan.</p>';
+  } else {
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/check-payment?order_id=' + encodeURIComponent(orderId));
+        const data = await res.json();
+
+        if (data.paid && data.access_code) {
+          localStorage.setItem('accessCode', data.access_code);
+          codeBox.textContent = data.access_code;
+          waitingState.style.display = 'none';
+          successState.style.display = 'block';
+          codeBox.style.display = 'block';
+          goChat.style.display = 'block';
+          return;
+        }
+      } catch (e) {
+        // diamkan, coba lagi di polling berikutnya
+      }
+      setTimeout(checkStatus, 5000);
+    }
+    checkStatus();
+  }
+
+  goChat.addEventListener('click', () => {
+    window.location.href = 'chat.html';
+  });
+</script>
+</body>
+  </html>
