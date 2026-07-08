@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Berlangganan ZO AI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1C1B29;
+    color: #F5F0E6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .card {
+    background: #26243A;
+    border: 1px solid #322F49;
+    border-radius: 20px;
+    padding: 32px 24px;
+    max-width: 340px;
+    width: 100%;
+  }
+  h1 { font-family: 'Fraunces', serif; font-size: 22px; margin-bottom: 10px; }
+  p { color: #ADA9C4; font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
+  .price { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; margin-bottom: 22px; }
+  .price span { font-size: 14px; color: #ADA9C4; font-weight: 400; font-family: 'Inter', sans-serif; }
+  button {
+    width: 100%;
+    background: #E3B23C;
+    color: #1C1B29;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 15px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  #error { color: #F87171; font-size: 13px; margin-top: 14px; min-height: 16px; }
+  a.back { display: inline-block; margin-top: 20px; color: #8B87A6; font-size: 13px; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Langganan ZO AI</h1>
+  <p>Bayar sekali, akses penuh chat AI selama 1 bulan tanpa batas.</p>
+  <div class="price">Rp50.000<span>/bulan</span></div>
+  <button id="payBtn">Bayar Sekarang</button>
+  <div id="error"></div>
+</div>
+
+<a href="index.html" class="back">← Kembali ke beranda</a>
+
+<script>
+  const payBtn = document.getElementById('payBtn');
+  const errorEl = document.getElementById('error');
+
+  payBtn.addEventListener('click', async () => {
+    payBtn.disabled = true;
+    payBtn.textContent = 'Menyiapkan pembayaran...';
+    errorEl.textContent = '';
+
+    try {
+      const res = await fetch('/api/create-invoice', { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok || !data.invoice_url) {
+        throw new Error(data.error || 'Gagal membuat invoice');
+      }
+
+      window.location.href = data.invoice_url;
+    } catch (e) {
+      errorEl.textContent = 'Gagal memulai pembayaran. Coba lagi ya.';
+      payBtn.disabled = false;
+      payBtn.textContent = 'Bayar Sekarang';
+    }
+  });
+</script>
+</body>
+</html>
