@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZO AI — Wallet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000000; --surface:#0d0d0f; --line:rgba(255,255,255,0.09);
+    --text:#ffffff; --muted:#96959b; --red:#e3242b; --green:#2ee6a6;
+    --font-body:'Inter', sans-serif; --font-mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5;}
+  .wrap{max-width:420px; margin:0 auto; padding:0 22px 40px;}
+  a{color:inherit;}
+  header{display:flex; align-items:center; justify-content:space-between; padding:22px;}
+  .brand{display:flex; align-items:center; gap:8px;}
+  .zmark{width:20px; height:20px;}
+  .logo{font-weight:800; font-size:16px;}
+  .logo .red{color:var(--red);}
+
+  .hero{padding:18px 0 10px; text-align:center;}
+  .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--red); margin-bottom:12px; font-weight:600;}
+  h1{font-weight:800; font-size:25px; letter-spacing:-0.02em; margin-bottom:12px;}
+  .hero p{color:var(--muted); font-size:14.5px;}
+
+  .connect-box{background:var(--surface); border:1px solid var(--line); border-radius:26px; padding:34px 24px; text-align:center; margin:26px 0;}
+  .wallet-icon{width:58px; height:58px; border-radius:18px; background:#000; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; margin:0 auto 18px; font-size:24px; color:var(--red);}
+  .connect-box h3{font-size:16px; font-weight:700; margin-bottom:6px;}
+  .connect-box p{font-size:13px; color:var(--muted); margin-bottom:22px;}
+  .provider-row{display:flex; gap:8px; margin-bottom:16px;}
+  .provider{flex:1; border:1px solid var(--line); border-radius:100px; padding:12px 8px; font-size:12px; font-weight:600; background:#000; color:var(--text);}
+  .provider:active{border-color:var(--red);}
+  .connect-btn{background:var(--red); color:#fff; border:none; padding:15px 20px; border-radius:100px; font-weight:700; font-size:14.5px; width:100%;}
+
+  .connected{display:none;}
+  .connected.show{display:block;}
+  .connect-box.hide{display:none;}
+
+  .addr-card{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:17px 19px; margin:22px 0; display:flex; align-items:center; justify-content:space-between;}
+  .addr-left{display:flex; align-items:center; gap:10px;}
+  .addr-dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+  .addr-text{font-family:var(--font-mono); font-size:13px;}
+  .addr-net{font-family:var(--font-mono); font-size:10.5px; color:var(--muted);}
+
+  .balance-card{background:var(--surface); border:1px solid var(--line); border-radius:26px; padding:28px 24px; margin-bottom:20px;}
+  .balance-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;}
+  .balance-amount{font-weight:800; font-size:36px; margin:9px 0 5px; letter-spacing:-0.02em;}
+  .balance-change{font-family:var(--font-mono); font-size:12px; color:var(--green);}
+
+  .token-list h2{font-size:14px; font-weight:700; color:var(--muted); margin:24px 0 14px;}
+  .token{display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--line);}
+  .token:last-child{border-bottom:none;}
+  .tok-left{display:flex; align-items:center; gap:11px;}
+  .tok-icon{width:34px; height:34px; border-radius:50%; background:var(--line); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:11px; font-weight:700;}
+  .tok-name{font-size:14px; font-weight:600;}
+  .tok-sub{font-size:11.5px; color:var(--muted); font-family:var(--font-mono);}
+  .tok-right{text-align:right;}
+  .tok-val{font-size:14px; font-weight:600;}
+  .tok-usd{font-size:11.5px; color:var(--muted);}
+
+  .swap-btn{width:100%; margin-top:22px; background:var(--surface); border:1px solid var(--line); color:var(--text); padding:15px; border-radius:100px; font-weight:600; font-size:14.5px;}
+  .swap-btn:active{border-color:var(--red);}
+
+  .note{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-align:center; letter-spacing:0.03em; margin-top:22px;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="brand"><svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 13 A 35 35 0 1 1 49.9 13" fill="none" stroke="#e3242b" stroke-width="9"/><rect x="44" y="2" width="12" height="20" rx="4" fill="#e3242b"/><path d="M50 38 L68 68 L57 68 L50 54 L43 68 L32 68 Z" fill="#e3242b"/></svg><span class="logo">ZO <span class="red">AI</span></span></a>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Non-custodial wallet</div>
+    <h1>Connect your wallet</h1>
+    <p>ZO AI only reads your address and balance. Your keys stay with you, always.</p>
+  </div>
+
+  <div class="connect-box" id="connectBox">
+    <div class="wallet-icon">◈</div>
+    <h3>No wallet connected</h3>
+    <p>Choose a provider to try the demo connection</p>
+    <div class="provider-row">
+      <button class="provider" onclick="connectWallet('MetaMask')">MetaMask</button>
+      <button class="provider" onclick="connectWallet('Trust')">Trust</button>
+      <button class="provider" onclick="connectWallet('Phantom')">Phantom</button>
+    </div>
+    <button class="connect-btn" onclick="connectWallet('MetaMask')">Connect wallet</button>
+  </div>
+
+  <div class="connected" id="connected">
+    <div class="addr-card">
+      <div class="addr-left">
+        <div class="addr-dot"></div>
+        <div>
+          <div class="addr-text">0x8F3a...91Qx</div>
+          <div class="addr-net">Ethereum · <span id="providerName">MetaMask</span></div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-mono); font-size:11px; color:var(--red);" onclick="disconnectWallet()">disconnect</div>
+    </div>
+
+    <div class="balance-card">
+      <div class="balance-label">Total balance</div>
+      <div class="balance-amount">$2,481.30</div>
+      <div class="balance-change">▲ 3.2% today</div>
+    </div>
+
+    <div class="token-list">
+      <h2>Your tokens</h2>
+      <div class="token">
+        <div class="tok-left"><div class="tok-icon">Ξ</div><div><div class="tok-name">ETH</div><div class="tok-sub">0.82</div></div></div>
+        <div class="tok-right"><div class="tok-val">$1,920.40</div><div class="tok-usd">+2.1%</div></div>
+      </div>
+      <div class="token">
+        <div class="tok-left"><div class="tok-icon">₮</div><div><div class="tok-name">USDT</div><div class="tok-sub">410.00</div></div></div>
+        <div class="tok-right"><div class="tok-val">$410.00</div><div class="tok-usd">0.0%</div></div>
+      </div>
+      <div class="token">
+        <div class="tok-left"><div class="tok-icon">◎</div><div><div class="tok-name">SOL</div><div class="tok-sub">2.6</div></div></div>
+        <div class="tok-right"><div class="tok-val">$150.90</div><div class="tok-usd">+5.4%</div></div>
+      </div>
+    </div>
+
+    <button class="swap-btn" onclick="showSwapNote()">Swap tokens</button>
+    <div class="note" id="swapNote">Ask ZO AI in chat to check your balance or explain a token — try it in Chat.</div>
+  </div>
+</div>
+
+<script>
+  function connectWallet(name){
+    document.getElementById('providerName').textContent = name;
+    document.getElementById('connectBox').classList.add('hide');
+    document.getElementById('connected').classList.add('show');
+  }
+  function disconnectWallet(){
+    document.getElementById('connectBox').classList.remove('hide');
+    document.getElementById('connected').classList.remove('show');
+  }
+  function showSwapNote(){
+    document.getElementById('swapNote').textContent = 'Demo: real swaps will route through a DEX aggregator (1inch / Jupiter) once connected live.';
+  }
+</script>
+</body>
+          </html>
