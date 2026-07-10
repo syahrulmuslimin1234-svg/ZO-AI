@@ -1,340 +1,169 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ZO AI — Asisten AI Pribadimu</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZO AI — Your everyday intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #05070d;
-    color: #F5F0E6;
-    overflow-x: hidden;
+  :root{
+    --bg:#000000;
+    --surface:#0d0d0f;
+    --surface2:#141416;
+    --line:rgba(255,255,255,0.09);
+    --text:#ffffff;
+    --muted:#96959b;
+    --red:#e3242b;
+    --font-display:'Inter', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
   }
-  a { text-decoration: none; color: inherit; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; overflow-x:hidden;}
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:960px; margin:0 auto; padding:0 22px;}
 
-  .circuit-bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    background-color: #05070d;
-    background-image:
-      linear-gradient(rgba(5,7,13,0.75), rgba(5,7,13,0.9)),
-      repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(56,189,248,0.09) 38px, rgba(56,189,248,0.09) 39px),
-      repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(56,189,248,0.09) 38px, rgba(56,189,248,0.09) 39px);
-    pointer-events: none;
+  nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px; position:sticky; top:0; z-index:10;
+    background:rgba(0,0,0,0.75); backdrop-filter:blur(12px);
   }
-  .node {
-    position: fixed;
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: #38BDF8;
-    box-shadow: 0 0 8px 2px rgba(56,189,248,0.9), 0 0 20px 6px rgba(56,189,248,0.4);
-    animation: pulse 2.4s ease-in-out infinite;
-    z-index: 1;
-    pointer-events: none;
-  }
-  .node.n1 { top: 12%; left: 20%; animation-delay: 0s; }
-  .node.n2 { top: 28%; right: 15%; animation-delay: .5s; background:#E3B23C; box-shadow:0 0 8px 2px rgba(227,178,60,0.9),0 0 20px 6px rgba(227,178,60,0.4); }
-  .node.n3 { top: 62%; left: 10%; animation-delay: 1s; }
-  .node.n4 { top: 75%; right: 22%; animation-delay: 1.5s; }
-  .node.n5 { top: 45%; left: 50%; animation-delay: .8s; background:#E3B23C; box-shadow:0 0 8px 2px rgba(227,178,60,0.9),0 0 20px 6px rgba(227,178,60,0.4); }
-  @keyframes pulse {
-    0%, 100% { opacity: 0.25; transform: scale(0.8); }
-    50% { opacity: 1; transform: scale(1.3); }
-  }
-  .glow {
-    position: fixed;
-    top: -120px; right: -100px;
-    width: 320px; height: 320px;
-    background: radial-gradient(circle, rgba(56,189,248,0.22), transparent 70%);
-    filter: blur(10px);
-    pointer-events: none;
-    z-index: 1;
-  }
-  .glow2 {
-    position: fixed;
-    bottom: -150px; left: -120px;
-    width: 320px; height: 320px;
-    background: radial-gradient(circle, rgba(227,178,60,0.15), transparent 70%);
-    filter: blur(10px);
-    pointer-events: none;
-    z-index: 1;
-  }
+  .brand{display:flex; align-items:center; gap:9px;}
+  .zmark{width:24px; height:24px; flex-shrink:0;}
+  .logo{font-weight:800; font-size:17px; letter-spacing:-0.02em;}
+  .logo .red{color:var(--red);}
+  .nav-cta{font-size:13.5px; font-weight:600; background:#fff; color:#000; padding:10px 20px; border-radius:100px;}
 
-  nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px;
-    position: relative;
-    z-index: 2;
+  .hero{padding:52px 22px 10px; text-align:center;}
+  .zmark-hero{width:52px; height:52px; margin:0 auto 28px;}
+  h1{
+    font-weight:800; letter-spacing:-0.035em; line-height:1.04;
+    font-size:clamp(36px, 10vw, 60px);
+    margin-bottom:22px;
   }
-  .brand { display: flex; align-items: center; gap: 8px; }
-  .brand .dot {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: linear-gradient(135deg, #E3B23C, #4FD1C5);
-  }
-  .brand span { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
-  .nav-cta {
-    background: #26243A;
-    border: 1px solid #3A3752;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-  }
+  .hero p{color:var(--muted); font-size:16.5px; max-width:440px; margin:0 auto 34px; font-weight:400;}
 
-  .hero {
-    padding: 40px 20px 30px;
-    text-align: center;
-    position: relative;
-    z-index: 2;
-  }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(227,178,60,0.12);
-    border: 1px solid rgba(227,178,60,0.3);
-    color: #E3B23C;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .hero h1 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 34px;
-    line-height: 1.25;
-    margin-bottom: 16px;
-  }
-  .hero h1 .accent { color: #E3B23C; }
-  .hero p {
-    color: #ADA9C4;
-    font-size: 15px;
-    line-height: 1.6;
-    max-width: 340px;
-    margin: 0 auto 28px;
-  }
-  .cta-row {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
-  .btn-primary {
-    background: #E3B23C;
-    color: #1C1B29;
-    font-weight: 700;
-    font-size: 15px;
-    padding: 15px 32px;
-    border-radius: 14px;
-    width: 100%;
-    max-width: 280px;
-    text-align: center;
-  }
-  .btn-secondary {
-    color: #ADA9C4;
-    font-size: 13px;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
+  .btn-row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:8px;}
+  .btn{font-weight:700; font-size:15px; padding:15px 28px; border-radius:100px;}
+  .btn-primary{background:var(--red); color:#fff;}
+  .btn-ghost{background:var(--surface); color:var(--text); border:1px solid var(--line);}
 
-  .mockup {
-    margin: 36px auto 0;
-    max-width: 300px;
-    background: #26243A;
-    border: 1px solid #322F49;
-    border-radius: 20px;
-    padding: 16px;
-    text-align: left;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  .callouts{padding:64px 22px 20px;}
+  .callout{padding:38px 0; border-top:1px solid var(--line); display:flex; align-items:baseline; gap:22px; flex-wrap:wrap;}
+  .callout:first-child{border-top:none;}
+  .callout .big{
+    font-weight:800; letter-spacing:-0.03em; font-size:clamp(38px,11vw,64px);
+    white-space:nowrap;
   }
-  .mockup .bubble {
-    font-size: 13px;
-    padding: 9px 12px;
-    border-radius: 14px;
-    margin-bottom: 8px;
-    line-height: 1.4;
-    max-width: 85%;
-  }
-  .mockup .bubble.a { background: #1C1B29; border: 1px solid #322F49; }
-  .mockup .bubble.u { background: #E3B23C; color: #1C1B29; margin-left: auto; }
+  .callout .big .sup{font-size:0.42em; vertical-align:super; color:var(--red); font-weight:700;}
+  .callout .desc{font-size:16px; color:var(--muted); max-width:280px;}
 
-  section { padding: 40px 20px; position: relative; z-index: 2; }
-  .section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: #4FD1C5;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    display: block;
-  }
-  section h2 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 24px;
-    margin-bottom: 24px;
-  }
+  .section{padding:56px 22px;}
+  .section h2{font-weight:800; font-size:26px; letter-spacing:-0.02em; margin-bottom:26px;}
+  .grid{display:grid; grid-template-columns:1fr; gap:12px;}
+  @media(min-width:640px){.grid{grid-template-columns:1fr 1fr;}}
+  .card{background:var(--surface); border-radius:22px; padding:26px; border:1px solid var(--line);}
+  .card .tag{font-family:var(--font-mono); font-size:11px; color:var(--red); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:12px; font-weight:600;}
+  .card h3{font-size:17px; font-weight:700; margin-bottom:8px; letter-spacing:-0.01em;}
+  .card p{font-size:14px; color:var(--muted);}
 
-  .features {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  .price{
+    background:var(--surface); border:1px solid var(--line); border-radius:28px;
+    padding:40px 30px; max-width:360px; margin:0 auto; text-align:center;
   }
-  .feature {
-    background: #26243A;
-    border: 1px solid #322F49;
-    border-radius: 16px;
-    padding: 18px;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
-  .feature .icon {
-    width: 38px; height: 38px;
-    flex-shrink: 0;
-    border-radius: 10px;
-    background: rgba(227,178,60,0.12);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .feature h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-  .feature p { font-size: 13px; color: #ADA9C4; line-height: 1.5; }
+  .price .amount{font-weight:800; font-size:56px; letter-spacing:-0.03em;}
+  .price .amount span{font-size:16px; color:var(--muted); font-weight:500;}
+  .price ul{list-style:none; margin:28px 0; text-align:left; font-size:14.5px; color:var(--muted);}
+  .price li{padding:9px 0; padding-left:26px; position:relative;}
+  .price li::before{content:'✓'; position:absolute; left:0; color:var(--red); font-weight:700;}
 
-  .pricing-card {
-    background: linear-gradient(160deg, #26243A, #1F1D30);
-    border: 1px solid #3A3752;
-    border-radius: 20px;
-    padding: 28px 22px;
-    text-align: center;
-  }
-  .price {
-    font-family: 'Fraunces', serif;
-    font-size: 40px;
-    font-weight: 700;
-    margin: 10px 0 4px;
-  }
-  .price span { font-size: 15px; color: #ADA9C4; font-weight: 400; font-family: 'Inter', sans-serif; }
-  .pricing-card ul {
-    list-style: none;
-    text-align: left;
-    margin: 20px 0 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .pricing-card li {
-    font-size: 14px;
-    color: #D8D4E8;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .pricing-card li::before {
-    content: '✓';
-    color: #4FD1C5;
-    font-weight: 700;
-  }
-
-  footer {
-    text-align: center;
-    padding: 30px 20px 40px;
-    color: #6B6885;
-    font-size: 12px;
-    position: relative;
-    z-index: 2;
-  }
+  footer{padding:40px 22px; text-align:center; color:var(--muted); font-size:12.5px; font-family:var(--font-mono); border-top:1px solid var(--line);}
 </style>
 </head>
 <body>
 
-<div class="circuit-bg"></div>
-<div class="node n1"></div>
-<div class="node n2"></div>
-<div class="node n3"></div>
-<div class="node n4"></div>
-<div class="node n5"></div>
-<div class="glow"></div>
-<div class="glow2"></div>
-
 <nav>
   <div class="brand">
-    <div class="dot"></div>
-    <span>ZO AI</span>
+    <svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 13 A 35 35 0 1 1 49.9 13" fill="none" stroke="#e3242b" stroke-width="9"/><rect x="44" y="2" width="12" height="20" rx="4" fill="#e3242b"/><path d="M50 38 L68 68 L57 68 L50 54 L43 68 L32 68 Z" fill="#e3242b"/>
+    </svg>
+    <div class="logo">ZO <span class="red">AI</span></div>
   </div>
-  <a href="chat.html" class="nav-cta">Coba Sekarang</a>
+  <a href="subscribe.html" class="nav-cta">Get started</a>
 </nav>
 
-<div class="hero">
-  <div class="badge">● SIAP 24/7</div>
-  <h1>Asisten AI yang <span class="accent">selalu siap</span> bantu kerjaanmu</h1>
-  <p>Tanya apa saja, dapat jawaban cepat dan jelas. Buat ide, jawab pertanyaan, bantu tugas — kapan saja kamu butuh.</p>
-  <div class="cta-row">
-    <a href="chat.html" class="btn-primary">Coba Gratis Sekarang</a>
-    <a href="#harga" class="btn-secondary">Lihat harga langganan</a>
+<section class="hero">
+  <svg class="zmark-hero" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 13 A 35 35 0 1 1 49.9 13" fill="none" stroke="#e3242b" stroke-width="9"/><rect x="44" y="2" width="12" height="20" rx="4" fill="#e3242b"/><path d="M50 38 L68 68 L57 68 L50 54 L43 68 L32 68 Z" fill="#e3242b"/>
+  </svg>
+  <h1>Make ZO AI your<br>everyday intelligence</h1>
+  <p>Chat, write, think, and build — with an assistant that never sleeps. Subscribe with crypto, get instant access.</p>
+  <div class="btn-row">
+    <a href="chat.html" class="btn btn-primary">Try it free</a>
+    <a href="wallet.html" class="btn btn-ghost">Start with your wallet</a>
   </div>
+</section>
 
-  <div class="mockup">
-    <div class="bubble a">Halo! Ada yang bisa aku bantu hari ini?</div>
-    <div class="bubble u">Buatin caption buat jualan online dong</div>
-    <div class="bubble a">Siap! Mau caption yang santai, persuasif, atau formal?</div>
+<section class="callouts wrap">
+  <div class="callout">
+    <div class="big">24<span class="sup">/7</span></div>
+    <div class="desc">Always available, no downtime, no waiting in line</div>
   </div>
-</div>
+  <div class="callout">
+    <div class="big">&lt;2<span class="sup">sec</span></div>
+    <div class="desc">Average response time for any question you ask</div>
+  </div>
+  <div class="callout">
+    <div class="big">$6<span class="sup">/mo</span></div>
+    <div class="desc">One flat price, no hidden fees, cancel anytime</div>
+  </div>
+</section>
 
-<section>
-  <span class="section-label">Kenapa ZO AI</span>
-  <h2>Dibuat biar kerjaan lebih cepat</h2>
-  <div class="features">
-    <div class="feature">
-      <div class="icon">⚡</div>
-      <div>
-        <h3>Jawaban instan</h3>
-        <p>Nggak perlu nunggu, tanya apa saja langsung dijawab dalam hitungan detik.</p>
+<section class="section" id="features">
+  <div class="wrap">
+    <h2>Built for how you actually work</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="tag">Chat</div>
+        <h3>Talk about anything</h3>
+        <p>Research, writing, planning, or just thinking out loud — no narrow use case, no limits.</p>
       </div>
-    </div>
-    <div class="feature">
-      <div class="icon">🧠</div>
-      <div>
-        <h3>Paham konteks</h3>
-        <p>Ingat obrolan kamu selama sesi berlangsung, jadi nggak perlu ulang jelasin dari awal.</p>
+      <div class="card">
+        <div class="tag">Payments</div>
+        <h3>Pay with crypto</h3>
+        <p>One payment, instant access code, generated automatically the moment it clears.</p>
       </div>
-    </div>
-    <div class="feature">
-      <div class="icon">📱</div>
-      <div>
-        <h3>Bisa dari HP</h3>
-        <p>Tinggal buka link-nya di browser HP kamu, tanpa perlu install aplikasi apa pun.</p>
+      <div class="card">
+        <div class="tag">Wallet · coming soon</div>
+        <h3>Connect your wallet</h3>
+        <p>Track your portfolio and swap tokens — non-custodial, you stay in control.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Access</div>
+        <h3>No accounts, no friction</h3>
+        <p>One unique code gets you in. Nothing to remember, nothing to lose.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section id="harga">
-  <span class="section-label">Harga</span>
-  <h2>Langganan simpel, tanpa ribet</h2>
-  <div class="pricing-card">
-    <div class="section-label" style="margin-bottom:0;">Paket Bulanan</div>
-    <div class="price">Rp50rb<span>/bulan</span></div>
-    <ul>
-      <li>Akses penuh 24/7</li>
-      <li>Tanpa batas topik obrolan</li>
-      <li>Update fitur baru gratis</li>
-    </ul>
-    <a href="bayar.html" class="btn-primary" style="display:block;">Mulai Sekarang</a>
+<section class="section" id="pricing">
+  <div class="wrap" style="text-align:center;">
+    <h2 style="text-align:left;">Pricing</h2>
+    <div class="price">
+      <div class="amount">$6<span>/month</span></div>
+      <ul>
+        <li>Full access to ZO AI chat</li>
+        <li>Automatic access code</li>
+        <li>Pay with crypto — USDT, BTC, ETH</li>
+      </ul>
+      <a href="subscribe.html" class="btn btn-primary" style="display:block; border-radius:100px;">Subscribe now</a>
+    </div>
   </div>
 </section>
 
-<footer>
-  © 2026 ZO AI. Dibuat dengan ❤️ untuk kamu yang butuh bantuan cepat.
-</footer>
-
+<footer>zo-ai.vercel.app</footer>
 </body>
 </html>
