@@ -32,10 +32,19 @@
 
   .method-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin:24px 0 10px; text-align:left; font-weight:600;}
   .methods{display:flex; gap:8px; flex-wrap:wrap;}
-  .method{border:1px solid var(--line); border-radius:100px; padding:11px 14px; font-family:var(--font-mono); font-size:12.5px; color:var(--text); flex:1; text-align:center; min-width:70px;}
+  .method{border:1px solid var(--line); border-radius:100px; padding:11px 14px; font-family:var(--font-mono); font-size:12.5px; color:var(--text); flex:1; text-align:center; min-width:70px; background:transparent; cursor:pointer;}
   .method.active{background:#fff; color:#000; border-color:#fff;}
 
-  .pay-btn{width:100%; background:var(--red); color:#fff; border:none; padding:17px; border-radius:100px; font-weight:700; font-size:15px; margin-top:22px;}
+  .pay-btn{width:100%; background:var(--red); color:#fff; border:none; padding:17px; border-radius:100px; font-weight:700; font-size:15px; margin-top:22px; cursor:pointer;}
+  .pay-btn:disabled{opacity:0.5;}
+
+  .invoice-box{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; margin-top:18px; display:none;}
+  .invoice-box.show{display:block;}
+  .invoice-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .invoice-row:last-child{border-bottom:none;}
+  .invoice-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase;}
+  .invoice-value{font-family:var(--font-mono); font-size:12.5px; word-break:break-all; text-align:right;}
+  .copy-btn{background:transparent; border:1px solid var(--line); color:var(--text); border-radius:100px; padding:6px 12px; font-family:var(--font-mono); font-size:11px; margin-top:10px; cursor:pointer;}
 
   .flow{margin-top:36px;}
   .flow h2{font-size:14px; font-weight:700; margin-bottom:18px; color:var(--muted);}
@@ -44,8 +53,187 @@
   .step-text{font-size:13.5px; color:var(--muted); padding-top:3px;}
 
   .status-note{font-family:var(--font-mono); font-size:11.5px; color:var(--warn); text-align:center; margin-top:26px; padding:14px; border:1px dashed var(--line); border-radius:14px;}
+  .status-note.error{color:var(--red);}
+  .status-note.success{color:#4FD1C5;}
 </style>
 </head>
 <body>
 
-<header><a href="index.html" class="brand"><svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 13 A 35 35 0 1 1 49.9 13" fill="none" stroke="#e3242b" stroke-wid
+<header>
+  <a href="index.html" class="brand">
+    <svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 13 A 35 35 0 1 1 49.9 13" fill="none" stroke="#e3242b" stroke-width="9"/><rect x="44" y="2" width="12" height="20" rx="4" fill="#e3242b"/><path d="M50 38 L68 68 L57 68 L50 54 L43 68 L32 68 Z" fill="#e3242b"/></svg>
+    <div class="logo">ZO <span class="red">AI</span></div>
+  </a>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">Subscription</div>
+    <h1>Upgrade ke ZO AI</h1>
+  </div>
+
+  <div class="price-card">
+    <div class="amount">$6<span>/bulan</span></div>
+
+    <div class="method-label">Pilih metode bayar</div>
+    <div class="methods" id="methods">
+      <button class="method active" data-currency="usdttrc20">USDT</button>
+      <button class="method" data-currency="btc">BTC</button>
+      <button class="method" data-currency="eth">ETH</button>
+    </div>
+
+    <button class="pay-btn" id="payBtn">Bayar Sekarang</button>
+
+    <div class="invoice-box" id="invoiceBox">
+      <div class="invoice-row">
+        <div class="invoice-label">Kirim ke alamat</div>
+      </div>
+      <div class="invoice-value" id="payAddress">—</div>
+      <div class="invoice-row">
+        <div class="invoice-label">Jumlah</div>
+        <div class="invoice-value" id="payAmount">—</div>
+      </div>
+      <button class="copy-btn" id="copyBtn">Salin Alamat</button>
+    </div>
+  </div>
+
+  <div class="flow">
+    <h2>Cara kerja</h2>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">Pilih metode bayar (USDT/BTC/ETH), lalu tap Bayar Sekarang.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">Kirim jumlah yang tertera ke alamat yang muncul.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">Akun otomatis aktif begitu pembayaran terkonfirmasi di jaringan.</div>
+    </div>
+  </div>
+
+  <div class="status-note" id="statusNote">Belum ada pembayaran dibuat.</div>
+
+</div>
+
+<script>
+  const methodsEl = document.getElementById('methods');
+  const payBtn = document.getElementById('payBtn');
+  const invoiceBox = document.getElementById('invoiceBox');
+  const payAddressEl = document.getElementById('payAddress');
+  const payAmountEl = document.getElementById('payAmount');
+  const copyBtn = document.getElementById('copyBtn');
+  const statusNote = document.getElementById('statusNote');
+
+  let selectedCurrency = 'usdttrc20';
+  let pollTimer = null;
+  let currentPaymentId = null;
+
+  methodsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.method');
+    if (!btn) return;
+    document.querySelectorAll('.method').forEach(m => m.classList.remove('active'));
+    btn.classList.add('active');
+    selectedCurrency = btn.dataset.currency;
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const val = payAddressEl.textContent;
+    if (val && val !== '—') {
+      navigator.clipboard.writeText(val);
+      copyBtn.textContent = 'Tersalin!';
+      setTimeout(() => copyBtn.textContent = 'Salin Alamat', 1500);
+    }
+  });
+
+  function setStatus(text, type){
+    statusNote.textContent = text;
+    statusNote.className = 'status-note' + (type ? ' ' + type : '');
+  }
+
+  async function createInvoice(){
+    payBtn.disabled = true;
+    payBtn.textContent = 'Memproses...';
+    setStatus('Membuat invoice pembayaran...');
+
+    try {
+      const res = await fetch('/api/create-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          price_amount: 6,
+          price_currency: 'usd',
+          pay_currency: selectedCurrency
+        })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        setStatus('Gagal membuat invoice: ' + (data.error.message || data.error), 'error');
+        payBtn.disabled = false;
+        payBtn.textContent = 'Bayar Sekarang';
+        return;
+      }
+
+      // NOWPayments-style hosted invoice
+      if (data.invoice_url) {
+        window.location.href = data.invoice_url;
+        return;
+      }
+
+      // Direct pay_address / pay_amount response
+      const address = data.pay_address || data.address;
+      const amount = data.pay_amount || data.amount;
+      currentPaymentId = data.payment_id || data.id;
+
+      if (address) {
+        payAddressEl.textContent = address;
+        payAmountEl.textContent = (amount ? amount + ' ' : '') + selectedCurrency.toUpperCase();
+        invoiceBox.classList.add('show');
+        setStatus('Menunggu pembayaran masuk...');
+        startPolling();
+      } else {
+        setStatus('Invoice dibuat, tapi format respons tidak dikenali.', 'error');
+      }
+
+    } catch (err) {
+      setStatus('Gagal terhubung ke server. Coba lagi.', 'error');
+    }
+
+    payBtn.disabled = false;
+    payBtn.textContent = 'Bayar Sekarang';
+  }
+
+  function startPolling(){
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(checkPayment, 6000);
+  }
+
+  async function checkPayment(){
+    if (!currentPaymentId) return;
+    try {
+      const res = await fetch('/api/check-payment?payment_id=' + encodeURIComponent(currentPaymentId));
+      const data = await res.json();
+
+      const status = data.payment_status || data.status;
+      if (status === 'finished' || status === 'confirmed' || status === 'paid') {
+        clearInterval(pollTimer);
+        setStatus('Pembayaran terkonfirmasi! Mengarahkan...', 'success');
+        setTimeout(() => window.location.href = 'success.html', 1200);
+      } else if (status === 'failed' || status === 'expired') {
+        clearInterval(pollTimer);
+        setStatus('Pembayaran gagal atau kedaluwarsa. Coba buat invoice baru.', 'error');
+      } else {
+        setStatus('Status: ' + (status || 'menunggu konfirmasi...'));
+      }
+    } catch (err) {
+      // silent fail, keep polling
+    }
+  }
+
+  payBtn.addEventListener('click', createInvoice);
+</script>
+</body>
+</html>
