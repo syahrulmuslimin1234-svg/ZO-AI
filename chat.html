@@ -1,311 +1,81 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Asisten Kamu</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZO AI — Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #1C1B29;
-    color: #F5F0E6;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+  :root{
+    --bg:#000000; --surface:#0d0d0f; --line:rgba(255,255,255,0.09);
+    --text:#ffffff; --muted:#96959b; --red:#e3242b;
+    --font-body:'Inter', sans-serif; --font-mono:'JetBrains Mono', monospace;
   }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-thumb { background: #3A3752; border-radius: 4px; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); height:100vh; display:flex; flex-direction:column;}
 
-  header {
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid #2A2840;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .avatar {
-    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(135deg, #E3B23C, #4FD1C5);
-  }
-  .title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
-  .status { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8B87A6; margin-top: 2px; }
+  header{display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--line); flex-shrink:0;}
+  .brand{display:flex; align-items:center; gap:8px;}
+  .zmark{width:18px; height:18px;}
+  .logo{font-weight:800; font-size:16px;}
+  .logo .red{color:var(--red);}
+  .status{font-family:var(--font-mono); font-size:11px; color:var(--red); display:flex; align-items:center; gap:6px;}
+  .status::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--red); box-shadow:0 0 8px var(--red);}
 
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 18px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .row { display: flex; }
-  .row.user { justify-content: flex-end; }
-  .row.assistant { justify-content: flex-start; }
-  .bubble {
-    max-width: 82%;
-    padding: 10px 14px;
-    font-size: 14.5px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .bubble.user { background: #E3B23C; color: #1C1B29; border-radius: 18px 18px 4px 18px; }
-  .bubble.assistant { background: #26243A; border: 1px solid #322F49; border-radius: 18px 18px 18px 4px; }
+  .messages{flex:1; overflow-y:auto; padding:24px 18px; display:flex; flex-direction:column; gap:16px;}
+  .msg{max-width:82%; padding:14px 17px; border-radius:20px; font-size:14.5px; line-height:1.5;}
+  .msg.user{align-self:flex-end; background:var(--red); color:#fff; font-weight:500; border-bottom-right-radius:6px;}
+  .msg.ai{align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:6px;}
+  .msg.ai .label{font-family:var(--font-mono); font-size:10.5px; color:var(--red); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; display:block; font-weight:600;}
 
-  .dots { display: flex; gap: 5px; padding: 12px 16px; }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: #4FD1C5; animation: breathe 1.2s ease-in-out infinite; }
-  .dot:nth-child(2) { animation-delay: 0.15s; }
-  .dot:nth-child(3) { animation-delay: 0.3s; }
-  @keyframes breathe { 0%,100% { opacity:.3; transform:scale(.8);} 50%{opacity:1; transform:scale(1.1);} }
-
-  #inputBar {
-    padding: 12px 14px 16px;
-    border-top: 1px solid #2A2840;
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-  }
-  textarea {
-    flex: 1;
-    resize: none;
-    background: #26243A;
-    border: 1px solid #3A3752;
-    border-radius: 14px;
-    padding: 10px 14px;
-    color: #F5F0E6;
-    font-size: 14.5px;
-    font-family: 'Inter', sans-serif;
-    outline: none;
-    max-height: 120px;
-  }
-  textarea::placeholder { color: #6B6885; }
-  button {
-    background: #3A3752;
-    color: #6B6885;
-    border: none;
-    border-radius: 12px;
-    width: 42px; height: 42px;
-    flex-shrink: 0;
-    font-size: 16px;
-    cursor: default;
-  }
-  button.active { background: #E3B23C; color: #1C1B29; cursor: pointer; }
-
-  #upgradeBox {
-    display: none;
-    margin: 0 16px 14px;
-    background: linear-gradient(160deg, #2E2A18, #26243A);
-    border: 1px solid #E3B23C;
-    border-radius: 16px;
-    padding: 16px;
-  }
-  #upgradeBox h3 {
-    font-family: 'Fraunces', serif;
-    font-size: 15px;
-    margin-bottom: 6px;
-  }
-  #upgradeBox p {
-    font-size: 12.5px;
-    color: #ADA9C4;
-    margin-bottom: 10px;
-    line-height: 1.5;
-  }
-  #upgradeBox .row2 {
-    display: flex;
-    gap: 8px;
-  }
-  #upgradeBox input {
-    flex: 1;
-    background: #1C1B29;
-    border: 1px solid #3A3752;
-    border-radius: 10px;
-    padding: 9px 12px;
-    color: #F5F0E6;
-    font-size: 13px;
-    outline: none;
-  }
-  #upgradeBox button {
-    width: auto;
-    background: #E3B23C;
-    color: #1C1B29;
-    font-weight: 600;
-    font-size: 13px;
-    padding: 0 16px;
-    border-radius: 10px;
-    cursor: pointer;
-  }
-  #upgradeError { color: #F87171; font-size: 12px; margin-top: 6px; min-height: 14px; }
+  .composer{border-top:1px solid var(--line); padding:14px 16px 22px; flex-shrink:0; display:flex; gap:10px; align-items:flex-end;}
+  .composer textarea{flex:1; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:14px 17px; color:var(--text); font-family:var(--font-body); font-size:14.5px; resize:none; max-height:120px;}
+  .composer textarea:focus{outline:none; border-color:var(--red);}
+  .send-btn{background:var(--red); color:#fff; border:none; border-radius:50%; width:46px; height:46px; font-size:18px; flex-shrink:0; font-weight:700;}
 </style>
 </head>
 <body>
 
-<header style="justify-content: space-between;">
-  <div style="display:flex; align-items:center; gap:10px;">
-    <div class="avatar"></div>
-    <div>
-      <div class="title">ZO AI</div>
-      <div class="status" id="status">siap membantu</div>
-    </div>
+<header>
+  <div class="brand">
+    <svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 13 A 35 35 0 1 1 49.9 13" fill="none" stroke="#e3242b" stroke-width="9"/><rect x="44" y="2" width="12" height="20" rx="4" fill="#e3242b"/><path d="M50 38 L68 68 L57 68 L50 54 L43 68 L32 68 Z" fill="#e3242b"/></svg>
+    <div class="logo">ZO <span class="red">AI</span></div>
   </div>
-  <a href="index.html" style="font-size:12px; color:#8B87A6; text-decoration:none;">← Beranda</a>
+  <div class="status">online</div>
 </header>
 
-<div id="messages"></div>
-
-<div id="upgradeBox">
-  <h3>✨ Batas gratis tercapai</h3>
-  <p>Kamu sudah pakai 5 pesan gratis. Sudah berlangganan? Masukkan kode akses di bawah untuk lanjut chat tanpa batas.</p>
-  <div class="row2">
-    <input id="codeInput" type="text" placeholder="Kode langganan" />
-    <button id="unlockBtn">Buka</button>
-  </div>
-  <div id="upgradeError"></div>
+<div class="messages" id="messages">
+  <div class="msg ai"><span class="label">ZO AI</span>Hey! I can help with writing, research, planning — anything, really. This is a preview screen, not yet wired to the live Claude API.</div>
+  <div class="msg user">Can you help me draft a tweet?</div>
+  <div class="msg ai"><span class="label">ZO AI</span>Of course — what's it about, and what tone are you going for?</div>
 </div>
 
-<div id="inputBar">
-  <textarea id="input" rows="1" placeholder="Tulis pesan..."></textarea>
-  <button id="sendBtn">↑</button>
+<div class="composer">
+  <textarea id="input" rows="1" placeholder="Message ZO AI..."></textarea>
+  <button class="send-btn" id="sendBtn">↑</button>
 </div>
 
 <script>
-  const messagesEl = document.getElementById('messages');
-  const inputEl = document.getElementById('input');
+  const messages = document.getElementById('messages');
+  const input = document.getElementById('input');
   const sendBtn = document.getElementById('sendBtn');
-  const statusEl = document.getElementById('status');
-  const upgradeBox = document.getElementById('upgradeBox');
-  const codeInput = document.getElementById('codeInput');
-  const unlockBtn = document.getElementById('unlockBtn');
-  const upgradeError = document.getElementById('upgradeError');
-  const inputBar = document.getElementById('inputBar');
-
-  const FREE_LIMIT = 5;
-
-  let history = [
-    { role: 'assistant', content: 'Halo! Aku asisten AI kamu. Tanya apa saja.' }
-  ];
-  let loading = false;
-  let freeUsed = parseInt(localStorage.getItem('freeUsed') || '0', 10);
-  let accessCode = localStorage.getItem('accessCode') || '';
-
-  function isUnlocked() {
-    return !!accessCode || freeUsed < FREE_LIMIT;
+  function addMessage(text, who){
+    const div = document.createElement('div');
+    div.className = 'msg ' + who;
+    div.innerHTML = who === 'ai' ? '<span class="label">ZO AI</span>' + text : text;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
   }
-
-  function refreshGateUI() {
-    if (isUnlocked()) {
-      upgradeBox.style.display = 'none';
-      inputBar.style.display = 'flex';
-    } else {
-      upgradeBox.style.display = 'block';
-      inputBar.style.display = 'none';
-    }
+  function send(){
+    const val = input.value.trim();
+    if(!val) return;
+    addMessage(val, 'user');
+    input.value = '';
+    setTimeout(()=>{ addMessage('This is still a demo reply — connect the <code>/api/chat</code> endpoint to the real Claude API to go live.', 'ai'); }, 500);
   }
-
-  function render() {
-    messagesEl.innerHTML = '';
-    history.forEach(m => {
-      const row = document.createElement('div');
-      row.className = 'row ' + m.role;
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble ' + m.role;
-      bubble.textContent = m.content;
-      row.appendChild(bubble);
-      messagesEl.appendChild(row);
-    });
-    if (loading) {
-      const row = document.createElement('div');
-      row.className = 'row assistant';
-      row.innerHTML = '<div class="bubble assistant"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>';
-      messagesEl.appendChild(row);
-    }
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  function updateButton() {
-    const has = inputEl.value.trim().length > 0;
-    sendBtn.className = (has && !loading) ? 'active' : '';
-  }
-
-  unlockBtn.addEventListener('click', () => {
-    const code = codeInput.value.trim();
-    if (!code) return;
-    accessCode = code;
-    // Validasi akan dicek beneran saat kirim pesan pertama;
-    // simpan dulu supaya UI langsung terbuka
-    localStorage.setItem('accessCode', code);
-    upgradeError.textContent = '';
-    refreshGateUI();
-  });
-
-  codeInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') unlockBtn.click();
-  });
-
-  async function send() {
-    const text = inputEl.value.trim();
-    if (!text || loading || !isUnlocked()) return;
-
-    history.push({ role: 'user', content: text });
-    inputEl.value = '';
-    loading = true;
-    statusEl.textContent = 'sedang mengetik...';
-    updateButton();
-    render();
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, accessCode: accessCode || undefined })
-      });
-
-      if (res.status === 401) {
-        // Kode salah
-        accessCode = '';
-        localStorage.removeItem('accessCode');
-        history.pop(); // batalkan pesan user yang gagal
-        loading = false;
-        statusEl.textContent = 'siap membantu';
-        render();
-        refreshGateUI();
-        upgradeError.textContent = 'Kode salah, coba lagi.';
-        return;
-      }
-
-      const data = await res.json();
-      const reply = (data.content && data.content.find(c => c.type === 'text')?.text)
-        || 'Maaf, aku tidak bisa menjawab sekarang.';
-      history.push({ role: 'assistant', content: reply });
-
-      // Hitung pemakaian gratis hanya kalau belum pakai kode langganan
-      if (!accessCode) {
-        freeUsed += 1;
-        localStorage.setItem('freeUsed', String(freeUsed));
-      }
-    } catch (e) {
-      history.push({ role: 'assistant', content: 'Ups, ada gangguan koneksi. Coba kirim lagi ya.' });
-    } finally {
-      loading = false;
-      statusEl.textContent = 'siap membantu';
-      render();
-      updateButton();
-      refreshGateUI();
-    }
-  }
-
-  inputEl.addEventListener('input', updateButton);
-  inputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  });
   sendBtn.addEventListener('click', send);
-
-  refreshGateUI();
-  render();
+  input.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
 </script>
 </body>
 </html>
