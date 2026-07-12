@@ -34,8 +34,8 @@ export default async function handler(req, res) {
         "x-api-key": process.env.NOWPAYMENTS_API_KEY,
       },
       body: JSON.stringify({
-        price_amount: 50000,
-        price_currency: "idr",
+        price_amount: 15,
+        price_currency: "usd",
         order_id: orderId,
         order_description: "Langganan ZO AI - 1 bulan",
         ipn_callback_url: `${process.env.SITE_URL}/api/webhook/nowpayments`,
