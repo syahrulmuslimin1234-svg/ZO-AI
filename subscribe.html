@@ -70,51 +70,51 @@
 
   <div class="hero">
     <div class="eyebrow">Subscription</div>
-    <h1>Upgrade ke ZO AI</h1>
+    <h1>Upgrade to ZO AI</h1>
   </div>
 
   <div class="price-card">
-    <div class="amount">$15<span>/bulan</span></div>
+    <div class="amount">$15<span>/month</span></div>
 
-    <div class="method-label">Pilih metode bayar</div>
+    <div class="method-label">Choose payment method</div>
     <div class="methods" id="methods">
       <button class="method active" data-currency="usdttrc20">USDT</button>
       <button class="method" data-currency="btc">BTC</button>
       <button class="method" data-currency="eth">ETH</button>
     </div>
 
-    <button class="pay-btn" id="payBtn">Bayar Sekarang</button>
+    <button class="pay-btn" id="payBtn">Pay Now</button>
 
     <div class="invoice-box" id="invoiceBox">
       <div class="invoice-row">
-        <div class="invoice-label">Kirim ke alamat</div>
+        <div class="invoice-label">Send to address</div>
       </div>
       <div class="invoice-value" id="payAddress">—</div>
       <div class="invoice-row">
-        <div class="invoice-label">Jumlah</div>
+        <div class="invoice-label">Amount</div>
         <div class="invoice-value" id="payAmount">—</div>
       </div>
-      <button class="copy-btn" id="copyBtn">Salin Alamat</button>
+      <button class="copy-btn" id="copyBtn">Copy Address</button>
     </div>
   </div>
 
   <div class="flow">
-    <h2>Cara kerja</h2>
+    <h2>How it works</h2>
     <div class="step">
       <div class="step-num">1</div>
-      <div class="step-text">Pilih metode bayar (USDT/BTC/ETH), lalu tap Bayar Sekarang.</div>
+      <div class="step-text">Choose a payment method (USDT/BTC/ETH), then tap Pay Now.</div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div class="step-text">Kirim jumlah yang tertera ke alamat yang muncul.</div>
+      <div class="step-text">Send the exact amount shown to the address provided.</div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-text">Akun otomatis aktif begitu pembayaran terkonfirmasi di jaringan.</div>
+      <div class="step-text">Your account activates automatically once the payment is confirmed on-chain.</div>
     </div>
   </div>
 
-  <div class="status-note" id="statusNote">Belum ada pembayaran dibuat.</div>
+  <div class="status-note" id="statusNote">No payment created yet.</div>
 
 </div>
 
@@ -143,8 +143,8 @@
     const val = payAddressEl.textContent;
     if (val && val !== '—') {
       navigator.clipboard.writeText(val);
-      copyBtn.textContent = 'Tersalin!';
-      setTimeout(() => copyBtn.textContent = 'Salin Alamat', 1500);
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => copyBtn.textContent = 'Copy Address', 1500);
     }
   });
 
@@ -155,8 +155,8 @@
 
   async function createInvoice(){
     payBtn.disabled = true;
-    payBtn.textContent = 'Memproses...';
-    setStatus('Membuat invoice pembayaran...');
+    payBtn.textContent = 'Processing...';
+    setStatus('Creating payment invoice...');
 
     try {
       const res = await fetch('/api/create-invoice', {
@@ -171,9 +171,9 @@
       const data = await res.json();
 
       if (data.error) {
-        setStatus('Gagal membuat invoice: ' + (data.error.message || data.error), 'error');
+        setStatus('Failed to create invoice: ' + (data.error.message || data.error), 'error');
         payBtn.disabled = false;
-        payBtn.textContent = 'Bayar Sekarang';
+        payBtn.textContent = 'Pay Now';
         return;
       }
 
@@ -192,18 +192,18 @@
         payAddressEl.textContent = address;
         payAmountEl.textContent = (amount ? amount + ' ' : '') + selectedCurrency.toUpperCase();
         invoiceBox.classList.add('show');
-        setStatus('Menunggu pembayaran masuk...');
+        setStatus('Waiting for payment...');
         startPolling();
       } else {
-        setStatus('Invoice dibuat, tapi format respons tidak dikenali.', 'error');
+        setStatus('Invoice created, but response format not recognized.', 'error');
       }
 
     } catch (err) {
-      setStatus('Gagal terhubung ke server. Coba lagi.', 'error');
+      setStatus('Could not reach the server. Please try again.', 'error');
     }
 
     payBtn.disabled = false;
-    payBtn.textContent = 'Bayar Sekarang';
+    payBtn.textContent = 'Pay Now';
   }
 
   function startPolling(){
@@ -220,13 +220,13 @@
       const status = data.payment_status || data.status;
       if (status === 'finished' || status === 'confirmed' || status === 'paid') {
         clearInterval(pollTimer);
-        setStatus('Pembayaran terkonfirmasi! Mengarahkan...', 'success');
+        setStatus('Payment confirmed! Redirecting...', 'success');
         setTimeout(() => window.location.href = 'success.html', 1200);
       } else if (status === 'failed' || status === 'expired') {
         clearInterval(pollTimer);
-        setStatus('Pembayaran gagal atau kedaluwarsa. Coba buat invoice baru.', 'error');
+        setStatus('Payment failed or expired. Please create a new invoice.', 'error');
       } else {
-        setStatus('Status: ' + (status || 'menunggu konfirmasi...'));
+        setStatus('Status: ' + (status || 'waiting for confirmation...'));
       }
     } catch (err) {
       // silent fail, keep polling
