@@ -74,7 +74,7 @@
   </div>
 
   <div class="price-card">
-    <div class="amount">$6<span>/bulan</span></div>
+    <div class="amount">$15<span>/bulan</span></div>
 
     <div class="method-label">Pilih metode bayar</div>
     <div class="methods" id="methods">
@@ -163,7 +163,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          price_amount: 6,
+          price_amount: 15,
           price_currency: 'usd',
           pay_currency: selectedCurrency
         })
