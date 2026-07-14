@@ -31,10 +31,12 @@
   .wallet-icon{width:58px; height:58px; border-radius:18px; background:#000; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; margin:0 auto 18px; font-size:24px; color:var(--red);}
   .connect-box h3{font-size:16px; font-weight:700; margin-bottom:6px;}
   .connect-box p{font-size:13px; color:var(--muted); margin-bottom:22px;}
-  .provider-row{display:flex; gap:8px; margin-bottom:16px;}
-  .provider{flex:1; border:1px solid var(--line); border-radius:100px; padding:12px 8px; font-size:12px; font-weight:600; background:#000; color:var(--text);}
+  .provider-row{display:flex; flex-direction:column; gap:10px;}
+  .provider{border:1px solid var(--line); border-radius:100px; padding:14px 16px; font-size:14px; font-weight:600; background:#000; color:var(--text); display:flex; align-items:center; justify-content:center; gap:8px;}
   .provider:active{border-color:var(--red);}
-  .connect-btn{background:var(--red); color:#fff; border:none; padding:15px 20px; border-radius:100px; font-weight:700; font-size:14.5px; width:100%;}
+  .provider .dot{width:8px; height:8px; border-radius:50%; background:var(--muted); flex-shrink:0;}
+  .provider.available .dot{background:var(--green);}
+  .status-line{font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:16px;}
 
   .connected{display:none;}
   .connected.show{display:block;}
@@ -42,14 +44,15 @@
 
   .addr-card{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:17px 19px; margin:22px 0; display:flex; align-items:center; justify-content:space-between;}
   .addr-left{display:flex; align-items:center; gap:10px;}
-  .addr-dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
-  .addr-text{font-family:var(--font-mono); font-size:13px;}
+  .addr-dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); flex-shrink:0;}
+  .addr-text{font-family:var(--font-mono); font-size:13px; word-break:break-all;}
   .addr-net{font-family:var(--font-mono); font-size:10.5px; color:var(--muted);}
+  .disconnect{font-family:var(--font-mono); font-size:11px; color:var(--red); flex-shrink:0; padding-left:12px;}
 
   .balance-card{background:var(--surface); border:1px solid var(--line); border-radius:26px; padding:28px 24px; margin-bottom:20px;}
   .balance-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;}
   .balance-amount{font-weight:800; font-size:36px; margin:9px 0 5px; letter-spacing:-0.02em;}
-  .balance-change{font-family:var(--font-mono); font-size:12px; color:var(--green);}
+  .balance-sub{font-family:var(--font-mono); font-size:12px; color:var(--muted);}
 
   .token-list h2{font-size:14px; font-weight:700; color:var(--muted); margin:24px 0 14px;}
   .token{display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--line);}
@@ -62,10 +65,11 @@
   .tok-val{font-size:14px; font-weight:600;}
   .tok-usd{font-size:11.5px; color:var(--muted);}
 
-  .swap-btn{width:100%; margin-top:22px; background:var(--surface); border:1px solid var(--line); color:var(--text); padding:15px; border-radius:100px; font-weight:600; font-size:14.5px;}
-  .swap-btn:active{border-color:var(--red);}
+  .note{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-align:center; letter-spacing:0.03em; margin-top:22px; line-height:1.6;}
+  .note a{color:var(--red); text-decoration:underline;}
 
-  .note{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-align:center; letter-spacing:0.03em; margin-top:22px;}
+  .loader{display:inline-block; width:12px; height:12px; border:2px solid var(--line); border-top-color:var(--red); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -78,19 +82,25 @@
   <div class="hero">
     <div class="eyebrow">Non-custodial wallet</div>
     <h1>Connect your wallet</h1>
-    <p>ZO AI only reads your address and balance. Your keys stay with you, always.</p>
+    <p>ZO AI only reads your address and balance. Your keys never leave your wallet.</p>
   </div>
 
   <div class="connect-box" id="connectBox">
     <div class="wallet-icon">◈</div>
-    <h3>No wallet connected</h3>
-    <p>Choose a provider to try the demo connection</p>
-    <div class="provider-row">
-      <button class="provider" onclick="connectWallet('MetaMask')">MetaMask</button>
-      <button class="provider" onclick="connectWallet('Trust')">Trust</button>
-      <button class="provider" onclick="connectWallet('Phantom')">Phantom</button>
+    <h3 id="statusTitle">Choose a wallet</h3>
+    <p>Detected providers show a green dot</p>
+    <div class="provider-row" id="providerRow">
+      <button class="provider" id="btnMetaMask">
+        <span class="dot"></span> MetaMask
+      </button>
+      <button class="provider" id="btnTrust">
+        <span class="dot"></span> Trust Wallet
+      </button>
+      <button class="provider" id="btnPhantom">
+        <span class="dot"></span> Phantom
+      </button>
     </div>
-    <button class="connect-btn" onclick="connectWallet('MetaMask')">Connect wallet</button>
+    <div class="status-line" id="statusLine">Open this page inside your wallet app's browser for a direct connection, or tap a provider to try a deep link.</div>
   </div>
 
   <div class="connected" id="connected">
@@ -98,53 +108,187 @@
       <div class="addr-left">
         <div class="addr-dot"></div>
         <div>
-          <div class="addr-text">0x8F3a...91Qx</div>
-          <div class="addr-net">Ethereum · <span id="providerName">MetaMask</span></div>
+          <div class="addr-text" id="addrText">—</div>
+          <div class="addr-net" id="addrNet">—</div>
         </div>
       </div>
-      <div style="font-family:var(--font-mono); font-size:11px; color:var(--red);" onclick="disconnectWallet()">disconnect</div>
+      <div class="disconnect" onclick="disconnectWallet()">disconnect</div>
     </div>
 
     <div class="balance-card">
       <div class="balance-label">Total balance</div>
-      <div class="balance-amount">$2,481.30</div>
-      <div class="balance-change">▲ 3.2% today</div>
+      <div class="balance-amount" id="balanceAmount"><span class="loader"></span>loading</div>
+      <div class="balance-sub" id="balanceSub"></div>
     </div>
 
     <div class="token-list">
       <h2>Your tokens</h2>
-      <div class="token">
-        <div class="tok-left"><div class="tok-icon">Ξ</div><div><div class="tok-name">ETH</div><div class="tok-sub">0.82</div></div></div>
-        <div class="tok-right"><div class="tok-val">$1,920.40</div><div class="tok-usd">+2.1%</div></div>
-      </div>
-      <div class="token">
-        <div class="tok-left"><div class="tok-icon">₮</div><div><div class="tok-name">USDT</div><div class="tok-sub">410.00</div></div></div>
-        <div class="tok-right"><div class="tok-val">$410.00</div><div class="tok-usd">0.0%</div></div>
-      </div>
-      <div class="token">
-        <div class="tok-left"><div class="tok-icon">◎</div><div><div class="tok-name">SOL</div><div class="tok-sub">2.6</div></div></div>
-        <div class="tok-right"><div class="tok-val">$150.90</div><div class="tok-usd">+5.4%</div></div>
-      </div>
+      <div id="tokenListInner"></div>
     </div>
 
-    <button class="swap-btn" onclick="showSwapNote()">Swap tokens</button>
-    <div class="note" id="swapNote">Ask ZO AI in chat to check your balance or explain a token — try it in Chat.</div>
+    <div class="note">Ask ZO AI in <a href="chat.html">Chat</a> to explain any of these tokens.</div>
   </div>
 </div>
 
 <script>
-  function connectWallet(name){
-    document.getElementById('providerName').textContent = name;
+  const ETH_RPC = 'https://cloudflare-eth.com';
+  const SOL_RPC = 'https://api.mainnet-beta.solana.com';
+  const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec';
+
+  let currentAddress = null;
+  let currentNetwork = null;
+
+  // Detect providers
+  const hasEthereum = typeof window.ethereum !== 'undefined';
+  const hasPhantom = typeof window.solana !== 'undefined' && window.solana.isPhantom;
+
+  if (hasEthereum) {
+    document.getElementById('btnMetaMask').classList.add('available');
+    if (window.ethereum.isTrust) document.getElementById('btnTrust').classList.add('available');
+  }
+  if (hasPhantom) document.getElementById('btnPhantom').classList.add('available');
+
+  document.getElementById('btnMetaMask').addEventListener('click', () => connectEVM('MetaMask', 'https://metamask.app.link/dapp/' + window.location.host));
+  document.getElementById('btnTrust').addEventListener('click', () => connectEVM('Trust Wallet', 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodeURIComponent(window.location.href)));
+  document.getElementById('btnPhantom').addEventListener('click', () => connectPhantom());
+
+  async function connectEVM(name, deepLink) {
+    if (!hasEthereum) {
+      window.location.href = deepLink;
+      return;
+    }
+    try {
+      document.getElementById('statusLine').textContent = 'Requesting connection...';
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      currentAddress = accounts[0];
+      currentNetwork = 'ethereum';
+      showConnected(name, currentAddress, 'Ethereum');
+      loadEthBalances(currentAddress);
+    } catch (err) {
+      document.getElementById('statusLine').textContent = 'Connection was cancelled or failed.';
+    }
+  }
+
+  async function connectPhantom() {
+    if (!hasPhantom) {
+      const dappUrl = window.location.href;
+      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(dappUrl) + '?ref=' + encodeURIComponent(window.location.origin);
+      return;
+    }
+    try {
+      document.getElementById('statusLine').textContent = 'Requesting connection...';
+      const resp = await window.solana.connect();
+      currentAddress = resp.publicKey.toString();
+      currentNetwork = 'solana';
+      showConnected('Phantom', currentAddress, 'Solana');
+      loadSolBalance(currentAddress);
+    } catch (err) {
+      document.getElementById('statusLine').textContent = 'Connection was cancelled or failed.';
+    }
+  }
+
+  function showConnected(providerName, address, network) {
     document.getElementById('connectBox').classList.add('hide');
     document.getElementById('connected').classList.add('show');
+    document.getElementById('addrText').textContent = address.slice(0, 6) + '...' + address.slice(-4);
+    document.getElementById('addrNet').textContent = network + ' · ' + providerName;
   }
-  function disconnectWallet(){
+
+  function disconnectWallet() {
+    currentAddress = null;
+    currentNetwork = null;
     document.getElementById('connectBox').classList.remove('hide');
     document.getElementById('connected').classList.remove('show');
+    document.getElementById('statusLine').textContent = 'Open this page inside your wallet app\'s browser for a direct connection, or tap a provider to try a deep link.';
   }
-  function showSwapNote(){
-    document.getElementById('swapNote').textContent = 'Demo: real swaps will route through a DEX aggregator (1inch / Jupiter) once connected live.';
+
+  async function rpcCall(url, method, params) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+    });
+    const data = await res.json();
+    return data.result;
   }
+
+  async function getPrices() {
+    try {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana,tether&vs_currencies=usd');
+      return await res.json();
+    } catch (e) {
+      return {};
+    }
+  }
+
+  async function loadEthBalances(address) {
+    const prices = await getPrices();
+    const ethPrice = prices.ethereum?.usd || 0;
+    const usdtPrice = prices.tether?.usd || 1;
+
+    // ETH balance
+    const weiHex = await rpcCall(ETH_RPC, 'eth_getBalance', [address, 'latest']);
+    const ethBal = weiHex ? Number(BigInt(weiHex)) / 1e18 : 0;
+
+    // USDT balance (ERC20)
+    const data = '0x70a08231' + '000000000000000000000000' + address.slice(2).toLowerCase();
+    const usdtHex = await rpcCall(ETH_RPC, 'eth_call', [{ to: USDT_CONTRACT, data }, 'latest']);
+    const usdtBal = usdtHex ? Number(BigInt(usdtHex)) / 1e6 : 0;
+
+    const totalUsd = ethBal * ethPrice + usdtBal * usdtPrice;
+
+    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
+    document.getElementById('balanceSub').textContent = 'Live from Ethereum mainnet';
+
+    renderTokens([
+      { symbol: 'ETH', icon: 'Ξ', amount: ethBal.toFixed(4), usd: (ethBal * ethPrice).toFixed(2) },
+      { symbol: 'USDT', icon: '₮', amount: usdtBal.toFixed(2), usd: (usdtBal * usdtPrice).toFixed(2) }
+    ]);
+  }
+
+  async function loadSolBalance(address) {
+    const prices = await getPrices();
+    const solPrice = prices.solana?.usd || 0;
+
+    const lamports = await rpcCall(SOL_RPC, 'getBalance', [address]);
+    const solBal = lamports ? lamports.value / 1e9 : 0;
+    const totalUsd = solBal * solPrice;
+
+    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
+    document.getElementById('balanceSub').textContent = 'Live from Solana mainnet';
+
+    renderTokens([
+      { symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }
+    ]);
+  }
+
+  function renderTokens(tokens) {
+    const el = document.getElementById('tokenListInner');
+    el.innerHTML = '';
+    tokens.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'token';
+      row.innerHTML =
+        '<div class="tok-left"><div class="tok-icon">' + t.icon + '</div><div><div class="tok-name">' + t.symbol + '</div><div class="tok-sub">' + t.amount + '</div></div></div>' +
+        '<div class="tok-right"><div class="tok-val">$' + t.usd + '</div></div>';
+      el.appendChild(row);
+    });
+  }
+
+  // Auto-detect if wallet already connected (e.g. opened inside wallet app browser with prior permission)
+  window.addEventListener('load', async () => {
+    if (hasEthereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          currentAddress = accounts[0];
+          currentNetwork = 'ethereum';
+          showConnected('Wallet', currentAddress, 'Ethereum');
+          loadEthBalances(currentAddress);
+        }
+      } catch (e) {}
+    }
+  });
 </script>
 </body>
 </html>
