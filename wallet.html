@@ -209,22 +209,34 @@
   let currentAddress = null;
   let currentNetwork = null;
 
-  // Detect providers
-  const hasEthereum = typeof window.ethereum !== 'undefined';
-  const hasPhantom = typeof window.solana !== 'undefined' && window.solana.isPhantom;
+  // Detect providers — MetaMask/Trust inject window.ethereum a bit AFTER page load
+  // inside their in-app browsers, so we poll for a few seconds instead of checking once.
+  function hasEth() { return typeof window.ethereum !== 'undefined'; }
+  function hasPhan() { return typeof window.solana !== 'undefined' && window.solana.isPhantom; }
 
-  if (hasEthereum) {
-    document.getElementById('btnMetaMask').classList.add('available');
-    if (window.ethereum.isTrust) document.getElementById('btnTrust').classList.add('available');
+  function refreshProviderDots() {
+    if (hasEth()) {
+      document.getElementById('btnMetaMask').classList.add('available');
+      if (window.ethereum.isTrust) document.getElementById('btnTrust').classList.add('available');
+    }
+    if (hasPhan()) document.getElementById('btnPhantom').classList.add('available');
   }
-  if (hasPhantom) document.getElementById('btnPhantom').classList.add('available');
+
+  refreshProviderDots();
+  window.addEventListener('ethereum#initialized', refreshProviderDots, { once: true });
+  let detectTries = 0;
+  const detectTimer = setInterval(() => {
+    detectTries++;
+    refreshProviderDots();
+    if ((hasEth() && hasPhan()) || detectTries >= 15) clearInterval(detectTimer);
+  }, 250);
 
   document.getElementById('btnMetaMask').addEventListener('click', () => connectEVM('MetaMask', 'https://metamask.app.link/dapp/' + window.location.host));
   document.getElementById('btnTrust').addEventListener('click', () => connectEVM('Trust Wallet', 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodeURIComponent(window.location.href)));
   document.getElementById('btnPhantom').addEventListener('click', () => connectPhantom());
 
   async function connectEVM(name, deepLink) {
-    if (!hasEthereum) {
+    if (!hasEth()) {
       window.location.href = deepLink;
       return;
     }
@@ -236,12 +248,12 @@
       showConnected(name, currentAddress, 'Ethereum');
       loadEthBalances(currentAddress);
     } catch (err) {
-      document.getElementById('statusLine').textContent = 'Connection was cancelled or failed.';
+      document.getElementById('statusLine').textContent = err && err.message ? err.message : 'Connection was cancelled or failed.';
     }
   }
 
   async function connectPhantom() {
-    if (!hasPhantom) {
+    if (!hasPhan()) {
       const dappUrl = window.location.href;
       window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(dappUrl) + '?ref=' + encodeURIComponent(window.location.origin);
       return;
@@ -254,7 +266,7 @@
       showConnected('Phantom', currentAddress, 'Solana');
       loadSolBalance(currentAddress);
     } catch (err) {
-      document.getElementById('statusLine').textContent = 'Connection was cancelled or failed.';
+      document.getElementById('statusLine').textContent = err && err.message ? err.message : 'Connection was cancelled or failed.';
     }
   }
 
@@ -418,4 +430,79 @@
       } else if (asset === 'ETH') {
         await sendEthWithdraw(to, Number(amountStr));
       } else if (asset === 'USDT') {
-        await 
+        await sendUsdtWithdraw(to, Number(amountStr));
+      }
+      setWithdrawStatus('Transaction sent. Balance will update shortly.', 'success');
+      setTimeout(() => {
+        closeModal('withdrawOverlay');
+        if (currentNetwork === 'solana') loadSolBalance(currentAddress);
+        else loadEthBalances(currentAddress);
+      }, 1800);
+    } catch (err) {
+      setWithdrawStatus(err.message && err.message.length < 90 ? err.message : 'Transaction failed or was rejected.', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function sendEthWithdraw(to, amount) {
+    const valueHex = '0x' + BigInt(Math.round(amount * 1e18)).toString(16);
+    await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to, value: valueHex }]
+    });
+  }
+
+  async function sendUsdtWithdraw(to, amount) {
+    const amountUnits = BigInt(Math.round(amount * 1e6)); // USDT has 6 decimals
+    const data = '0xa9059cbb'
+      + to.replace('0x', '').padStart(64, '0')
+      + amountUnits.toString(16).padStart(64, '0');
+    await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to: USDT_CONTRACT, data, value: '0x0' }]
+    });
+  }
+
+  async function sendSolWithdraw(to, amount) {
+    if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom not available.');
+    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = solanaWeb3;
+
+    let toPubkey;
+    try { toPubkey = new PublicKey(to); }
+    catch (e) { throw new Error('Invalid Solana address.'); }
+
+    const connection = new Connection(SOL_RPC, 'confirmed');
+    const fromPubkey = new PublicKey(currentAddress);
+    const lamports = Math.round(amount * LAMPORTS_PER_SOL);
+
+    const transaction = new Transaction().add(
+      SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
+    );
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = fromPubkey;
+
+    const { signature } = await window.solana.signAndSendTransaction(transaction);
+    await connection.confirmTransaction(signature, 'confirmed');
+  }
+
+  // Auto-detect if wallet already connected (e.g. opened inside wallet app browser with prior permission)
+  window.addEventListener('load', () => {
+    setTimeout(async () => {
+      if (hasEth()) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            currentAddress = accounts[0];
+            currentNetwork = 'ethereum';
+            showConnected('Wallet', currentAddress, 'Ethereum');
+            loadEthBalances(currentAddress);
+          }
+        } catch (e) {}
+      }
+    }, 400);
+  });
+</script>
+</body>
+</html>
