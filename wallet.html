@@ -70,6 +70,33 @@
 
   .loader{display:inline-block; width:12px; height:12px; border:2px solid var(--line); border-top-color:var(--red); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px;}
   @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .action-row{display:flex; gap:10px; margin-bottom:20px;}
+  .action-btn{flex:1; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px 0; text-align:center; font-size:13.5px; font-weight:700; color:var(--text);}
+  .action-btn:active{border-color:var(--red);}
+  .action-btn .ic{display:block; font-size:18px; margin-bottom:4px; color:var(--red);}
+
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:50; align-items:flex-end; justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal-sheet{background:var(--surface); border:1px solid var(--line); border-top-left-radius:26px; border-top-right-radius:26px; width:100%; max-width:420px; padding:24px 22px 32px; max-height:85vh; overflow-y:auto;}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;}
+  .modal-head h3{font-size:17px; font-weight:800;}
+  .modal-close{font-size:20px; color:var(--muted); padding:4px 8px;}
+
+  .qr-box{background:#fff; border-radius:16px; padding:16px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;}
+  #qrcodeCanvas{display:block;}
+  .deposit-addr{font-family:var(--font-mono); font-size:13px; word-break:break-all; background:#000; border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px;}
+  .copy-btn{width:100%; background:var(--red); color:#fff; border:none; border-radius:100px; padding:14px 0; font-size:14px; font-weight:700;}
+  .deposit-warn{font-size:11.5px; color:var(--muted); text-align:center; margin-top:12px; line-height:1.5;}
+
+  .field-label{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:14px 0 6px;}
+  .field-input, .field-select{width:100%; background:#000; border:1px solid var(--line); border-radius:12px; padding:14px; font-size:14px; color:var(--text); font-family:var(--font-body);}
+  .field-select{font-family:var(--font-mono);}
+  .withdraw-submit{width:100%; background:var(--red); color:#fff; border:none; border-radius:100px; padding:15px 0; font-size:14.5px; font-weight:700; margin-top:20px;}
+  .withdraw-submit:disabled{opacity:0.5;}
+  .withdraw-status{font-family:var(--font-mono); font-size:12px; color:var(--muted); text-align:center; margin-top:12px; min-height:16px;}
+  .withdraw-status.error{color:var(--red);}
+  .withdraw-status.success{color:var(--green);}
 </style>
 </head>
 <body>
@@ -121,6 +148,11 @@
       <div class="balance-sub" id="balanceSub"></div>
     </div>
 
+    <div class="action-row">
+      <button class="action-btn" onclick="openDeposit()"><span class="ic">↓</span>Deposit</button>
+      <button class="action-btn" onclick="openWithdraw()"><span class="ic">↑</span>Withdraw</button>
+    </div>
+
     <div class="token-list">
       <h2>Your tokens</h2>
       <div id="tokenListInner"></div>
@@ -129,6 +161,45 @@
     <div class="note">Ask ZO AI in <a href="chat.html">Chat</a> to explain any of these tokens.</div>
   </div>
 </div>
+
+<!-- Deposit modal -->
+<div class="modal-overlay" id="depositOverlay">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h3>Deposit</h3>
+      <div class="modal-close" onclick="closeModal('depositOverlay')">✕</div>
+    </div>
+    <div class="qr-box"><div id="qrcodeBox"></div></div>
+    <div class="deposit-addr" id="depositAddrFull">—</div>
+    <button class="copy-btn" onclick="copyAddress()">Copy address</button>
+    <div class="deposit-warn">Only send assets on the same network shown above (e.g. Ethereum mainnet). Sending from a different network may result in permanent loss of funds.</div>
+  </div>
+</div>
+
+<!-- Withdraw modal -->
+<div class="modal-overlay" id="withdrawOverlay">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h3>Withdraw</h3>
+      <div class="modal-close" onclick="closeModal('withdrawOverlay')">✕</div>
+    </div>
+
+    <div class="field-label">Asset</div>
+    <select class="field-select" id="withdrawAsset"></select>
+
+    <div class="field-label">Recipient address</div>
+    <input class="field-input" id="withdrawTo" placeholder="0x...">
+
+    <div class="field-label">Amount</div>
+    <input class="field-input" id="withdrawAmount" placeholder="0.00" type="number" step="any">
+
+    <button class="withdraw-submit" id="withdrawSubmitBtn" onclick="sendWithdraw()">Send</button>
+    <div class="withdraw-status" id="withdrawStatus"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
 
 <script>
   const ETH_RPC = 'https://cloudflare-eth.com';
@@ -275,20 +346,76 @@
     });
   }
 
-  // Auto-detect if wallet already connected (e.g. opened inside wallet app browser with prior permission)
-  window.addEventListener('load', async () => {
-    if (hasEthereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          currentAddress = accounts[0];
-          currentNetwork = 'ethereum';
-          showConnected('Wallet', currentAddress, 'Ethereum');
-          loadEthBalances(currentAddress);
-        }
-      } catch (e) {}
+  // ---- Deposit / Withdraw ----
+  let qrInstance = null;
+  let currentTokenBalances = { ETH: 0, USDT: 0, SOL: 0 };
+
+  function openDeposit() {
+    if (!currentAddress) return;
+    document.getElementById('depositAddrFull').textContent = currentAddress;
+    document.getElementById('qrcodeBox').innerHTML = '';
+    qrInstance = new QRCode(document.getElementById('qrcodeBox'), {
+      text: currentAddress, width: 200, height: 200,
+      colorDark: '#000000', colorLight: '#ffffff'
+    });
+    document.getElementById('depositOverlay').classList.add('show');
+  }
+
+  function copyAddress() {
+    if (!currentAddress) return;
+    navigator.clipboard.writeText(currentAddress).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  }
+
+  function openWithdraw() {
+    if (!currentAddress) return;
+    const select = document.getElementById('withdrawAsset');
+    select.innerHTML = '';
+    const assets = currentNetwork === 'solana' ? ['SOL'] : ['ETH', 'USDT'];
+    assets.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      select.appendChild(opt);
+    });
+    document.getElementById('withdrawTo').value = '';
+    document.getElementById('withdrawAmount').value = '';
+    document.getElementById('withdrawStatus').textContent = '';
+    document.getElementById('withdrawStatus').className = 'withdraw-status';
+    document.getElementById('withdrawOverlay').classList.add('show');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  function setWithdrawStatus(msg, type) {
+    const el = document.getElementById('withdrawStatus');
+    el.textContent = msg;
+    el.className = 'withdraw-status' + (type ? ' ' + type : '');
+  }
+
+  async function sendWithdraw() {
+    const asset = document.getElementById('withdrawAsset').value;
+    const to = document.getElementById('withdrawTo').value.trim();
+    const amountStr = document.getElementById('withdrawAmount').value.trim();
+    const btn = document.getElementById('withdrawSubmitBtn');
+
+    if (!to || !amountStr || Number(amountStr) <= 0) {
+      setWithdrawStatus('Enter a valid recipient and amount.', 'error');
+      return;
     }
-  });
-</script>
-</body>
-</html>
+
+    btn.disabled = true;
+    setWithdrawStatus('Confirm the transaction in your wallet app...', '');
+
+    try {
+      if (currentNetwork === 'solana') {
+        await sendSolWithdraw(to, Number(amountStr));
+      } else if (asset === 'ETH') {
+        await sendEthWithdraw(to, Number(amountStr));
+      } else if (asset === 'USDT') {
+        await 
