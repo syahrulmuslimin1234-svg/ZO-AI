@@ -18,7 +18,7 @@
   a{color:inherit;}
   header{padding:22px; text-align:center;}
   .brand{display:inline-flex; align-items:center; gap:8px;}
-  .zmark{width:20px; height:20px;}
+  .zmark{width:20px; height:20px; object-fit:contain;}
   .logo{font-weight:800; font-size:16px;}
   .logo .red{color:var(--red);}
 
@@ -67,7 +67,7 @@
 
 <header>
   <a href="index.html" class="brand">
-    <svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 13 A 35 35 0 1 1 49.9 13"/></svg>
+    <img src="assets/logo2-96.png" class="zmark" alt="ZO AI">
     <div class="logo">ZO <span class="red">AI</span></div>
   </a>
 </header>
@@ -264,5 +264,4 @@
   payBtn.addEventListener('click', createInvoice);
 </script>
 </body>
-  </html>
-  
+</html>
