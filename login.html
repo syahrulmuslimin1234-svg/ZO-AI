@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZO AI — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000000; --surface:#0d0d0d; --line:rgba(255,255,255,0.09);
+    --text:#ffffff; --muted:#96959b; --red:#e3242b; --green:#2ee6a6;
+    --font-body:'Inter', sans-serif; --font-mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .wrap{max-width:400px; width:100%;}
+  .brand{display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:32px;}
+  .brand-mark{width:32px; height:32px; object-fit:contain;}
+  .brand-name{font-weight:800; font-size:19px; letter-spacing:-0.02em;}
+  .brand-name .red{color:var(--red);}
+
+  .hero{text-align:center; margin-bottom:32px;}
+  .hero-eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--red); margin-bottom:10px;}
+  .hero h2{font-size:26px; font-weight:800; letter-spacing:-0.02em; line-height:1.25; margin-bottom:10px;}
+  .hero p{font-size:13.5px; color:var(--muted); line-height:1.6;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:32px 26px;}
+  .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--red); text-align:center; margin-bottom:10px;}
+  h1{font-size:22px; font-weight:800; text-align:center; margin-bottom:8px; letter-spacing:-0.02em;}
+  .sub{font-size:13.5px; color:var(--muted); text-align:center; margin-bottom:28px; line-height:1.6;}
+
+  .field-label{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:6px; display:block;}
+  .field-input{width:100%; background:#000; border:1px solid var(--line); border-radius:12px; padding:15px 14px; font-size:15px; color:var(--text); font-family:var(--font-body);}
+  .field-input:focus{outline:none; border-color:var(--red);}
+
+  .otp-row{display:flex; gap:8px; margin-bottom:4px;}
+  .otp-box{flex:1; aspect-ratio:1; background:#000; border:1px solid var(--line); border-radius:12px; text-align:center; font-size:20px; font-weight:700; font-family:var(--font-mono); color:var(--text);}
+  .otp-box:focus{outline:none; border-color:var(--red);}
+
+  .primary-btn{width:100%; background:var(--red); color:#fff; border:none; border-radius:100px; padding:15px 0; font-size:14.5px; font-weight:700; margin-top:18px;}
+  .primary-btn:disabled{opacity:0.5;}
+  .ghost-btn{width:100%; background:transparent; color:var(--muted); border:none; padding:14px 0; font-size:13px; font-family:var(--font-mono); text-align:center;}
+  .ghost-btn b{color:var(--text);}
+
+  .status{font-family:var(--font-mono); font-size:12px; text-align:center; margin-top:14px; min-height:16px; color:var(--muted);}
+  .status.error{color:var(--red);}
+  .status.success{color:var(--green);}
+
+  .step{display:none;}
+  .step.active{display:block;}
+
+  .foot-note{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); text-align:center; margin-top:24px; letter-spacing:0.02em; line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="brand">
+    <img src="assets/logo2-96.png" class="brand-mark" alt="ZO AI">
+    <div class="brand-name">ZO <span class="red">AI</span></div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Always on</div>
+    <h2>Your everyday intelligence, unlocked with just your email</h2>
+    <p>No password, no forms. One code sent to your inbox is all it takes.</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Step 1: email -->
+    <div class="step active" id="stepEmail">
+      <div class="eyebrow">Sign in</div>
+      <h1>Enter your email</h1>
+      <div class="sub">We'll send a 6-digit code to verify it's you. No password needed.</div>
+
+      <label class="field-label">Email address</label>
+      <input class="field-input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email">
+
+      <button class="primary-btn" id="sendCodeBtn" onclick="sendCode()">Send code</button>
+      <div class="status" id="emailStatus"></div>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div class="step" id="stepOtp">
+      <div class="eyebrow">Verify</div>
+      <h1>Enter the code</h1>
+      <div class="sub">Sent to <b id="sentToEmail" style="color:var(--text);"></b></div>
+
+      <div class="otp-row">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="0">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="1">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="2">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="3">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="4">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="5">
+      </div>
+
+      <button class="primary-btn" id="verifyBtn" onclick="verifyCode()">Verify & continue</button>
+      <button class="ghost-btn" onclick="resendCode()">Didn't get it? <b>Resend code</b></button>
+      <div class="status" id="otpStatus"></div>
+    </div>
+
+  </div>
+
+  <div class="foot-note">By continuing you agree this device will stay signed in until you log out.</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ---- Config: same Supabase project used for the subscribers table ----
+  const SUPABASE_URL = 'https://pjrkzujhrngllagxawxv.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp';
+  const REDIRECT_AFTER_LOGIN = 'chat.html';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let pendingEmail = '';
+
+  function setStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = 'status' + (type ? ' ' + type : '');
+  }
+
+  function showStep(id) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  async function sendCode() {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email || !email.includes('@')) {
+      setStatus('emailStatus', 'Enter a valid email address.', 'error');
+      return;
+    }
+    const btn = document.getElementById('sendCodeBtn');
+    btn.disabled = true;
+    setStatus('emailStatus', 'Sending code...', '');
+
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true }
+    });
+
+    btn.disabled = false;
+
+    if (error) {
+      setStatus('emailStatus', error.message, 'error');
+      return;
+    }
+
+    pendingEmail = email;
+    document.getElementById('sentToEmail').textContent = email;
+    setStatus('emailStatus', '', '');
+    showStep('stepOtp');
+    document.querySelector('.otp-box').focus();
+  }
+
+  async function resendCode() {
+    if (!pendingEmail) return;
+    setStatus('otpStatus', 'Resending...', '');
+    const { error } = await sb.auth.signInWithOtp({ email: pendingEmail, options: { shouldCreateUser: true } });
+    setStatus('otpStatus', error ? error.message : 'Code resent.', error ? 'error' : 'success');
+  }
+
+  async function verifyCode() {
+    const boxes = document.querySelectorAll('.otp-box');
+    const code = Array.from(boxes).map(b => b.value).join('');
+    if (code.length !== 6) {
+      setStatus('otpStatus', 'Enter the full 6-digit code.', 'error');
+      return;
+    }
+    const btn = document.getElementById('verifyBtn');
+    btn.disabled = true;
+    setStatus('otpStatus', 'Verifying...', '');
+
+    const { data, error } = await sb.auth.verifyOtp({
+      email: pendingEmail,
+      token: code,
+      type: 'email'
+    });
+
+    btn.disabled = false;
+
+    if (error) {
+      setStatus('otpStatus', error.message, 'error');
+      return;
+    }
+
+    setStatus('otpStatus', 'Verified. Redirecting...', 'success');
+    setTimeout(() => { window.location.href = REDIRECT_AFTER_LOGIN; }, 700);
+  }
+
+  // OTP box auto-advance
+  const otpBoxes = document.querySelectorAll('.otp-box');
+  otpBoxes.forEach((box, i) => {
+    box.addEventListener('input', () => {
+      box.value = box.value.replace(/[^0-9]/g, '');
+      if (box.value && i < otpBoxes.length - 1) otpBoxes[i + 1].focus();
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !box.value && i > 0) otpBoxes[i - 1].focus();
+    });
+    box.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+      paste.split('').forEach((ch, idx) => { if (otpBoxes[idx]) otpBoxes[idx].value = ch; });
+      if (paste.length === 6) otpBoxes[5].focus();
+    });
+  });
+
+  // If already signed in, skip straight to redirect target
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) window.location.href = REDIRECT_AFTER_LOGIN;
+  })();
+</script>
+</body>
+  </html>
+
