@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#000000; --surface:#0d0d0f; --line:rgba(255,255,255,0.09);
+    --bg:#000000; --surface:#0d0d0d; --line:rgba(255,255,255,0.09);
     --text:#ffffff; --muted:#96959b; --red:#e3242b; --warn:#e9a13c;
     --font-body:'Inter', sans-serif; --font-mono:'JetBrains Mono', monospace;
   }
@@ -23,36 +23,42 @@
   .logo .red{color:var(--red);}
 
   .hero{padding:22px 0 30px; text-align:center;}
-  .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--red); margin-bottom:12px; font-weight:600;}
+  .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--red); margin-bottom:10px;}
   h1{font-weight:800; font-size:27px; letter-spacing:-0.02em;}
 
-  .price-card{background:var(--surface); border:1px solid var(--line); border-radius:26px; padding:34px 24px; text-align:center; margin-bottom:26px;}
+  .price-card{background:var(--surface); border:1px solid var(--line); border-radius:26px; padding:34px 24px; text-align:center;}
   .amount{font-weight:800; font-size:46px; letter-spacing:-0.02em;}
   .amount span{font-size:14px; color:var(--muted); font-weight:500;}
 
-  .method-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin:24px 0 10px; text-align:left; font-weight:600;}
-  .methods{display:flex; gap:8px; flex-wrap:wrap;}
-  .method{border:1px solid var(--line); border-radius:100px; padding:11px 14px; font-family:var(--font-mono); font-size:12.5px; color:var(--text); flex:1; text-align:center; min-width:70px; background:transparent; cursor:pointer;}
-  .method.active{background:#fff; color:#000; border-color:#fff;}
+  .email-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; text-align:left; margin:24px 0 8px;}
+  .email-input{width:100%; background:#000; border:1px solid var(--line); border-radius:12px; padding:14px; font-size:14px; color:var(--text); font-family:var(--font-body); text-align:left;}
+  .email-input:focus{outline:none; border-color:var(--red);}
+  .email-input.invalid{border-color:var(--red);}
+  .email-hint{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); text-align:left; margin-top:6px; line-height:1.5;}
 
-  .pay-btn{width:100%; background:var(--red); color:#fff; border:none; padding:17px; border-radius:100px; font-weight:700; font-size:15px; margin-top:22px; cursor:pointer;}
+  .method-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; text-align:left; margin:20px 0 8px;}
+  .methods{display:flex; gap:8px; flex-wrap:wrap;}
+  .method{border:1px solid var(--line); border-radius:100px; padding:11px 14px; font-family:var(--font-mono); font-size:12.5px; background:transparent; color:var(--text);}
+  .method.active{background:#fff; color:#000; border:none; padding:12px 17px; border-radius:100px; font-weight:700;}
+
+  .pay-btn{width:100%; background:var(--red); color:#fff; border:none; padding:17px; border-radius:100px; font-weight:700; font-size:15px; margin-top:22px;}
   .pay-btn:disabled{opacity:0.5;}
 
   .invoice-box{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; margin-top:18px; display:none;}
   .invoice-box.show{display:block;}
   .invoice-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
   .invoice-row:last-child{border-bottom:none;}
-  .invoice-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase;}
+  .invoice-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;}
   .invoice-value{font-family:var(--font-mono); font-size:12.5px; word-break:break-all; text-align:right;}
-  .copy-btn{background:transparent; border:1px solid var(--line); color:var(--text); border-radius:100px; padding:6px 12px; font-family:var(--font-mono); font-size:11px; margin-top:10px; cursor:pointer;}
+  .copy-btn{background:transparent; border:1px solid var(--line); color:var(--text); padding:6px 14px; border-radius:100px; font-size:12px; margin-top:6px; width:100%;}
 
   .flow{margin-top:36px;}
   .flow h2{font-size:14px; font-weight:700; margin-bottom:18px; color:var(--muted);}
   .step{display:flex; gap:13px; padding:9px 0;}
-  .step-num{font-family:var(--font-mono); font-size:11px; width:24px; height:24px; border-radius:50%; background:var(--surface); border:1px solid var(--line); color:var(--red); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:600;}
+  .step-num{font-family:var(--font-mono); font-size:11px; width:24px; height:24px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   .step-text{font-size:13.5px; color:var(--muted); padding-top:3px;}
 
-  .status-note{font-family:var(--font-mono); font-size:11.5px; color:var(--warn); text-align:center; margin-top:26px; padding:14px; border:1px dashed var(--line); border-radius:14px;}
+  .status-note{font-family:var(--font-mono); font-size:11.5px; color:var(--warn); text-align:center; margin-top:26px; padding:0 10px; line-height:1.6;}
   .status-note.error{color:var(--red);}
   .status-note.success{color:#4FD1C5;}
 </style>
@@ -61,7 +67,7 @@
 
 <header>
   <a href="index.html" class="brand">
-    <svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 13 A 35 35 0 1 1 49.9 13" fill="none" stroke="#e3242b" stroke-width="9"/><rect x="44" y="2" width="12" height="20" rx="4" fill="#e3242b"/><path d="M50 38 L68 68 L57 68 L50 54 L43 68 L32 68 Z" fill="#e3242b"/></svg>
+    <svg class="zmark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 13 A 35 35 0 1 1 49.9 13"/></svg>
     <div class="logo">ZO <span class="red">AI</span></div>
   </a>
 </header>
@@ -76,6 +82,10 @@
   <div class="price-card">
     <div class="amount">$15<span>/month</span></div>
 
+    <div class="email-label">Your email</div>
+    <input type="email" class="email-input" id="emailInput" placeholder="you@example.com" autocomplete="email">
+    <div class="email-hint">Used to activate your subscription and sign in — must match the email you'll log in with.</div>
+
     <div class="method-label">Choose payment method</div>
     <div class="methods" id="methods">
       <button class="method active" data-currency="usdttrc20">USDT</button>
@@ -88,8 +98,8 @@
     <div class="invoice-box" id="invoiceBox">
       <div class="invoice-row">
         <div class="invoice-label">Send to address</div>
+        <div class="invoice-value" id="payAddress">—</div>
       </div>
-      <div class="invoice-value" id="payAddress">—</div>
       <div class="invoice-row">
         <div class="invoice-label">Amount</div>
         <div class="invoice-value" id="payAmount">—</div>
@@ -102,7 +112,7 @@
     <h2>How it works</h2>
     <div class="step">
       <div class="step-num">1</div>
-      <div class="step-text">Choose a payment method (USDT/BTC/ETH), then tap Pay Now.</div>
+      <div class="step-text">Enter your email, choose a payment method (USDT/BTC/ETH), then tap Pay Now.</div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
@@ -110,7 +120,7 @@
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-text">Your account activates automatically once the payment is confirmed on-chain.</div>
+      <div class="step-text">Your account activates automatically for that email once the payment is confirmed on-chain.</div>
     </div>
   </div>
 
@@ -119,6 +129,7 @@
 </div>
 
 <script>
+  const emailInput = document.getElementById('emailInput');
   const methodsEl = document.getElementById('methods');
   const payBtn = document.getElementById('payBtn');
   const invoiceBox = document.getElementById('invoiceBox');
@@ -153,7 +164,21 @@
     statusNote.className = 'status-note' + (type ? ' ' + type : '');
   }
 
+  function isValidEmail(val) {
+    return val && val.includes('@') && val.includes('.') && val.length > 5;
+  }
+
   async function createInvoice(){
+    const email = emailInput.value.trim();
+
+    if (!isValidEmail(email)) {
+      emailInput.classList.add('invalid');
+      setStatus('Enter a valid email before paying.', 'error');
+      emailInput.focus();
+      return;
+    }
+    emailInput.classList.remove('invalid');
+
     payBtn.disabled = true;
     payBtn.textContent = 'Processing...';
     setStatus('Creating payment invoice...');
@@ -163,6 +188,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          email: email,
           price_amount: 15,
           price_currency: 'usd',
           pay_currency: selectedCurrency
@@ -233,7 +259,10 @@
     }
   }
 
+  emailInput.addEventListener('input', () => emailInput.classList.remove('invalid'));
+
   payBtn.addEventListener('click', createInvoice);
 </script>
 </body>
-</html>
+  </html>
+  
