@@ -4,6 +4,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { email } = req.body || {};
+
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return res.status(400).json({ error: "Email wajib diisi dan harus valid" });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
     const orderId =
       "ZOAI-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
 
@@ -17,6 +25,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         order_id: orderId,
+        email: cleanEmail,
         status: "pending",
       }),
     });
