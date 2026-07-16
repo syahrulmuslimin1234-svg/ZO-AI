@@ -13,7 +13,7 @@
     --font-body:'Inter', sans-serif; --font-mono:'JetBrains Mono', monospace;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; overflow-x:hidden;}
   .wrap{max-width:400px; width:100%;}
   .brand{display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:32px;}
   .brand-mark{width:32px; height:32px; object-fit:contain;}
@@ -34,8 +34,8 @@
   .field-input{width:100%; background:#000; border:1px solid var(--line); border-radius:12px; padding:15px 14px; font-size:15px; color:var(--text); font-family:var(--font-body);}
   .field-input:focus{outline:none; border-color:var(--red);}
 
-  .otp-row{display:flex; gap:8px; margin-bottom:4px;}
-  .otp-box{flex:1; min-width:0; width:0; aspect-ratio:1; background:#000; border:1px solid var(--line); border-radius:12px; text-align:center; font-size:20px; font-weight:700; font-family:var(--font-mono); color:var(--text); padding:0;}
+  .otp-row{display:flex; gap:6px; margin-bottom:4px;}
+  .otp-box{flex:1 1 0; min-width:0; width:100%; height:48px; background:#000; border:1px solid var(--line); border-radius:12px; text-align:center; font-size:18px; font-weight:700; font-family:var(--font-mono); color:var(--text); padding:0;}
   .otp-box:focus{outline:none; border-color:var(--red);}
 
   .primary-btn{width:100%; background:var(--red); color:#fff; border:none; border-radius:100px; padding:15px 0; font-size:14.5px; font-weight:700; margin-top:18px;}
@@ -112,7 +112,7 @@
   // ---- Config: same Supabase project used for the subscribers table ----
   const SUPABASE_URL = 'https://pjrkzujhrngllagxawxv.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp';
-  const REDIRECT_AFTER_LOGIN = 'landing.html';
+  const REDIRECT_AFTER_LOGIN = 'chat.html';
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -231,4 +231,3 @@
 </script>
 </body>
 </html>
-
