@@ -195,8 +195,21 @@
 
   // OTP box auto-advance
   const otpBoxes = document.querySelectorAll('.otp-box');
+  function fillOtp(str) {
+    const digits = str.replace(/[^0-9]/g, '').slice(0, 6);
+    digits.split('').forEach((ch, idx) => { if (otpBoxes[idx]) otpBoxes[idx].value = ch; });
+    const nextEmpty = digits.length < 6 ? digits.length : 5;
+    otpBoxes[nextEmpty].focus();
+  }
+
   otpBoxes.forEach((box, i) => {
     box.addEventListener('input', () => {
+      // Mobile browsers (Android Chrome) often deliver a multi-char paste
+      // through the normal `input` event instead of firing `paste`.
+      if (box.value.replace(/[^0-9]/g, '').length > 1) {
+        fillOtp(box.value);
+        return;
+      }
       box.value = box.value.replace(/[^0-9]/g, '');
       if (box.value && i < otpBoxes.length - 1) otpBoxes[i + 1].focus();
     });
@@ -205,9 +218,8 @@
     });
     box.addEventListener('paste', (e) => {
       e.preventDefault();
-      const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
-      paste.split('').forEach((ch, idx) => { if (otpBoxes[idx]) otpBoxes[idx].value = ch; });
-      if (paste.length === 6) otpBoxes[5].focus();
+      const paste = (e.clipboardData || window.clipboardData).getData('text');
+      fillOtp(paste);
     });
   });
 
@@ -219,3 +231,4 @@
 </script>
 </body>
 </html>
+
