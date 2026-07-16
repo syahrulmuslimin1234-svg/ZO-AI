@@ -46,6 +46,8 @@ export default async function handler(req, res) {
 
     if (payment_status === "finished" || payment_status === "confirmed") {
       const accessCode = crypto.randomBytes(6).toString("hex").toUpperCase();
+      const paidAt = new Date();
+      const expiresAt = new Date(paidAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const updateRes = await fetch(
         `${process.env.SUPABASE_URL}/rest/v1/subscribers?order_id=eq.${order_id}`,
@@ -60,7 +62,8 @@ export default async function handler(req, res) {
           body: JSON.stringify({
             status: "paid",
             access_code: accessCode,
-            paid_at: new Date().toISOString(),
+            paid_at: paidAt.toISOString(),
+            expires_at: expiresAt.toISOString(),
           }),
         }
       );
@@ -77,4 +80,4 @@ export default async function handler(req, res) {
     console.error(err);
     res.status(500).json({ error: "Terjadi kesalahan server" });
   }
-        }
+}
