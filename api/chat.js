@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages, accessCode } = req.body;
+    const { messages, email } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Pesan tidak valid" });
@@ -17,12 +17,13 @@ export default async function handler(req, res) {
         .split(",")[0]
         .trim();
 
-    // Validate access code if provided
-    if (accessCode) {
+    // Check subscription status from the logged-in email
+    if (email) {
+      const nowIso = new Date().toISOString();
       const checkRes = await fetch(
-        `${process.env.SUPABASE_URL}/rest/v1/subscribers?access_code=eq.${encodeURIComponent(
-          accessCode
-        )}&status=eq.paid&select=id`,
+        `${process.env.SUPABASE_URL}/rest/v1/subscribers?email=eq.${encodeURIComponent(
+          email
+        )}&status=eq.paid&select=id,expires_at&order=paid_at.desc&limit=1`,
         {
           headers: {
             apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -31,13 +32,16 @@ export default async function handler(req, res) {
         }
       );
       const rows = await checkRes.json();
-      if (Array.isArray(rows) && rows.length > 0) {
+      const sub = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+      const stillValid = sub && (!sub.expires_at || sub.expires_at > nowIso);
+
+      if (stillValid) {
         tier = "paid";
-        identifier = accessCode;
+        identifier = email;
         limit = 20;
-      } else {
-        return res.status(401).json({ error: "Kode akses salah" });
       }
+      // Kalau email login tapi belum/ga bayar lagi -> tetap lanjut sebagai
+      // free tier (identifier tetap IP), bukan error 401 seperti access_code lama
     }
 
     const today = new Date().toISOString().slice(0, 10);
@@ -136,4 +140,4 @@ export default async function handler(req, res) {
     console.error(err);
     return res.status(500).json({ error: "Terjadi kesalahan server" });
   }
-}
+                   }
