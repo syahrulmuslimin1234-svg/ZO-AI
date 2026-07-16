@@ -54,11 +54,14 @@
     'https://pjrkzujhrngllagxawxv.supabase.co',
     'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp'
   );
+  let userEmail = '';
   (async () => {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
       window.location.href = 'index.html';
+      return;
     }
+    userEmail = session.user.email;
   })();
 </script>
 
@@ -73,12 +76,7 @@
   </div>
 </header>
 
-<div class="code-bar" id="codeBar">
-  <input type="text" id="codeInput" placeholder="Paste your access code">
-  <button id="codeSubmit">Unlock</button>
-</div>
-
-<div class="quota" id="quotaBar">5 free questions left today</div>
+<div class="quota" id="quotaBar">Checking your plan...</div>
 
 <div class="messages" id="messages">
   <div class="msg ai"><span class="label">ZO AI</span>Hey! I can help with writing, research, planning — anything, really. Ask me something.</div>
@@ -94,9 +92,6 @@
   const input = document.getElementById('input');
   const sendBtn = document.getElementById('sendBtn');
   const tierBadge = document.getElementById('tierBadge');
-  const codeBar = document.getElementById('codeBar');
-  const codeInput = document.getElementById('codeInput');
-  const codeSubmit = document.getElementById('codeSubmit');
   const quotaBar = document.getElementById('quotaBar');
   const logoutBtn = document.getElementById('logoutBtn');
 
@@ -106,10 +101,9 @@
   });
 
   let history = [];
-  let accessCode = localStorage.getItem('zo_access_code') || '';
 
-  function updateBadge(){
-    if (accessCode) {
+  function updateBadge(tier){
+    if (tier === 'paid') {
       tierBadge.textContent = 'Pro · Claude';
       tierBadge.classList.add('paid');
     } else {
@@ -117,22 +111,6 @@
       tierBadge.classList.remove('paid');
     }
   }
-  updateBadge();
-
-  tierBadge.addEventListener('click', () => {
-    codeBar.classList.toggle('show');
-  });
-
-  codeSubmit.addEventListener('click', () => {
-    const val = codeInput.value.trim();
-    if (val) {
-      accessCode = val;
-      localStorage.setItem('zo_access_code', val);
-      updateBadge();
-      codeBar.classList.remove('show');
-      quotaBar.textContent = 'Pro unlocked — send a message to confirm';
-    }
-  });
 
   function addMessage(text, who){
     const div = document.createElement('div');
@@ -166,21 +144,17 @@
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, accessCode: accessCode || undefined })
+        body: JSON.stringify({ messages: history, email: userEmail || undefined })
       });
       const data = await res.json();
       loadingDiv.remove();
 
       if (data.error) {
         addMessage('Error: ' + data.error, 'ai');
-        if (res.status === 401) {
-          accessCode = '';
-          localStorage.removeItem('zo_access_code');
-          updateBadge();
-        }
       } else {
         addMessage(data.reply, 'ai');
         history.push({ role: 'assistant', content: data.reply });
+        updateBadge(data.tier);
         if (typeof data.remaining === 'number') {
           const label = data.tier === 'paid' ? 'Pro questions' : 'free questions';
           quotaBar.textContent = data.remaining + ' ' + label + ' left today';
