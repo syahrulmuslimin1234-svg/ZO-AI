@@ -14,6 +14,21 @@ function sortObjectKeys(obj) {
   return obj;
 }
 
+async function notifyAdmin(orderId) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (!botToken || !adminChatId) return;
+
+  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: adminChatId,
+      text: `💰 Pembayaran baru masuk!\nOrder ID: ${orderId}\nStatus: paid`,
+    }),
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -73,6 +88,11 @@ export default async function handler(req, res) {
         console.error("Gagal update Supabase:", errText);
         return res.status(500).json({ error: "Gagal update data pembayaran" });
       }
+
+      // Notify admin via Telegram (best-effort, doesn't block the response)
+      notifyAdmin(order_id).catch((e) =>
+        console.error("Gagal kirim notifikasi Telegram:", e)
+      );
     }
 
     res.status(200).json({ received: true });
