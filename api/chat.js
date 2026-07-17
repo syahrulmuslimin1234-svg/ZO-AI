@@ -84,6 +84,14 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
           max_tokens: 1024,
+          system:
+            "Kamu adalah ZO AI, asisten yang fokus membantu analisis kripto, berita ekonomi, dan strategi trading. Berikan info yang akurat, berimbang, dan berdasarkan data terkini soal market crypto dan makroekonomi. Jangan berikan saran finansial personal (bukan financial advisor), dan selalu ingatkan bahwa keputusan investasi tetap di tangan user. Kamu juga tetap bisa bantu topik umum lain di luar crypto kalau user tanya.",
+          tools: [
+            {
+              type: "web_search_20250305",
+              name: "web_search",
+            },
+          ],
           messages,
         }),
       });
@@ -93,7 +101,11 @@ export default async function handler(req, res) {
           .status(500)
           .json({ error: data.error.message || "Gagal menghubungi Claude" });
       }
-      replyText = data.content?.[0]?.text || "Maaf, tidak ada respons.";
+      replyText =
+        data.content
+          ?.filter((block) => block.type === "text")
+          .map((block) => block.text)
+          .join("\n") || "Maaf, tidak ada respons.";
     } else {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -140,4 +152,4 @@ export default async function handler(req, res) {
     console.error(err);
     return res.status(500).json({ error: "Terjadi kesalahan server" });
   }
-                   }
+}
