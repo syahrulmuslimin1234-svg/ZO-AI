@@ -1,0 +1,19 @@
+{
+  "name": "ZO AI",
+  "short_name": "ZO AI",
+  "description": "Your everyday AI assistant — ask anything, anytime.",
+  "start_url": "/index.html",
+  "id": "/index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/logo2-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
