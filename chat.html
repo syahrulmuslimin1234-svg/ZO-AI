@@ -57,6 +57,7 @@
     'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp'
   );
   let userEmail = '';
+  let accessToken = '';
   (async () => {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
@@ -64,6 +65,7 @@
       return;
     }
     userEmail = session.user.email;
+    accessToken = session.access_token;
   })();
 </script>
 
@@ -145,8 +147,11 @@
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, email: userEmail || undefined })
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {})
+        },
+        body: JSON.stringify({ messages: history })
       });
       const data = await res.json();
       loadingDiv.remove();
