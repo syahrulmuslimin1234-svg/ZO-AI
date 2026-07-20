@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages, email } = req.body;
+    const { messages } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Pesan tidak valid" });
@@ -17,12 +17,41 @@ export default async function handler(req, res) {
         .split(",")[0]
         .trim();
 
-    // Check subscription status from the logged-in email
-    if (email) {
+    // ---- Verifikasi identitas dari access_token, BUKAN dari teks email yang
+    // dikirim client. Ini mencegah orang mengaku-aku jadi email siapa pun
+    // tanpa benar-benar login lewat OTP. ----
+    const authHeader = req.headers["authorization"] || "";
+    const accessToken = authHeader.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length)
+      : null;
+
+    let verifiedEmail = null;
+
+    if (accessToken) {
+      try {
+        const userRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          verifiedEmail = userData?.email || null;
+        }
+        // Kalau token invalid/expired, userRes.ok akan false -> verifiedEmail
+        // tetap null -> otomatis jatuh ke tier free di bawah, bukan error.
+      } catch (e) {
+        console.error("Token verification failed:", e);
+      }
+    }
+
+    // Check subscription status from the VERIFIED email only
+    if (verifiedEmail) {
       const nowIso = new Date().toISOString();
       const checkRes = await fetch(
         `${process.env.SUPABASE_URL}/rest/v1/subscribers?email=eq.${encodeURIComponent(
-          email
+          verifiedEmail
         )}&status=eq.paid&select=id,expires_at&order=paid_at.desc&limit=1`,
         {
           headers: {
@@ -37,11 +66,11 @@ export default async function handler(req, res) {
 
       if (stillValid) {
         tier = "paid";
-        identifier = email;
+        identifier = verifiedEmail;
         limit = 20;
       }
-      // Kalau email login tapi belum/ga bayar lagi -> tetap lanjut sebagai
-      // free tier (identifier tetap IP), bukan error 401 seperti access_code lama
+      // Kalau login tapi belum/ga bayar -> tetap lanjut sebagai free tier
+      // (identifier tetap IP), bukan error.
     }
 
     const today = new Date().toISOString().slice(0, 10);
