@@ -97,6 +97,25 @@
   .withdraw-status{font-family:var(--font-mono); font-size:12px; color:var(--muted); text-align:center; margin-top:12px; min-height:16px;}
   .withdraw-status.error{color:var(--red);}
   .withdraw-status.success{color:var(--green);}
+
+  .swap-field{background:#000; border:1px solid var(--line); border-radius:16px; padding:16px; margin-top:6px;}
+  .swap-field-label{display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:10px;}
+  .swap-field-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .swap-amount-input{flex:1; background:none; border:none; color:var(--text); font-family:var(--font-mono); font-size:22px; font-weight:600; outline:none; min-width:0;}
+  .swap-amount-input::placeholder{color:var(--muted);}
+  .swap-token-select{background:var(--surface); border:1px solid var(--line); border-radius:100px; padding:8px 14px; font-family:var(--font-body); font-weight:700; font-size:13.5px; color:var(--text); flex-shrink:0;}
+  .swap-divider{display:flex; justify-content:center; margin:-8px 0; position:relative; z-index:2;}
+  .swap-flip{width:34px; height:34px; border-radius:10px; background:var(--red); border:4px solid var(--surface); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px;}
+  .swap-rate-box{background:rgba(227,36,43,0.06); border:1px solid rgba(227,36,43,0.18); border-radius:12px; padding:12px 14px; margin:16px 0;}
+  .swap-rate-row{display:flex; justify-content:space-between; font-size:12px; padding:2px 0;}
+  .swap-rate-row .k{color:var(--muted);}
+  .swap-rate-row .v{font-family:var(--font-mono); font-weight:600;}
+  .swap-rate-row .v.fee{color:var(--red);}
+  .swap-submit{width:100%; background:var(--red); color:#fff; border:none; border-radius:100px; padding:15px 0; font-size:14.5px; font-weight:700; margin-top:4px;}
+  .swap-submit:disabled{opacity:0.5;}
+  .swap-status{font-family:var(--font-mono); font-size:12px; color:var(--muted); text-align:center; margin-top:12px; min-height:16px;}
+  .swap-status.error{color:var(--red);}
+  .swap-status.success{color:var(--green);}
 </style>
 </head>
 <body>
@@ -150,6 +169,7 @@
 
     <div class="action-row">
       <button class="action-btn" onclick="openDeposit()"><span class="ic">↓</span>Deposit</button>
+      <button class="action-btn" onclick="openSwap()"><span class="ic">⇄</span>Swap</button>
       <button class="action-btn" onclick="openWithdraw()"><span class="ic">↑</span>Withdraw</button>
     </div>
 
@@ -198,6 +218,45 @@
   </div>
 </div>
 
+<!-- Swap modal -->
+<div class="modal-overlay" id="swapOverlay">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h3>Swap</h3>
+      <div class="modal-close" onclick="closeModal('swapOverlay')">✕</div>
+    </div>
+
+    <div class="swap-field">
+      <div class="swap-field-label"><span>Sell</span><span id="swapSellBalance">—</span></div>
+      <div class="swap-field-row">
+        <input class="swap-amount-input" id="swapSellAmount" placeholder="0.0" type="number" step="any" oninput="onSwapAmountChange()">
+        <select class="swap-token-select" id="swapSellToken" onchange="onSwapAmountChange()"></select>
+      </div>
+    </div>
+
+    <div class="swap-divider">
+      <div class="swap-flip" onclick="flipSwapTokens()">⇅</div>
+    </div>
+
+    <div class="swap-field">
+      <div class="swap-field-label"><span>Buy (estimated)</span><span id="swapBuyBalance">—</span></div>
+      <div class="swap-field-row">
+        <input class="swap-amount-input" id="swapBuyAmount" placeholder="0.0" readonly>
+        <select class="swap-token-select" id="swapBuyToken" onchange="onSwapAmountChange()"></select>
+      </div>
+    </div>
+
+    <div class="swap-rate-box">
+      <div class="swap-rate-row"><span class="k">Rate</span><span class="v" id="swapRate">—</span></div>
+      <div class="swap-rate-row"><span class="k">ZO AI fee</span><span class="v fee" id="swapFee">0.3%</span></div>
+      <div class="swap-rate-row"><span class="k">Est. network fee</span><span class="v" id="swapGas">—</span></div>
+    </div>
+
+    <button class="swap-submit" id="swapSubmitBtn" onclick="executeSwap()" disabled>Enter an amount</button>
+    <div class="swap-status" id="swapStatus"></div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
 
@@ -205,6 +264,23 @@
   const ETH_RPC = 'https://cloudflare-eth.com';
   const SOL_RPC = 'https://api.mainnet-beta.solana.com';
   const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec';
+
+  // ---- Swap token maps ----
+  const NATIVE_EVM = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+  const NATIVE_SOL = 'So11111111111111111111111111111111111111112';
+  const USDC_SOL = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+  const EVM_TOKENS = {
+    ETH:  { address: NATIVE_EVM,     decimals: 18 },
+    USDT: { address: USDT_CONTRACT,  decimals: 6 }
+  };
+  const SOL_TOKENS = {
+    SOL:  { address: NATIVE_SOL, decimals: 9 },
+    USDC: { address: USDC_SOL,   decimals: 6 }
+  };
+
+  let swapQuoteTimer = null;
+  let latestQuote = null;
 
   let currentAddress = null;
   let currentNetwork = null;
@@ -484,6 +560,220 @@
     transaction.feePayer = fromPubkey;
 
     const { signature } = await window.solana.signAndSendTransaction(transaction);
+    await connection.confirmTransaction(signature, 'confirmed');
+  }
+
+  // ---- Swap ----
+  function tokenMapFor(network) {
+    return network === 'solana' ? SOL_TOKENS : EVM_TOKENS;
+  }
+
+  function openSwap() {
+    if (!currentAddress) return;
+    const map = tokenMapFor(currentNetwork);
+    const symbols = Object.keys(map);
+
+    const sellSel = document.getElementById('swapSellToken');
+    const buySel = document.getElementById('swapBuyToken');
+    sellSel.innerHTML = ''; buySel.innerHTML = '';
+    symbols.forEach(sym => {
+      sellSel.appendChild(new Option(sym, sym));
+      buySel.appendChild(new Option(sym, sym));
+    });
+    sellSel.value = symbols[0];
+    buySel.value = symbols[1];
+
+    document.getElementById('swapSellAmount').value = '';
+    document.getElementById('swapBuyAmount').value = '';
+    document.getElementById('swapRate').textContent = '—';
+    document.getElementById('swapGas').textContent = '—';
+    setSwapStatus('', '');
+    setSwapButtonState('Enter an amount', true);
+    latestQuote = null;
+
+    document.getElementById('swapSellBalance').textContent =
+      currentTokenBalances && Object.keys(currentTokenBalances).length ? '' : '';
+
+    document.getElementById('swapOverlay').classList.add('show');
+  }
+
+  function flipSwapTokens() {
+    const sellSel = document.getElementById('swapSellToken');
+    const buySel = document.getElementById('swapBuyToken');
+    const tmp = sellSel.value;
+    sellSel.value = buySel.value;
+    buySel.value = tmp;
+    document.getElementById('swapSellAmount').value = '';
+    document.getElementById('swapBuyAmount').value = '';
+    onSwapAmountChange();
+  }
+
+  function setSwapStatus(msg, type) {
+    const el = document.getElementById('swapStatus');
+    el.textContent = msg;
+    el.className = 'swap-status' + (type ? ' ' + type : '');
+  }
+
+  function setSwapButtonState(label, disabled) {
+    const btn = document.getElementById('swapSubmitBtn');
+    btn.textContent = label;
+    btn.disabled = disabled;
+  }
+
+  function onSwapAmountChange() {
+    clearTimeout(swapQuoteTimer);
+    const amountStr = document.getElementById('swapSellAmount').value;
+    const sellSym = document.getElementById('swapSellToken').value;
+    const buySym = document.getElementById('swapBuyToken').value;
+
+    if (sellSym === buySym) {
+      setSwapButtonState('Choose two different tokens', true);
+      return;
+    }
+    if (!amountStr || Number(amountStr) <= 0) {
+      document.getElementById('swapBuyAmount').value = '';
+      setSwapButtonState('Enter an amount', true);
+      return;
+    }
+
+    setSwapButtonState('Fetching best rate...', true);
+    setSwapStatus('', '');
+    swapQuoteTimer = setTimeout(() => fetchSwapQuote(sellSym, buySym, Number(amountStr)), 450);
+  }
+
+  async function fetchSwapQuote(sellSym, buySym, amount) {
+    try {
+      const map = tokenMapFor(currentNetwork);
+      const sellTok = map[sellSym];
+      const buyTok = map[buySym];
+      const sellAmountBase = BigInt(Math.round(amount * Math.pow(10, sellTok.decimals))).toString();
+
+      const chain = currentNetwork === 'solana' ? 'solana' : 'ethereum';
+      const params = new URLSearchParams({
+        chain,
+        sellToken: sellTok.address,
+        buyToken: buyTok.address,
+        sellAmount: sellAmountBase,
+        takerAddress: currentAddress
+      });
+
+      const res = await fetch('/api/swap-quote?' + params.toString());
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error((data && data.error && (data.error.reason || data.error.message)) || 'No route found for this pair.');
+      }
+
+      latestQuote = data.quote;
+      latestQuote._meta = { sellSym, buySym, sellTok, buyTok, amount };
+
+      const buyAmountBase = BigInt(data.quote.buyAmount || '0');
+      const buyAmountDisplay = Number(buyAmountBase) / Math.pow(10, buyTok.decimals);
+      document.getElementById('swapBuyAmount').value = buyAmountDisplay.toFixed(6);
+
+      const rate = buyAmountDisplay / amount;
+      document.getElementById('swapRate').textContent = '1 ' + sellSym + ' ≈ ' + rate.toFixed(6) + ' ' + buySym;
+      document.getElementById('swapFee').textContent = ((data.estimatedFeeBps || 30) / 100).toFixed(2) + '%';
+
+      if (data.quote.transaction && data.quote.transaction.gas) {
+        document.getElementById('swapGas').textContent = data.quote.transaction.gas + ' gas units (est.)';
+      } else {
+        document.getElementById('swapGas').textContent = 'Shown in wallet before confirming';
+      }
+
+      setSwapButtonState('Swap ' + sellSym + ' for ' + buySym, false);
+    } catch (err) {
+      console.error('Quote error:', err);
+      document.getElementById('swapBuyAmount').value = '';
+      setSwapStatus(err.message && err.message.length < 100 ? err.message : 'Could not fetch a quote for this pair.', 'error');
+      setSwapButtonState('Try again', true);
+    }
+  }
+
+  async function executeSwap() {
+    if (!latestQuote) return;
+    const btn = document.getElementById('swapSubmitBtn');
+    btn.disabled = true;
+
+    try {
+      if (currentNetwork === 'solana') {
+        await executeSolanaSwap(latestQuote);
+      } else {
+        await executeEvmSwap(latestQuote);
+      }
+      setSwapStatus('Swap submitted. Your balance will update shortly.', 'success');
+      setTimeout(() => {
+        closeModal('swapOverlay');
+        if (currentNetwork === 'solana') loadSolBalance(currentAddress);
+        else loadEthBalances(currentAddress);
+      }, 1800);
+    } catch (err) {
+      console.error('Swap execution error:', err);
+      setSwapStatus(err.message && err.message.length < 100 ? err.message : 'Swap failed or was rejected in your wallet.', 'error');
+      btn.disabled = false;
+    }
+  }
+
+  async function executeEvmSwap(quote) {
+    const { sellTok } = quote._meta;
+    const spender = quote.issues && quote.issues.allowance && quote.issues.allowance.spender;
+
+    // Native ETH never needs an ERC20 approval.
+    if (sellTok.address.toLowerCase() !== NATIVE_EVM.toLowerCase() && spender) {
+      setSwapStatus('Checking token approval...', '');
+      const needsApproval = await checkNeedsApproval(sellTok.address, currentAddress, spender, quote.sellAmount);
+      if (needsApproval) {
+        setSwapStatus('Approve token access in your wallet...', '');
+        await sendErc20Approve(sellTok.address, spender, quote.sellAmount);
+      }
+    }
+
+    setSwapStatus('Confirm the swap in your wallet...', '');
+    const tx = quote.transaction;
+    await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        from: currentAddress,
+        to: tx.to,
+        data: tx.data,
+        value: tx.value || '0x0'
+      }]
+    });
+  }
+
+  async function checkNeedsApproval(tokenAddress, owner, spender, requiredAmount) {
+    const data = '0xdd62ed3e'
+      + owner.replace('0x', '').toLowerCase().padStart(64, '0')
+      + spender.replace('0x', '').toLowerCase().padStart(64, '0');
+    const result = await rpcCall(ETH_RPC, 'eth_call', [{ to: tokenAddress, data }, 'latest']);
+    const currentAllowance = result ? BigInt(result) : 0n;
+    return currentAllowance < BigInt(requiredAmount);
+  }
+
+  async function sendErc20Approve(tokenAddress, spender, amount) {
+    const amountHex = BigInt(amount).toString(16).padStart(64, '0');
+    const data = '0x095ea7b3'
+      + spender.replace('0x', '').toLowerCase().padStart(64, '0')
+      + amountHex;
+    const txHash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to: tokenAddress, data, value: '0x0' }]
+    });
+    // Wait a bit for the approval to be mined before submitting the swap.
+    await new Promise(r => setTimeout(r, 4000));
+    return txHash;
+  }
+
+  async function executeSolanaSwap(quote) {
+    if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom not available.');
+    if (!quote.transaction) throw new Error('No transaction returned for this route.');
+
+    const { VersionedTransaction } = solanaWeb3;
+    const raw = Uint8Array.from(atob(quote.transaction), c => c.charCodeAt(0));
+    const transaction = VersionedTransaction.deserialize(raw);
+
+    const { signature } = await window.solana.signAndSendTransaction(transaction);
+    const connection = new solanaWeb3.Connection(SOL_RPC, 'confirmed');
     await connection.confirmTransaction(signature, 'confirmed');
   }
 
