@@ -75,23 +75,26 @@ export default async function handler(req, res) {
 
     const today = new Date().toISOString().slice(0, 10);
 
-    // Check current usage
-    const usageRes = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/usage_limits?identifier=eq.${encodeURIComponent(
-        identifier
-      )}&day=eq.${today}&select=count`,
-      {
-        headers: {
-          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      }
-    );
-    const usageRows = await usageRes.json();
-    const currentCount =
-      Array.isArray(usageRows) && usageRows.length > 0 ? usageRows[0].count : 0;
+    // Check + reserve usage slot secara atomic (hindari race condition kalau
+    // ada 2 request barengan dari identifier yang sama).
+    const usageRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/check_and_increment_usage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        p_identifier: identifier,
+        p_day: today,
+        p_tier: tier,
+        p_limit: limit,
+      }),
+    });
+    const usageResult = await usageRes.json();
+    const { allowed, new_count } = Array.isArray(usageResult) ? usageResult[0] : usageResult;
 
-    if (currentCount >= limit) {
+    if (!allowed) {
       return res.status(429).json({
         error:
           tier === "paid"
@@ -126,24 +129,7 @@ export default async function handler(req, res) {
       replyText = data.choices?.[0]?.message?.content || "Maaf, tidak ada respons.";
     }
 
-    // Update usage count (upsert)
-    await fetch(`${process.env.SUPABASE_URL}/rest/v1/usage_limits`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        Prefer: "resolution=merge-duplicates",
-      },
-      body: JSON.stringify({
-        identifier,
-        day: today,
-        tier,
-        count: currentCount + 1,
-      }),
-    });
-
-    const remaining = limit - (currentCount + 1);
+    const remaining = limit - new_count;
 
     return res.status(200).json({ reply: replyText, tier, remaining });
   } catch (err) {
