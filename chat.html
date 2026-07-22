@@ -40,7 +40,7 @@
   .msg.ai{align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:6px;}
   .msg.ai .label{display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--red); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;}
   .msg.error{align-self:flex-start; background:rgba(227,36,43,0.08); border:1px solid rgba(227,36,43,0.35); color:#ff9a9e; border-bottom-left-radius:6px;}
-  .msg.error .label{color:#ff9a9e;}
+  .msg.error .label{display:block; font-family:var(--font-mono); font-size:10.5px; color:#ff9a9e; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;}
 
   .quota.low{color:var(--red); font-weight:600;}
 
@@ -118,7 +118,7 @@
     if (who === 'ai' || who === 'error') {
       const label = document.createElement('span');
       label.className = 'label';
-      label.textContent = who === 'error' ? 'Perhatian' : 'ZO AI';
+      label.textContent = who === 'error' ? 'Notice' : 'ZO AI';
       div.appendChild(label);
       div.appendChild(document.createTextNode(text));
     } else {
@@ -131,10 +131,10 @@
 
   // Tampilan error yang ramah, gak nampilin pesan mentah dari provider AI
   function friendlyErrorFor(status, rawMessage){
-    if (status === 429) return rawMessage || 'Kuota harian kamu sudah habis.';
-    if (status === 503) return rawMessage || 'Layanan AI lagi sibuk. Coba lagi sebentar lagi ya.';
-    if (status >= 500) return 'Ada gangguan di server kami. Coba lagi dalam beberapa saat.';
-    return rawMessage || 'Terjadi kesalahan. Coba lagi ya.';
+    if (status === 429) return rawMessage || 'You have reached your daily limit.';
+    if (status === 503) return rawMessage || 'The AI service is busy right now. Please try again shortly.';
+    if (status >= 500) return 'Something went wrong on our end. Please try again in a moment.';
+    return rawMessage || 'Something went wrong. Please try again.';
   }
 
   function updateQuotaBar(tier, remaining){
@@ -223,7 +223,7 @@
       }
     } catch (err) {
       loadingDiv.remove();
-      addMessage('Gak bisa konek ke server. Cek koneksi internet kamu, terus coba lagi.', 'error');
+      addMessage('Could not reach the server. Check your connection and try again.', 'error');
     }
 
     sendBtn.disabled = false;
