@@ -122,9 +122,10 @@ export default async function handler(req, res) {
       });
       const data = await response.json();
       if (data.error) {
-        return res
-          .status(500)
-          .json({ error: data.error.message || "Gagal menghubungi GPT" });
+        console.error("OpenAI error:", data.error.message);
+        return res.status(503).json({
+          error: "Layanan AI lagi sibuk atau kuota server habis. Coba lagi dalam beberapa menit ya.",
+        });
       }
       replyText = data.choices?.[0]?.message?.content || "Maaf, tidak ada respons.";
     }
@@ -140,7 +141,7 @@ export default async function handler(req, res) {
 
 const SYSTEM_PROMPT =
   "Kamu adalah ZO AI, asisten yang fokus membantu analisis kripto, berita ekonomi, dan strategi trading. Berikan info yang akurat, berimbang, dan berdasarkan data terkini soal market crypto dan makroekonomi. Jangan berikan saran finansial personal (bukan financial advisor), dan selalu ingatkan bahwa keputusan investasi tetap di tangan user. Kamu juga tetap bisa bantu topik umum lain di luar crypto kalau user tanya. " +
-  "Kamu punya akses ke tool 'get_market_data' untuk mengambil harga terkini dan berita + sentiment analysis dari Polygon/Massive untuk crypto maupun saham. Gunakan tool ini kalau user bertanya soal harga, sentiment, atau berita terbaru suatu aset — jangan menebak dari ingatan kamu untuk data yang bisa berubah setiap hari.";
+  "Kamu punya akses ke tool 'get_market_data' untuk mengambil harga terkini dan berita + sentiment analysis dari Massive (Polygon) untuk crypto maupun saham. Gunakan tool ini kalau user bertanya soal harga, sentiment, atau berita terbaru suatu aset — jangan menebak dari ingatan kamu untuk data yang bisa berubah setiap hari.";
 
 const MARKET_DATA_TOOL = {
   name: "get_market_data",
