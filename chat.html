@@ -39,6 +39,10 @@
   .msg.user{align-self:flex-end; background:var(--red); color:#fff; font-weight:500; border-bottom-right-radius:6px;}
   .msg.ai{align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:6px;}
   .msg.ai .label{display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--red); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;}
+  .msg.error{align-self:flex-start; background:rgba(227,36,43,0.08); border:1px solid rgba(227,36,43,0.35); color:#ff9a9e; border-bottom-left-radius:6px;}
+  .msg.error .label{color:#ff9a9e;}
+
+  .quota.low{color:var(--red); font-weight:600;}
 
   .composer{border-top:1px solid var(--line); padding:14px 16px 22px; display:flex; gap:10px; align-items:flex-end;}
   .composer textarea{flex:1; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:14px 16px; font-size:14.5px; color:var(--text); font-family:var(--font-body); resize:none; max-height:120px;}
@@ -51,22 +55,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ---- Require login before this page is usable ----
+  // ---- Supabase client ----
   const sb = supabase.createClient(
     'https://pjrkzujhrngllagxawxv.supabase.co',
     'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp'
   );
   let userEmail = '';
+  let userId = '';
   let accessToken = '';
-  (async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-      window.location.href = 'index.html';
-      return;
-    }
-    userEmail = session.user.email;
-    accessToken = session.access_token;
-  })();
 </script>
 
 <header>
@@ -119,10 +115,10 @@
   function addMessage(text, who){
     const div = document.createElement('div');
     div.className = 'msg ' + who;
-    if (who === 'ai') {
+    if (who === 'ai' || who === 'error') {
       const label = document.createElement('span');
       label.className = 'label';
-      label.textContent = 'ZO AI';
+      label.textContent = who === 'error' ? 'Perhatian' : 'ZO AI';
       div.appendChild(label);
       div.appendChild(document.createTextNode(text));
     } else {
@@ -133,11 +129,71 @@
     return div;
   }
 
+  // Tampilan error yang ramah, gak nampilin pesan mentah dari provider AI
+  function friendlyErrorFor(status, rawMessage){
+    if (status === 429) return rawMessage || 'Kuota harian kamu sudah habis.';
+    if (status === 503) return rawMessage || 'Layanan AI lagi sibuk. Coba lagi sebentar lagi ya.';
+    if (status >= 500) return 'Ada gangguan di server kami. Coba lagi dalam beberapa saat.';
+    return rawMessage || 'Terjadi kesalahan. Coba lagi ya.';
+  }
+
+  function updateQuotaBar(tier, remaining){
+    if (typeof remaining !== 'number') return;
+    const label = tier === 'paid' ? 'Pro questions' : 'free questions';
+    quotaBar.textContent = remaining + ' ' + label + ' left today';
+    quotaBar.classList.toggle('low', remaining <= 1);
+  }
+
+  // Cek sisa kuota begitu halaman dibuka, tanpa makan jatah (endpoint read-only)
+  async function checkStatus(){
+    try {
+      const res = await fetch('/api/status', {
+        headers: accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {}
+      });
+      const data = await res.json();
+      updateBadge(data.tier);
+      updateQuotaBar(data.tier, data.remaining);
+    } catch (e) {
+      quotaBar.textContent = '';
+    }
+  }
+
+  // Muat riwayat chat sebelumnya dari Supabase (RLS: cuma punya user sendiri)
+  async function loadHistory(){
+    try {
+      const { data, error } = await sb
+        .from('chat_messages')
+        .select('role, content')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error || !data || data.length === 0) return;
+
+      messages.innerHTML = '';
+      data.forEach(m => {
+        addMessage(m.content, m.role === 'user' ? 'user' : 'ai');
+        history.push({ role: m.role, content: m.content });
+      });
+    } catch (e) {
+      console.error('Gagal memuat riwayat chat:', e);
+    }
+  }
+
+  // Simpan 1 pesan ke Supabase (dipanggil buat pesan user & balasan AI)
+  async function saveMessage(role, content){
+    try {
+      await sb.from('chat_messages').insert({ user_id: userId, role, content });
+    } catch (e) {
+      console.error('Gagal menyimpan pesan:', e);
+    }
+  }
+
   async function send(){
     const val = input.value.trim();
     if(!val) return;
     addMessage(val, 'user');
     history.push({ role: 'user', content: val });
+    saveMessage('user', val);
     input.value = '';
     input.style.height = 'auto';
     sendBtn.disabled = true;
@@ -157,19 +213,17 @@
       loadingDiv.remove();
 
       if (data.error) {
-        addMessage('Error: ' + data.error, 'ai');
+        addMessage(friendlyErrorFor(res.status, data.error), 'error');
       } else {
         addMessage(data.reply, 'ai');
         history.push({ role: 'assistant', content: data.reply });
+        saveMessage('assistant', data.reply);
         updateBadge(data.tier);
-        if (typeof data.remaining === 'number') {
-          const label = data.tier === 'paid' ? 'Pro questions' : 'free questions';
-          quotaBar.textContent = data.remaining + ' ' + label + ' left today';
-        }
+        updateQuotaBar(data.tier, data.remaining);
       }
     } catch (err) {
       loadingDiv.remove();
-      addMessage('Network error — please try again.', 'ai');
+      addMessage('Gak bisa konek ke server. Cek koneksi internet kamu, terus coba lagi.', 'error');
     }
 
     sendBtn.disabled = false;
@@ -181,6 +235,21 @@
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
   });
+
+  // ---- Init: cek login, lalu muat riwayat + status quota ----
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      window.location.href = 'index.html';
+      return;
+    }
+    userEmail = session.user.email;
+    userId = session.user.id;
+    accessToken = session.access_token;
+
+    await loadHistory();
+    await checkStatus();
+  })();
 </script>
 <script>
   if ('serviceWorker' in navigator) {
