@@ -47,13 +47,16 @@
   .composer{border-top:1px solid var(--line); padding:14px 16px 22px; display:flex; gap:10px; align-items:flex-end;}
   .composer textarea{flex:1; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:14px 16px; font-size:14.5px; color:var(--text); font-family:var(--font-body); resize:none; max-height:120px;}
   .composer textarea:focus{outline:none; border-color:var(--red);}
-  .send-btn{background:var(--red); color:#fff; border:none; border-radius:50%; width:46px; height:46px; font-size:18px; flex-shrink:0;}
+  .send-btn{background:var(--red); color:#fff; border:none; border-radius:50%; width:46px; height:46px; font-size:18px; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
   .send-btn:disabled{opacity:0.5;}
   .mic-btn{background:var(--surface); color:var(--muted); border:1px solid var(--line); border-radius:50%; width:46px; height:46px; font-size:17px; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
   .mic-btn.recording{background:var(--red); color:#fff; border-color:var(--red); animation:pulse 1.2s infinite;}
   @keyframes pulse{0%{opacity:1;} 50%{opacity:0.55;} 100%{opacity:1;}}
 
-  .live-btn{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:100px; padding:5px 10px;}
+  .live-btn{background:var(--red); color:#fff; border:none; border-radius:50%; width:46px; height:46px; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
+  .img-btn{background:var(--surface); color:var(--muted); border:1px solid var(--line); border-radius:50%; width:46px; height:46px; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
+  .img-btn:disabled{opacity:0.5;}
+  .msg.ai img{max-width:100%; border-radius:14px; margin-top:4px; display:block;}
 
   .live-overlay{position:fixed; inset:0; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:100;}
   .live-overlay.show{display:flex;}
@@ -64,7 +67,7 @@
   @keyframes orbSpeak{0%,100%{transform:scale(1);} 50%{transform:scale(0.9);}}
   .live-status{font-family:var(--font-mono); font-size:13px; color:var(--muted); letter-spacing:0.05em;}
   .live-transcript{max-width:80%; text-align:center; font-size:15px; color:var(--text); min-height:24px;}
-  .live-close{position:absolute; top:24px; right:24px; background:var(--surface); border:1px solid var(--line); color:var(--text); border-radius:50%; width:40px; height:40px; font-size:16px;}
+  .live-close{position:absolute; top:24px; right:24px; background:var(--surface); border:1px solid var(--line); color:var(--text); border-radius:50%; width:40px; height:40px; font-size:16px; display:flex; align-items:center; justify-content:center;}
 </style>
 </head>
 <body>
@@ -88,13 +91,12 @@
   </div>
   <div class="header-right">
     <div class="tier-badge" id="tierBadge">Free · GPT</div>
-    <button class="live-btn" id="liveBtn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>Live</button>
     <button class="logout-btn" id="logoutBtn">Log out</button>
   </div>
 </header>
 
 <div class="live-overlay" id="liveOverlay">
-  <button class="live-close" id="liveCloseBtn">✕</button>
+  <button class="live-close" id="liveCloseBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   <div class="live-orb" id="liveOrb"></div>
   <div class="live-status" id="liveStatus">Listening...</div>
   <div class="live-transcript" id="liveTranscript"></div>
@@ -111,7 +113,13 @@
   <button class="mic-btn" id="micBtn" title="Voice input">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
   </button>
-  <button class="send-btn" id="sendBtn">➤</button>
+  <button class="img-btn" id="imgBtn" title="Generate image">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+  </button>
+  <button class="live-btn" id="liveBtn" title="Live voice mode">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="10" x2="4" y2="14"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="16" y1="6" x2="16" y2="18"/><line x1="20" y1="10" x2="20" y2="14"/></svg>
+  </button>
+  <button class="send-btn" id="sendBtn"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg></button>
 </div>
 
 <script>
@@ -122,6 +130,7 @@
   const quotaBar = document.getElementById('quotaBar');
   const logoutBtn = document.getElementById('logoutBtn');
   const micBtn = document.getElementById('micBtn');
+  const imgBtn = document.getElementById('imgBtn');
   const liveBtn = document.getElementById('liveBtn');
   const liveOverlay = document.getElementById('liveOverlay');
   const liveOrb = document.getElementById('liveOrb');
@@ -272,6 +281,65 @@
   }
 
   sendBtn.addEventListener('click', send);
+
+  // Tampilin bubble AI yang isinya gambar (bukan teks)
+  function addImageMessage(base64){
+    const div = document.createElement('div');
+    div.className = 'msg ai';
+    const label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = 'ZO AI';
+    div.appendChild(label);
+    const img = document.createElement('img');
+    img.src = 'data:image/png;base64,' + base64;
+    img.alt = 'Generated image';
+    div.appendChild(img);
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+  }
+
+  async function generateImage(){
+    const promptText = input.value.trim();
+    if (!promptText) return;
+
+    addMessage(promptText, 'user');
+    saveMessage('user', promptText);
+    input.value = '';
+    input.style.height = 'auto';
+    imgBtn.disabled = true;
+
+    const loadingDiv = addMessage('Generating image...', 'ai');
+
+    try {
+      const res = await fetch('/api/image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {})
+        },
+        body: JSON.stringify({ prompt: promptText })
+      });
+      const data = await res.json();
+      loadingDiv.remove();
+
+      if (data.error) {
+        addMessage(friendlyErrorFor(res.status, data.error), 'error');
+      } else {
+        addImageMessage(data.image);
+        if (typeof data.remaining === 'number') {
+          quotaBar.textContent = data.remaining + ' images left today';
+        }
+      }
+    } catch (err) {
+      loadingDiv.remove();
+      addMessage('Could not reach the server. Check your connection and try again.', 'error');
+    }
+
+    imgBtn.disabled = false;
+  }
+
+  imgBtn.addEventListener('click', generateImage);
   input.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
   input.addEventListener('input', () => {
     input.style.height = 'auto';
