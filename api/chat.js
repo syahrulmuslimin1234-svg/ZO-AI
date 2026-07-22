@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     const { messages } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "Pesan tidak valid" });
+      return res.status(400).json({ error: "Invalid message format" });
     }
 
     let tier = "free";
@@ -98,8 +98,8 @@ export default async function handler(req, res) {
       return res.status(429).json({
         error:
           tier === "paid"
-            ? `Batas ${limit} pertanyaan hari ini sudah tercapai. Coba lagi besok.`
-            : `Batas gratis ${limit} pertanyaan hari ini sudah tercapai. Upgrade ke Pro untuk kuota lebih besar.`,
+            ? `You've reached your ${limit} question limit for today. Please try again tomorrow.`
+            : `You've reached your free limit of ${limit} questions today. Upgrade to Pro for a bigger quota.`,
       });
     }
 
@@ -124,7 +124,7 @@ export default async function handler(req, res) {
       if (data.error) {
         console.error("OpenAI error:", data.error.message);
         return res.status(503).json({
-          error: "Layanan AI lagi sibuk atau kuota server habis. Coba lagi dalam beberapa menit ya.",
+          error: "The AI service is busy or our server quota is exhausted. Please try again in a few minutes.",
         });
       }
       replyText = data.choices?.[0]?.message?.content || "Maaf, tidak ada respons.";
@@ -135,7 +135,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ reply: replyText, tier, remaining });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "Terjadi kesalahan server" });
+    return res.status(500).json({ error: "Something went wrong on our server." });
   }
 }
 
