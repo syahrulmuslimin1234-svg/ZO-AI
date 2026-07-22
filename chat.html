@@ -49,6 +49,22 @@
   .composer textarea:focus{outline:none; border-color:var(--red);}
   .send-btn{background:var(--red); color:#fff; border:none; border-radius:50%; width:46px; height:46px; font-size:18px; flex-shrink:0;}
   .send-btn:disabled{opacity:0.5;}
+  .mic-btn{background:var(--surface); color:var(--muted); border:1px solid var(--line); border-radius:50%; width:46px; height:46px; font-size:17px; flex-shrink:0;}
+  .mic-btn.recording{background:var(--red); color:#fff; border-color:var(--red); animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%{opacity:1;} 50%{opacity:0.55;} 100%{opacity:1;}}
+
+  .live-btn{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:100px; padding:5px 10px;}
+
+  .live-overlay{position:fixed; inset:0; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:100;}
+  .live-overlay.show{display:flex;}
+  .live-orb{width:140px; height:140px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff6a6f, var(--red) 70%); box-shadow:0 0 60px rgba(227,36,43,0.5);}
+  .live-orb.listening{animation:orbPulse 1.4s ease-in-out infinite;}
+  .live-orb.speaking{animation:orbSpeak 0.5s ease-in-out infinite;}
+  @keyframes orbPulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.12);}}
+  @keyframes orbSpeak{0%,100%{transform:scale(1);} 50%{transform:scale(0.9);}}
+  .live-status{font-family:var(--font-mono); font-size:13px; color:var(--muted); letter-spacing:0.05em;}
+  .live-transcript{max-width:80%; text-align:center; font-size:15px; color:var(--text); min-height:24px;}
+  .live-close{position:absolute; top:24px; right:24px; background:var(--surface); border:1px solid var(--line); color:var(--text); border-radius:50%; width:40px; height:40px; font-size:16px;}
 </style>
 </head>
 <body>
@@ -72,9 +88,17 @@
   </div>
   <div class="header-right">
     <div class="tier-badge" id="tierBadge">Free · GPT</div>
+    <button class="live-btn" id="liveBtn">🎙️ Live</button>
     <button class="logout-btn" id="logoutBtn">Log out</button>
   </div>
 </header>
+
+<div class="live-overlay" id="liveOverlay">
+  <button class="live-close" id="liveCloseBtn">✕</button>
+  <div class="live-orb" id="liveOrb"></div>
+  <div class="live-status" id="liveStatus">Listening...</div>
+  <div class="live-transcript" id="liveTranscript"></div>
+</div>
 
 <div class="quota" id="quotaBar">Checking your plan...</div>
 
@@ -84,6 +108,7 @@
 
 <div class="composer">
   <textarea id="input" rows="1" placeholder="Message ZO AI..."></textarea>
+  <button class="mic-btn" id="micBtn" title="Voice input">🎤</button>
   <button class="send-btn" id="sendBtn">➤</button>
 </div>
 
@@ -94,6 +119,13 @@
   const tierBadge = document.getElementById('tierBadge');
   const quotaBar = document.getElementById('quotaBar');
   const logoutBtn = document.getElementById('logoutBtn');
+  const micBtn = document.getElementById('micBtn');
+  const liveBtn = document.getElementById('liveBtn');
+  const liveOverlay = document.getElementById('liveOverlay');
+  const liveOrb = document.getElementById('liveOrb');
+  const liveStatus = document.getElementById('liveStatus');
+  const liveTranscript = document.getElementById('liveTranscript');
+  const liveCloseBtn = document.getElementById('liveCloseBtn');
 
   logoutBtn.addEventListener('click', async () => {
     await sb.auth.signOut();
@@ -188,6 +220,32 @@
     }
   }
 
+  // Fungsi inti: kirim history ke /api/chat, dipakai bareng oleh mode teks & voice
+  async function sendToAI(){
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {})
+        },
+        body: JSON.stringify({ messages: history })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        return { ok: false, message: friendlyErrorFor(res.status, data.error) };
+      }
+      history.push({ role: 'assistant', content: data.reply });
+      saveMessage('assistant', data.reply);
+      updateBadge(data.tier);
+      updateQuotaBar(data.tier, data.remaining);
+      return { ok: true, reply: data.reply };
+    } catch (err) {
+      return { ok: false, message: 'Could not reach the server. Check your connection and try again.' };
+    }
+  }
+
   async function send(){
     const val = input.value.trim();
     if(!val) return;
@@ -199,31 +257,13 @@
     sendBtn.disabled = true;
 
     const loadingDiv = addMessage('Thinking...', 'ai');
+    const result = await sendToAI();
+    loadingDiv.remove();
 
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {})
-        },
-        body: JSON.stringify({ messages: history })
-      });
-      const data = await res.json();
-      loadingDiv.remove();
-
-      if (data.error) {
-        addMessage(friendlyErrorFor(res.status, data.error), 'error');
-      } else {
-        addMessage(data.reply, 'ai');
-        history.push({ role: 'assistant', content: data.reply });
-        saveMessage('assistant', data.reply);
-        updateBadge(data.tier);
-        updateQuotaBar(data.tier, data.remaining);
-      }
-    } catch (err) {
-      loadingDiv.remove();
-      addMessage('Could not reach the server. Check your connection and try again.', 'error');
+    if (!result.ok) {
+      addMessage(result.message, 'error');
+    } else {
+      addMessage(result.reply, 'ai');
     }
 
     sendBtn.disabled = false;
@@ -235,6 +275,136 @@
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
   });
+
+  // ---- Voice input (Web Speech API — bawaan Chrome, gratis, gak lewat API AI) ----
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognitionAPI) {
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'id-ID'; // ganti 'en-US' kalau mayoritas user ngomong Inggris
+
+    let isRecording = false;
+
+    recognition.onstart = () => {
+      isRecording = true;
+      micBtn.classList.add('recording');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      input.value = (input.value ? input.value + ' ' : '') + transcript;
+      input.dispatchEvent(new Event('input'));
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+    };
+
+    recognition.onend = () => {
+      isRecording = false;
+      micBtn.classList.remove('recording');
+    };
+
+    micBtn.addEventListener('click', () => {
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    });
+  } else {
+    // Browser gak support (misal Firefox/Safari lama) — sembunyiin tombolnya
+    micBtn.style.display = 'none';
+  }
+
+  // ---- Live voice mode: dengerin terus, auto-kirim, jawaban dibacain ----
+  if (SpeechRecognitionAPI && 'speechSynthesis' in window) {
+    const liveRecognition = new SpeechRecognitionAPI();
+    liveRecognition.continuous = false;
+    liveRecognition.interimResults = false;
+    liveRecognition.lang = 'id-ID';
+
+    let liveActive = false;
+
+    function setLiveState(state, text){
+      liveOrb.classList.remove('listening', 'speaking');
+      if (state) liveOrb.classList.add(state);
+      liveStatus.textContent = text;
+    }
+
+    function speak(text){
+      return new Promise((resolve) => {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'id-ID';
+        utter.onend = resolve;
+        utter.onerror = resolve;
+        window.speechSynthesis.speak(utter);
+      });
+    }
+
+    async function startListening(){
+      if (!liveActive) return;
+      liveTranscript.textContent = '';
+      setLiveState('listening', 'Listening...');
+      try {
+        liveRecognition.start();
+      } catch (e) {
+        // recognition mungkin masih jalan dari sebelumnya, abaikan
+      }
+    }
+
+    liveRecognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      liveTranscript.textContent = transcript;
+      setLiveState(null, 'Thinking...');
+
+      addMessage(transcript, 'user');
+      history.push({ role: 'user', content: transcript });
+      saveMessage('user', transcript);
+
+      const result = await sendToAI();
+      if (!liveActive) return; // user udah nutup live mode pas nunggu jawaban
+
+      if (!result.ok) {
+        addMessage(result.message, 'error');
+        setLiveState('speaking', 'Speaking...');
+        liveTranscript.textContent = result.message;
+        await speak(result.message);
+      } else {
+        addMessage(result.reply, 'ai');
+        setLiveState('speaking', 'Speaking...');
+        liveTranscript.textContent = result.reply;
+        await speak(result.reply);
+      }
+
+      if (liveActive) startListening();
+    };
+
+    liveRecognition.onerror = (event) => {
+      console.error('Live recognition error:', event.error);
+      if (liveActive && event.error !== 'aborted') {
+        setTimeout(startListening, 800);
+      }
+    };
+
+    liveBtn.addEventListener('click', () => {
+      liveActive = true;
+      liveOverlay.classList.add('show');
+      startListening();
+    });
+
+    function stopLiveMode(){
+      liveActive = false;
+      window.speechSynthesis.cancel();
+      try { liveRecognition.stop(); } catch (e) {}
+      liveOverlay.classList.remove('show');
+    }
+
+    liveCloseBtn.addEventListener('click', stopLiveMode);
+  } else {
+    liveBtn.style.display = 'none';
+  }
 
   // ---- Init: cek login, lalu muat riwayat + status quota ----
   (async () => {
