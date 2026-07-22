@@ -301,7 +301,10 @@
 
   async function generateImage(){
     const promptText = input.value.trim();
-    if (!promptText) return;
+    if (!promptText) {
+      addMessage('Type a description first, then tap this button to generate an image.', 'error');
+      return;
+    }
 
     addMessage(promptText, 'user');
     saveMessage('user', promptText);
