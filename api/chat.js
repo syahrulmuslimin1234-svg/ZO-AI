@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages } = req.body;
+    const { messages, webSearchEnabled = true } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Invalid message format" });
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
     let replyText = "";
 
     if (tier === "paid") {
-      replyText = await callClaudeWithTools(messages);
+      replyText = await callClaudeWithTools(messages, webSearchEnabled);
     } else {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -168,9 +168,12 @@ const MARKET_DATA_TOOL = {
 // Loop tool-use: Claude bisa minta data pasar (client-side tool) sekaligus
 // pakai web_search (server-side tool, dieksekusi otomatis oleh Anthropic).
 // Kita hanya perlu menangani get_market_data secara manual.
-async function callClaudeWithTools(messages) {
+async function callClaudeWithTools(messages, webSearchEnabled) {
   let workingMessages = [...messages];
   const maxRounds = 3;
+  const tools = webSearchEnabled
+    ? [{ type: "web_search_20250305", name: "web_search" }, MARKET_DATA_TOOL]
+    : [MARKET_DATA_TOOL];
 
   for (let round = 0; round < maxRounds; round++) {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -184,7 +187,7 @@ async function callClaudeWithTools(messages) {
         model: "claude-sonnet-4-6",
         max_tokens: 1024,
         system: SYSTEM_PROMPT,
-        tools: [{ type: "web_search_20250305", name: "web_search" }, MARKET_DATA_TOOL],
+        tools: tools,
         messages: workingMessages,
       }),
     });
