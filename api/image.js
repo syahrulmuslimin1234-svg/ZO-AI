@@ -68,6 +68,7 @@ export default async function handler(req, res) {
     if (!allowed) {
       return res.status(429).json({
         error: `You've reached today's limit of ${IMAGE_LIMIT} generated images. Please try again tomorrow.`,
+        limit: IMAGE_LIMIT,
       });
     }
 
