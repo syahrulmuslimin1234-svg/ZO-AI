@@ -100,6 +100,8 @@ export default async function handler(req, res) {
           tier === "paid"
             ? `You've reached your ${limit} question limit for today. Please try again tomorrow.`
             : `You've reached your free limit of ${limit} questions today. Upgrade to Pro for a bigger quota.`,
+        tier,
+        limit,
       });
     }
 
