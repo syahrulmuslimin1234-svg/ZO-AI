@@ -18,7 +18,9 @@
   body{background:var(--bg); color:var(--text); font-family:var(--font-body); height:100vh; display:flex; flex-direction:column;}
 
   header{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line);}
-  .brand{display:flex; align-items:center; gap:8px;}
+  .brand{display:flex; align-items:center; gap:8px; background:none; border:none; padding:0; cursor:pointer;}
+  .avatar-circle{width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:14px; color:#fff; flex-shrink:0;}
+  .avatar-circle.small{width:64px; height:64px; font-size:22px; margin:0 auto;}
   .zmark{width:18px; height:18px; object-fit:contain;}
   .logo{font-weight:800; font-size:16px;}
   .logo .red{color:var(--red);}
@@ -103,10 +105,10 @@
 </script>
 
 <header>
-  <div class="brand">
+  <button class="brand" id="brandBtn">
     <img src="assets/logo2-96.png" class="zmark" alt="ZO AI">
     <div class="logo">ZO <span class="red">AI</span></div>
-  </div>
+  </button>
   <div class="header-right">
     <div class="tier-badge" id="tierBadge">Free · GPT</div>
     <button class="settings-btn" id="settingsBtn" title="Settings">
@@ -152,6 +154,26 @@
   </div>
 </div>
 
+<div class="settings-overlay" id="profileOverlay">
+  <div class="settings-panel">
+    <div class="settings-title" id="profileTitle">Profile</div>
+
+    <div class="avatar-circle small" id="profileAvatar"></div>
+
+    <div class="settings-row">
+      <label id="profileNameLabel">Name</label>
+      <input type="text" id="profileNameInput" style="background:#000; color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px;">
+    </div>
+
+    <div class="settings-row">
+      <label id="profileEmailLabel">Email</label>
+      <div style="font-size:14px; color:var(--muted); padding:10px 0;" id="profileEmailValue"></div>
+    </div>
+
+    <button class="settings-close-btn" id="profileSaveBtn">Save profile</button>
+  </div>
+</div>
+
 <div class="live-overlay" id="liveOverlay">
   <button class="live-close" id="liveCloseBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   <div class="live-orb" id="liveOrb"></div>
@@ -193,6 +215,15 @@
   const settingsCloseBtn = document.getElementById('settingsCloseBtn');
   const voiceLangSelect = document.getElementById('voiceLangSelect');
   const webSearchToggle = document.getElementById('webSearchToggle');
+  const brandBtn = document.getElementById('brandBtn');
+  const profileOverlay = document.getElementById('profileOverlay');
+  const profileAvatar = document.getElementById('profileAvatar');
+  const profileNameInput = document.getElementById('profileNameInput');
+  const profileEmailValue = document.getElementById('profileEmailValue');
+  const profileSaveBtn = document.getElementById('profileSaveBtn');
+  const profileTitle = document.getElementById('profileTitle');
+  const profileNameLabel = document.getElementById('profileNameLabel');
+  const profileEmailLabel = document.getElementById('profileEmailLabel');
   const liveBtn = document.getElementById('liveBtn');
   const liveOverlay = document.getElementById('liveOverlay');
   const liveOrb = document.getElementById('liveOrb');
@@ -209,10 +240,10 @@
 
   function updateBadge(tier){
     if (tier === 'paid') {
-      tierBadge.textContent = 'Pro · Claude';
+      tierBadge.textContent = t('proClaude');
       tierBadge.classList.add('paid');
     } else {
-      tierBadge.textContent = 'Free · GPT';
+      tierBadge.textContent = t('freeGpt');
       tierBadge.classList.remove('paid');
     }
   }
@@ -235,17 +266,19 @@
   }
 
   // Tampilan error yang ramah, gak nampilin pesan mentah dari provider AI
-  function friendlyErrorFor(status, rawMessage){
-    if (status === 429) return rawMessage || 'You have reached your daily limit.';
-    if (status === 503) return rawMessage || 'The AI service is busy right now. Please try again shortly.';
-    if (status >= 500) return 'Something went wrong on our end. Please try again in a moment.';
-    return rawMessage || 'Something went wrong. Please try again.';
+  function friendlyErrorFor(status, data){
+    if (status === 429 && typeof data.limit === 'number') {
+      return data.tier === 'paid' ? t('dailyLimitPaid')(data.limit) : t('dailyLimitFree')(data.limit);
+    }
+    if (status === 503) return t('aiBusy');
+    if (status >= 500) return t('serverError');
+    return t('genericError');
   }
 
   function updateQuotaBar(tier, remaining){
     if (typeof remaining !== 'number') return;
-    const label = tier === 'paid' ? 'Pro questions' : 'free questions';
-    quotaBar.textContent = remaining + ' ' + label + ' left today';
+    const label = tier === 'paid' ? t('questionsLeftPro') : t('questionsLeftFree');
+    quotaBar.textContent = remaining + ' ' + label;
     quotaBar.classList.toggle('low', remaining <= 1);
   }
 
@@ -307,7 +340,7 @@
       const data = await res.json();
 
       if (data.error) {
-        return { ok: false, message: friendlyErrorFor(res.status, data.error) };
+        return { ok: false, message: friendlyErrorFor(res.status, data) };
       }
       history.push({ role: 'assistant', content: data.reply });
       saveMessage('assistant', data.reply);
@@ -315,7 +348,7 @@
       updateQuotaBar(data.tier, data.remaining);
       return { ok: true, reply: data.reply };
     } catch (err) {
-      return { ok: false, message: 'Could not reach the server. Check your connection and try again.' };
+      return { ok: false, message: t('networkError') };
     }
   }
 
@@ -329,7 +362,7 @@
     input.style.height = 'auto';
     sendBtn.disabled = true;
 
-    const loadingDiv = addMessage('Thinking...', 'ai');
+    const loadingDiv = addMessage(t('thinking'), 'ai');
     const result = await sendToAI();
     loadingDiv.remove();
 
@@ -364,7 +397,7 @@
   async function generateImage(){
     const promptText = input.value.trim();
     if (!promptText) {
-      addMessage('Type a description first, then tap this button to generate an image.', 'error');
+      addMessage(t('typeFirst'), 'error');
       return;
     }
 
@@ -374,7 +407,7 @@
     input.style.height = 'auto';
     imgBtn.disabled = true;
 
-    const loadingDiv = addMessage('Generating image...', 'ai');
+    const loadingDiv = addMessage(t('generatingImage'), 'ai');
 
     try {
       const res = await fetch('/api/image', {
@@ -389,16 +422,16 @@
       loadingDiv.remove();
 
       if (data.error) {
-        addMessage(friendlyErrorFor(res.status, data.error), 'error');
+        addMessage(friendlyErrorFor(res.status, data), 'error');
       } else {
         addImageMessage(data.image);
         if (typeof data.remaining === 'number') {
-          quotaBar.textContent = data.remaining + ' images left today';
+          quotaBar.textContent = data.remaining + ' ' + t('imagesLeft');
         }
       }
     } catch (err) {
       loadingDiv.remove();
-      addMessage('Could not reach the server. Check your connection and try again.', 'error');
+      addMessage(t('networkError'), 'error');
     }
 
     imgBtn.disabled = false;
@@ -411,11 +444,88 @@
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
   });
 
+  // ---- Terjemahan UI (dipasangin ke bahasa yang dipilih di Settings) ----
+  const translations = {
+    en: {
+      logout: 'Log out', settings: 'Settings', voiceLanguage: 'Voice language',
+      webSearch: 'Web search', webSearchDesc: 'Let the AI search the web for real-time info',
+      done: 'Done', listening: 'Listening...', thinking: 'Thinking...', speaking: 'Speaking...',
+      welcome: 'Hey! I can help with writing, research, planning — anything, really. Ask me something.',
+      placeholder: 'Message ZO AI...', freeGpt: 'Free · GPT', proClaude: 'Pro · Claude',
+      typeFirst: 'Type a description first, then tap this button to generate an image.',
+      generatingImage: 'Generating image...', imagesLeft: 'images left today',
+      questionsLeftFree: 'free questions left today', questionsLeftPro: 'Pro questions left today',
+      dailyLimitPaid: (limit) => `You've reached your ${limit} question limit for today.`,
+      dailyLimitFree: (limit) => `You've reached your free limit of ${limit} questions today. Upgrade to Pro for a bigger quota.`,
+      aiBusy: 'The AI service is busy right now. Please try again shortly.',
+      serverError: 'Something went wrong on our end. Please try again in a moment.',
+      genericError: 'Something went wrong. Please try again.',
+      networkError: 'Could not reach the server. Check your connection and try again.',
+      profile: 'Profile', name: 'Name', email: 'Email', saveProfile: 'Save profile',
+    },
+    id: {
+      logout: 'Keluar', settings: 'Pengaturan', voiceLanguage: 'Bahasa suara',
+      webSearch: 'Pencarian web', webSearchDesc: 'Izinkan AI mencari di internet untuk info terkini',
+      done: 'Selesai', listening: 'Mendengarkan...', thinking: 'Berpikir...', speaking: 'Berbicara...',
+      welcome: 'Hai! Saya bisa bantu nulis, riset, rencana — apa aja. Tanya sesuatu ya.',
+      placeholder: 'Pesan ke ZO AI...', freeGpt: 'Gratis · GPT', proClaude: 'Pro · Claude',
+      typeFirst: 'Ketik deskripsi dulu, baru tap tombol ini untuk membuat gambar.',
+      generatingImage: 'Membuat gambar...', imagesLeft: 'gambar tersisa hari ini',
+      questionsLeftFree: 'pertanyaan gratis tersisa hari ini', questionsLeftPro: 'pertanyaan Pro tersisa hari ini',
+      dailyLimitPaid: (limit) => `Kamu sudah mencapai batas ${limit} pertanyaan hari ini.`,
+      dailyLimitFree: (limit) => `Kamu sudah mencapai batas gratis ${limit} pertanyaan hari ini. Upgrade ke Pro untuk kuota lebih besar.`,
+      aiBusy: 'Layanan AI sedang sibuk. Coba lagi sebentar lagi.',
+      serverError: 'Ada gangguan di server kami. Coba lagi dalam beberapa saat.',
+      genericError: 'Terjadi kesalahan. Coba lagi ya.',
+      networkError: 'Tidak bisa terhubung ke server. Cek koneksi internet kamu, lalu coba lagi.',
+      profile: 'Profil', name: 'Nama', email: 'Email', saveProfile: 'Simpan profil',
+    },
+  };
+
+  function currentLang(){
+    return voiceLang.startsWith('id') ? 'id' : 'en';
+  }
+
+  function t(key){
+    return translations[currentLang()][key];
+  }
+
+  function applyUILanguage(){
+    logoutBtn.textContent = t('logout');
+    document.querySelector('.settings-title').textContent = t('settings');
+    document.querySelector('.settings-row label').textContent = t('voiceLanguage');
+    const webSearchLabel = document.querySelectorAll('.settings-toggle-row > div > div');
+    if (webSearchLabel[0]) webSearchLabel[0].textContent = t('webSearch');
+    if (webSearchLabel[1]) webSearchLabel[1].textContent = t('webSearchDesc');
+    settingsCloseBtn.textContent = t('done');
+    profileTitle.textContent = t('profile');
+    profileNameLabel.textContent = t('name');
+    profileEmailLabel.textContent = t('email');
+    profileSaveBtn.textContent = t('saveProfile');
+    liveStatus.textContent = t('listening');
+    input.placeholder = t('placeholder');
+    tierBadge.textContent = tierBadge.classList.contains('paid') ? t('proClaude') : t('freeGpt');
+
+    // Update welcome message kalau belum ada riwayat chat (masih pesan default)
+    const firstMsg = messages.querySelector('.msg.ai');
+    if (firstMsg && messages.children.length === 1) {
+      const label = firstMsg.querySelector('.label');
+      firstMsg.textContent = '';
+      if (label) firstMsg.appendChild(label);
+      else {
+        const l = document.createElement('span'); l.className = 'label'; l.textContent = 'ZO AI';
+        firstMsg.appendChild(l);
+      }
+      firstMsg.appendChild(document.createTextNode(t('welcome')));
+    }
+  }
+
   // ---- Settings: bahasa suara & toggle web search, disimpan di localStorage ----
-  let voiceLang = localStorage.getItem('zo_voice_lang') || 'id-ID';
+  let voiceLang = localStorage.getItem('zo_voice_lang') || 'en-US';
   let webSearchEnabled = localStorage.getItem('zo_web_search') !== 'off';
   voiceLangSelect.value = voiceLang;
   webSearchToggle.checked = webSearchEnabled;
+  applyUILanguage();
 
   settingsBtn.addEventListener('click', () => settingsOverlay.classList.add('show'));
   settingsCloseBtn.addEventListener('click', () => {
@@ -423,10 +533,67 @@
     webSearchEnabled = webSearchToggle.checked;
     localStorage.setItem('zo_voice_lang', voiceLang);
     localStorage.setItem('zo_web_search', webSearchEnabled ? 'on' : 'off');
+    applyUILanguage();
     settingsOverlay.classList.remove('show');
   });
   settingsOverlay.addEventListener('click', (e) => {
     if (e.target === settingsOverlay) settingsCloseBtn.click();
+  });
+
+  // ---- Profile: avatar + nama tampilan, disimpen di tabel Supabase 'profiles' ----
+  let displayName = '';
+
+  function avatarColorFor(str){
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 55%, 42%)`;
+  }
+
+  function initialsFor(name, email){
+    const source = (name && name.trim()) || email || '?';
+    const parts = source.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return source.slice(0, 2).toUpperCase();
+  }
+
+  function renderAvatar(){
+    const initials = initialsFor(displayName, userEmail);
+    const color = avatarColorFor(displayName || userEmail || 'ZO');
+    profileAvatar.textContent = initials;
+    profileAvatar.style.background = color;
+  }
+
+  async function loadProfile(){
+    try {
+      const { data } = await sb.from('profiles').select('display_name').eq('user_id', userId).single();
+      if (data && data.display_name) displayName = data.display_name;
+    } catch (e) {
+      // belum ada profil tersimpan — gapapa, pakai default
+    }
+    renderAvatar();
+  }
+
+  async function saveProfile(){
+    const newName = profileNameInput.value.trim();
+    displayName = newName;
+    try {
+      await sb.from('profiles').upsert({ user_id: userId, display_name: newName, updated_at: new Date().toISOString() });
+    } catch (e) {
+      console.error('Gagal menyimpan profil:', e);
+    }
+    renderAvatar();
+    profileOverlay.classList.remove('show');
+  }
+
+  brandBtn.addEventListener('click', () => {
+    profileNameInput.value = displayName;
+    profileEmailValue.textContent = userEmail;
+    profileOverlay.classList.add('show');
+  });
+  profileSaveBtn.addEventListener('click', saveProfile);
+  profileOverlay.addEventListener('click', (e) => {
+    if (e.target === profileOverlay) profileOverlay.classList.remove('show');
   });
 
   // ---- Voice input (Web Speech API — bawaan Chrome, gratis, gak lewat API AI) ----
@@ -501,7 +668,7 @@
       if (!liveActive) return;
       liveRecognition.lang = voiceLang;
       liveTranscript.textContent = '';
-      setLiveState('listening', 'Listening...');
+      setLiveState('listening', t('listening'));
       try {
         liveRecognition.start();
       } catch (e) {
@@ -512,7 +679,7 @@
     liveRecognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript;
       liveTranscript.textContent = transcript;
-      setLiveState(null, 'Thinking...');
+      setLiveState(null, t('thinking'));
 
       addMessage(transcript, 'user');
       history.push({ role: 'user', content: transcript });
@@ -523,12 +690,12 @@
 
       if (!result.ok) {
         addMessage(result.message, 'error');
-        setLiveState('speaking', 'Speaking...');
+        setLiveState('speaking', t('speaking'));
         liveTranscript.textContent = result.message;
         await speak(result.message);
       } else {
         addMessage(result.reply, 'ai');
-        setLiveState('speaking', 'Speaking...');
+        setLiveState('speaking', t('speaking'));
         liveTranscript.textContent = result.reply;
         await speak(result.reply);
       }
@@ -574,6 +741,7 @@
 
     await loadHistory();
     await checkStatus();
+    await loadProfile();
   })();
 </script>
 <script>
