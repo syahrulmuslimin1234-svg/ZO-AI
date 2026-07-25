@@ -82,7 +82,22 @@
     <img src="assets/logo2-96.png" class="zmark" alt="ZO AI">
     <div class="logo">ZO <span class="red">AI</span></div>
   </a>
-  <a href="subscribe.html"><button class="btn-ghost">Get started</button></a>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <select id="langSelect" style="background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:100px; padding:6px 10px; font-size:12px;">
+      <option value="en-US">English</option>
+      <option value="id-ID">Bahasa Indonesia</option>
+      <option value="es-ES">Español</option>
+      <option value="pt-BR">Português</option>
+      <option value="fr-FR">Français</option>
+      <option value="de-DE">Deutsch</option>
+      <option value="ja-JP">日本語</option>
+      <option value="ko-KR">한국어</option>
+      <option value="zh-CN">中文</option>
+      <option value="ar-SA">العربية</option>
+      <option value="hi-IN">हिन्दी</option>
+    </select>
+    <a href="subscribe.html"><button class="btn-ghost" id="getStartedBtn">Get started</button></a>
+  </div>
 </header>
 
 <div class="wrap">
@@ -99,72 +114,231 @@
       <img src="assets/logo2-transparent-192.png" class="hero-mark" alt="ZO AI">
     </div>
 
-    <div class="eyebrow">Always on</div>
-    <h1>Make ZO AI your everyday intelligence</h1>
-    <div class="sub">Chat, write, think, and build — with an assistant that never sleeps. Subscribe with crypto, get instant access.</div>
+    <div class="eyebrow" id="eyebrowText">Always on</div>
+    <h1 id="heroTitle">Make ZO AI your everyday intelligence</h1>
+    <div class="sub" id="heroSub">Chat, write, think, and build — with an assistant that never sleeps. Subscribe with crypto, get instant access.</div>
 
     <div class="hero-actions">
-      <a href="chat.html"><button class="btn-primary">Try it free</button></a>
-      <a href="wallet.html"><button class="btn-secondary">Start with your wallet</button></a>
+      <a href="chat.html"><button class="btn-primary" id="tryFreeBtn">Try it free</button></a>
+      <a href="wallet.html"><button class="btn-secondary" id="walletBtn">Start with your wallet</button></a>
     </div>
   </div>
 
   <div class="stats">
     <div class="stat">
       <div class="stat-num">24<span class="unit">/7</span></div>
-      <div class="stat-text">Always available, no downtime, no waiting in line</div>
+      <div class="stat-text" id="stat1">Always available, no downtime, no waiting in line</div>
     </div>
     <div class="stat">
       <div class="stat-num">&lt;2<span class="unit">sec</span></div>
-      <div class="stat-text">Average response time for any question you ask</div>
+      <div class="stat-text" id="stat2">Average response time for any question you ask</div>
     </div>
     <div class="stat">
       <div class="stat-num">$15<span class="unit">/mo</span></div>
-      <div class="stat-text">One flat price, no hidden fees, cancel anytime</div>
+      <div class="stat-text" id="stat3">One flat price, no hidden fees, cancel anytime</div>
     </div>
   </div>
 
   <div class="section">
     <div class="cards">
       <div class="card">
-        <div class="card-tag">Chat</div>
-        <div class="card-title">Talk about anything</div>
-        <div class="card-desc">Research, writing, planning, or just thinking out loud — no narrow use case, no limits.</div>
+        <div class="card-tag" id="cardTag1">Chat</div>
+        <div class="card-title" id="cardTitle1">Talk about anything</div>
+        <div class="card-desc" id="cardDesc1">Research, writing, planning, or just thinking out loud — no narrow use case, no limits.</div>
       </div>
       <div class="card">
-        <div class="card-tag">Payments</div>
-        <div class="card-title">Pay with crypto</div>
-        <div class="card-desc">One payment, instant access code, generated automatically the moment it clears.</div>
+        <div class="card-tag" id="cardTag2">Payments</div>
+        <div class="card-title" id="cardTitle2">Pay with crypto</div>
+        <div class="card-desc" id="cardDesc2">One payment, instant access code, generated automatically the moment it clears.</div>
       </div>
       <div class="card">
-        <div class="card-tag">Wallet </div>
-        <div class="card-title">Connect your wallet</div>
-        <div class="card-desc">Track your portfolio and swap tokens — non-custodial, you stay in control.</div>
+        <div class="card-tag" id="cardTag3">Wallet </div>
+        <div class="card-title" id="cardTitle3">Connect your wallet</div>
+        <div class="card-desc" id="cardDesc3">Track your portfolio and swap tokens — non-custodial, you stay in control.</div>
       </div>
       <div class="card">
-        <div class="card-tag">Access</div>
-        <div class="card-title">No accounts, no friction</div>
-        <div class="card-desc">One unique code gets you in. Nothing to remember, nothing to lose.</div>
+        <div class="card-tag" id="cardTag4">Access</div>
+        <div class="card-title" id="cardTitle4">No accounts, no friction</div>
+        <div class="card-desc" id="cardDesc4">One unique code gets you in. Nothing to remember, nothing to lose.</div>
       </div>
     </div>
   </div>
 
   <div class="section" style="padding-top:0;">
-    <div class="section-title">Pricing</div>
+    <div class="section-title" id="pricingTitle">Pricing</div>
     <div class="price-card">
       <div class="amount">$15<span>/month</span></div>
       <ul class="features">
-        <li>Full access to ZO AI chat</li>
-        <li>Automatic access code</li>
-        <li>Pay with crypto — USDT, BTC, ETH</li>
+        <li id="feature1">Full access to ZO AI chat</li>
+        <li id="feature2">Automatic access code</li>
+        <li id="feature3">Pay with crypto — USDT, BTC, ETH</li>
       </ul>
-      <a href="subscribe.html"><button class="pay-btn">Subscribe now</button></a>
+      <a href="subscribe.html"><button class="pay-btn" id="subscribeBtn">Subscribe now</button></a>
     </div>
   </div>
 
 </div>
 
-<footer>© 2026 ZO AI. All rights reserved.</footer>
+<footer id="footerText">© 2026 ZO AI. All rights reserved.</footer>
 
+<script>
+  const landingTranslations = {
+    en: { getStarted:'Get started', alwaysOn:'Always on', heroTitle:'Make ZO AI your everyday intelligence',
+      heroSub:'Chat, write, think, and build — with an assistant that never sleeps. Subscribe with crypto, get instant access.',
+      tryFree:'Try it free', startWallet:'Start with your wallet',
+      stat1:'Always available, no downtime, no waiting in line', stat2:'Average response time for any question you ask', stat3:'One flat price, no hidden fees, cancel anytime',
+      chatTag:'Chat', chatTitle:'Talk about anything', chatDesc:'Research, writing, planning, or just thinking out loud — no narrow use case, no limits.',
+      paymentsTag:'Payments', paymentsTitle:'Pay with crypto', paymentsDesc:'One payment, instant access code, generated automatically the moment it clears.',
+      walletTag:'Wallet', walletTitle:'Connect your wallet', walletDesc:'Track your portfolio and swap tokens — non-custodial, you stay in control.',
+      accessTag:'Access', accessTitle:'No accounts, no friction', accessDesc:'One unique code gets you in. Nothing to remember, nothing to lose.',
+      pricingTitle:'Pricing', feature1:'Full access to ZO AI chat', feature2:'Automatic access code', feature3:'Pay with crypto — USDT, BTC, ETH',
+      subscribeNow:'Subscribe now', footerText:'© 2026 ZO AI. All rights reserved.' },
+    id: { getStarted:'Mulai', alwaysOn:'Selalu aktif', heroTitle:'Jadikan ZO AI kecerdasan harianmu',
+      heroSub:'Ngobrol, nulis, mikir, dan bangun sesuatu — dengan asisten yang gak pernah tidur. Subscribe pakai kripto, akses langsung aktif.',
+      tryFree:'Coba gratis', startWallet:'Mulai dengan wallet kamu',
+      stat1:'Selalu tersedia, tanpa downtime, tanpa antre', stat2:'Rata-rata waktu respons untuk pertanyaan apa pun', stat3:'Satu harga tetap, tanpa biaya tersembunyi, batalkan kapan saja',
+      chatTag:'Chat', chatTitle:'Ngobrolin apa aja', chatDesc:'Riset, nulis, rencana, atau sekadar mikir keras — gak ada batasan use case.',
+      paymentsTag:'Pembayaran', paymentsTitle:'Bayar pakai kripto', paymentsDesc:'Sekali bayar, kode akses langsung aktif otomatis begitu transaksi selesai.',
+      walletTag:'Wallet', walletTitle:'Hubungkan wallet kamu', walletDesc:'Pantau portofolio dan tukar token — non-custodial, kamu yang pegang kendali.',
+      accessTag:'Akses', accessTitle:'Tanpa akun, tanpa ribet', accessDesc:'Satu kode unik langsung masuk. Gak ada yang perlu diingat, gak ada yang bisa hilang.',
+      pricingTitle:'Harga', feature1:'Akses penuh ke chat ZO AI', feature2:'Kode akses otomatis', feature3:'Bayar pakai kripto — USDT, BTC, ETH',
+      subscribeNow:'Subscribe sekarang', footerText:'© 2026 ZO AI. Hak cipta dilindungi.' },
+    es: { getStarted:'Comenzar', alwaysOn:'Siempre activo', heroTitle:'Haz de ZO AI tu inteligencia diaria',
+      heroSub:'Chatea, escribe, piensa y crea — con un asistente que nunca duerme. Suscríbete con cripto, acceso instantáneo.',
+      tryFree:'Pruébalo gratis', startWallet:'Empieza con tu wallet',
+      stat1:'Siempre disponible, sin inactividad, sin esperas', stat2:'Tiempo de respuesta promedio para cualquier pregunta', stat3:'Un precio fijo, sin cargos ocultos, cancela cuando quieras',
+      chatTag:'Chat', chatTitle:'Habla de lo que sea', chatDesc:'Investigación, escritura, planificación, o solo pensar en voz alta — sin límites.',
+      paymentsTag:'Pagos', paymentsTitle:'Paga con cripto', paymentsDesc:'Un pago, código de acceso instantáneo, generado automáticamente al confirmarse.',
+      walletTag:'Wallet', walletTitle:'Conecta tu wallet', walletDesc:'Sigue tu portafolio e intercambia tokens — no custodial, tú tienes el control.',
+      accessTag:'Acceso', accessTitle:'Sin cuentas, sin fricción', accessDesc:'Un código único te da acceso. Nada que recordar, nada que perder.',
+      pricingTitle:'Precios', feature1:'Acceso completo al chat de ZO AI', feature2:'Código de acceso automático', feature3:'Paga con cripto — USDT, BTC, ETH',
+      subscribeNow:'Suscribirse ahora', footerText:'© 2026 ZO AI. Todos los derechos reservados.' },
+    pt: { getStarted:'Começar', alwaysOn:'Sempre ativo', heroTitle:'Faça do ZO AI sua inteligência do dia a dia',
+      heroSub:'Converse, escreva, pense e construa — com um assistente que nunca dorme. Assine com cripto, acesso instantâneo.',
+      tryFree:'Experimente grátis', startWallet:'Comece com sua wallet',
+      stat1:'Sempre disponível, sem inatividade, sem espera', stat2:'Tempo médio de resposta para qualquer pergunta', stat3:'Um preço fixo, sem taxas ocultas, cancele quando quiser',
+      chatTag:'Chat', chatTitle:'Fale sobre qualquer coisa', chatDesc:'Pesquisa, escrita, planejamento, ou só pensar alto — sem limites.',
+      paymentsTag:'Pagamentos', paymentsTitle:'Pague com cripto', paymentsDesc:'Um pagamento, código de acesso instantâneo, gerado automaticamente na confirmação.',
+      walletTag:'Wallet', walletTitle:'Conecte sua wallet', walletDesc:'Acompanhe seu portfólio e troque tokens — não-custodial, você no controle.',
+      accessTag:'Acesso', accessTitle:'Sem contas, sem fricção', accessDesc:'Um código único te dá acesso. Nada para lembrar, nada para perder.',
+      pricingTitle:'Preços', feature1:'Acesso completo ao chat do ZO AI', feature2:'Código de acesso automático', feature3:'Pague com cripto — USDT, BTC, ETH',
+      subscribeNow:'Assinar agora', footerText:'© 2026 ZO AI. Todos os direitos reservados.' },
+    fr: { getStarted:'Commencer', alwaysOn:'Toujours actif', heroTitle:'Fais de ZO AI ton intelligence quotidienne',
+      heroSub:'Discute, écris, réfléchis et crée — avec un assistant qui ne dort jamais. Abonne-toi en crypto, accès instantané.',
+      tryFree:'Essayer gratuitement', startWallet:'Commencer avec ton wallet',
+      stat1:'Toujours disponible, sans interruption, sans attente', stat2:'Temps de réponse moyen pour toute question', stat3:'Un prix fixe, sans frais cachés, annule à tout moment',
+      chatTag:'Chat', chatTitle:'Parle de tout', chatDesc:'Recherche, écriture, planification, ou juste réfléchir à voix haute — sans limites.',
+      paymentsTag:'Paiements', paymentsTitle:'Paie en crypto', paymentsDesc:"Un paiement, code d'accès instantané, généré automatiquement à la confirmation.",
+      walletTag:'Wallet', walletTitle:'Connecte ton wallet', walletDesc:'Suis ton portefeuille et échange des tokens — non-custodial, tu gardes le contrôle.',
+      accessTag:'Accès', accessTitle:'Pas de compte, pas de friction', accessDesc:'Un code unique te donne accès. Rien à retenir, rien à perdre.',
+      pricingTitle:'Tarifs', feature1:'Accès complet au chat ZO AI', feature2:"Code d'accès automatique", feature3:'Paie en crypto — USDT, BTC, ETH',
+      subscribeNow:"S'abonner maintenant", footerText:'© 2026 ZO AI. Tous droits réservés.' },
+    de: { getStarted:'Loslegen', alwaysOn:'Immer aktiv', heroTitle:'Mach ZO AI zu deiner täglichen Intelligenz',
+      heroSub:'Chatten, schreiben, denken und bauen — mit einem Assistenten, der nie schläft. Abonniere mit Krypto, sofortiger Zugang.',
+      tryFree:'Kostenlos testen', startWallet:'Mit deiner Wallet starten',
+      stat1:'Immer verfügbar, keine Ausfallzeiten, kein Warten', stat2:'Durchschnittliche Antwortzeit für jede Frage', stat3:'Ein Festpreis, keine versteckten Gebühren, jederzeit kündbar',
+      chatTag:'Chat', chatTitle:'Rede über alles', chatDesc:'Recherche, Schreiben, Planung, oder einfach laut nachdenken — ohne Grenzen.',
+      paymentsTag:'Zahlungen', paymentsTitle:'Mit Krypto bezahlen', paymentsDesc:'Eine Zahlung, sofortiger Zugangscode, automatisch generiert nach Bestätigung.',
+      walletTag:'Wallet', walletTitle:'Verbinde deine Wallet', walletDesc:'Verfolge dein Portfolio und tausche Tokens — non-custodial, du hast die Kontrolle.',
+      accessTag:'Zugang', accessTitle:'Keine Konten, keine Reibung', accessDesc:'Ein einzigartiger Code verschafft dir Zugang. Nichts zu merken, nichts zu verlieren.',
+      pricingTitle:'Preise', feature1:'Voller Zugang zum ZO AI Chat', feature2:'Automatischer Zugangscode', feature3:'Bezahle mit Krypto — USDT, BTC, ETH',
+      subscribeNow:'Jetzt abonnieren', footerText:'© 2026 ZO AI. Alle Rechte vorbehalten.' },
+    ja: { getStarted:'はじめる', alwaysOn:'常時稼働', heroTitle:'ZO AIを毎日の知性に',
+      heroSub:'チャット、執筆、思考、構築 — 眠らないアシスタントと一緒に。仮想通貨で登録すれば、即座にアクセスできます。',
+      tryFree:'無料で試す', startWallet:'ウォレットで始める',
+      stat1:'常時利用可能、ダウンタイムなし、待ち時間なし', stat2:'あらゆる質問への平均応答時間', stat3:'定額料金、隠れた費用なし、いつでも解約可能',
+      chatTag:'チャット', chatTitle:'何でも話せる', chatDesc:'リサーチ、執筆、計画、あるいはただ考えを声に出すだけでも — 制限なし。',
+      paymentsTag:'支払い', paymentsTitle:'仮想通貨で支払う', paymentsDesc:'一回の支払いで、確認後すぐにアクセスコードが自動生成されます。',
+      walletTag:'ウォレット', walletTitle:'ウォレットを接続', walletDesc:'ポートフォリオを追跡しトークンを交換 — ノンカストディアルで自分で管理。',
+      accessTag:'アクセス', accessTitle:'アカウント不要、摩擦なし', accessDesc:'一意のコードでアクセス可能。覚えることも失うこともありません。',
+      pricingTitle:'料金', feature1:'ZO AIチャットへのフルアクセス', feature2:'自動アクセスコード', feature3:'仮想通貨で支払い — USDT、BTC、ETH',
+      subscribeNow:'今すぐ登録', footerText:'© 2026 ZO AI. 無断複写・転載を禁じます。' },
+    ko: { getStarted:'시작하기', alwaysOn:'상시 가동', heroTitle:'ZO AI를 당신의 일상 지능으로',
+      heroSub:'채팅하고, 쓰고, 생각하고, 만들어보세요 — 절대 잠들지 않는 어시스턴트와 함께. 암호화폐로 구독하고 즉시 이용하세요.',
+      tryFree:'무료로 사용해보기', startWallet:'지갑으로 시작하기',
+      stat1:'항상 이용 가능, 다운타임 없음, 대기 없음', stat2:'모든 질문에 대한 평균 응답 시간', stat3:'단일 고정가, 숨겨진 수수료 없음, 언제든지 취소 가능',
+      chatTag:'채팅', chatTitle:'무엇이든 이야기하세요', chatDesc:'조사, 글쓰기, 계획, 아니면 그냥 생각을 정리하기까지 — 제한 없음.',
+      paymentsTag:'결제', paymentsTitle:'암호화폐로 결제', paymentsDesc:'한 번의 결제, 확인 즉시 자동으로 생성되는 액세스 코드.',
+      walletTag:'지갑', walletTitle:'지갑 연결하기', walletDesc:'포트폴리오를 추적하고 토큰을 교환하세요 — 비수탁형, 직접 관리.',
+      accessTag:'접근', accessTitle:'계정 불필요, 마찰 없음', accessDesc:'고유 코드 하나로 입장. 기억할 것도, 잃어버릴 것도 없습니다.',
+      pricingTitle:'요금제', feature1:'ZO AI 채팅 전체 이용', feature2:'자동 액세스 코드', feature3:'암호화폐로 결제 — USDT, BTC, ETH',
+      subscribeNow:'지금 구독하기', footerText:'© 2026 ZO AI. 모든 권리 보유.' },
+    zh: { getStarted:'开始使用', alwaysOn:'全天候在线', heroTitle:'让ZO AI成为你的日常智能助手',
+      heroSub:'聊天、写作、思考、创造 — 拥有一个从不休息的助手。用加密货币订阅,立即获得访问权限。',
+      tryFree:'免费试用', startWallet:'用你的钱包开始',
+      stat1:'全天候可用,无停机,无需排队', stat2:'任何问题的平均响应时间', stat3:'统一定价,无隐藏费用,随时可取消',
+      chatTag:'聊天', chatTitle:'畅所欲言', chatDesc:'研究、写作、规划,或只是随便想想 — 没有使用限制。',
+      paymentsTag:'支付', paymentsTitle:'用加密货币支付', paymentsDesc:'一次付款,确认后自动生成即时访问码。',
+      walletTag:'钱包', walletTitle:'连接你的钱包', walletDesc:'追踪投资组合并兑换代币 — 非托管,由你掌控。',
+      accessTag:'访问', accessTitle:'无需账户,零摩擦', accessDesc:'一个独特代码即可进入。无需记住,无从丢失。',
+      pricingTitle:'定价', feature1:'完全访问ZO AI聊天', feature2:'自动访问码', feature3:'用加密货币支付 — USDT、BTC、ETH',
+      subscribeNow:'立即订阅', footerText:'© 2026 ZO AI. 保留所有权利。' },
+    ar: { getStarted:'ابدأ الآن', alwaysOn:'يعمل دائماً', heroTitle:'اجعل ZO AI ذكاءك اليومي',
+      heroSub:'تحدث، اكتب، فكّر، وابنِ — مع مساعد لا ينام أبداً. اشترك بالعملات الرقمية، واحصل على وصول فوري.',
+      tryFree:'جرّبه مجاناً', startWallet:'ابدأ بمحفظتك',
+      stat1:'متاح دائماً، بدون توقف، بدون انتظار', stat2:'متوسط وقت الاستجابة لأي سؤال', stat3:'سعر ثابت واحد، بدون رسوم خفية، يمكن الإلغاء في أي وقت',
+      chatTag:'محادثة', chatTitle:'تحدث عن أي شيء', chatDesc:'بحث، كتابة، تخطيط، أو مجرد التفكير بصوت عالٍ — بلا حدود.',
+      paymentsTag:'المدفوعات', paymentsTitle:'ادفع بالعملات الرقمية', paymentsDesc:'دفعة واحدة، رمز وصول فوري، يُنشأ تلقائياً بمجرد التأكيد.',
+      walletTag:'المحفظة', walletTitle:'اربط محفظتك', walletDesc:'تتبّع محفظتك واستبدل العملات — بدون وصاية، أنت المتحكم.',
+      accessTag:'الوصول', accessTitle:'بدون حسابات، بدون تعقيد', accessDesc:'رمز فريد واحد يمنحك الوصول. لا شيء لتتذكره، لا شيء لتخسره.',
+      pricingTitle:'الأسعار', feature1:'وصول كامل لمحادثة ZO AI', feature2:'رمز وصول تلقائي', feature3:'ادفع بالعملات الرقمية — USDT، BTC، ETH',
+      subscribeNow:'اشترك الآن', footerText:'© 2026 ZO AI. جميع الحقوق محفوظة.' },
+    hi: { getStarted:'शुरू करें', alwaysOn:'हमेशा सक्रिय', heroTitle:'ZO AI को अपनी रोज़ की बुद्धिमत्ता बनाएं',
+      heroSub:'चैट करें, लिखें, सोचें, और बनाएं — एक ऐसे असिस्टेंट के साथ जो कभी नहीं सोता। क्रिप्टो से सब्सक्राइब करें, तुरंत एक्सेस पाएं।',
+      tryFree:'मुफ़्त आज़माएं', startWallet:'अपने वॉलेट से शुरू करें',
+      stat1:'हमेशा उपलब्ध, कोई डाउनटाइम नहीं, कोई इंतज़ार नहीं', stat2:'किसी भी सवाल के लिए औसत प्रतिक्रिया समय', stat3:'एक तय कीमत, कोई छिपी फीस नहीं, कभी भी रद्द करें',
+      chatTag:'चैट', chatTitle:'कुछ भी बात करें', chatDesc:'रिसर्च, लेखन, योजना, या बस ज़ोर से सोचना — कोई सीमा नहीं।',
+      paymentsTag:'भुगतान', paymentsTitle:'क्रिप्टो से भुगतान करें', paymentsDesc:'एक भुगतान, पुष्टि होते ही अपने आप बनने वाला एक्सेस कोड।',
+      walletTag:'वॉलेट', walletTitle:'अपना वॉलेट कनेक्ट करें', walletDesc:'अपना पोर्टफोलियो ट्रैक करें और टोकन बदलें — नॉन-कस्टोडियल, नियंत्रण आपके हाथ में।',
+      accessTag:'एक्सेस', accessTitle:'कोई अकाउंट नहीं, कोई झंझट नहीं', accessDesc:'एक यूनीक कोड से एंट्री। कुछ याद रखने की ज़रूरत नहीं, कुछ खोने का डर नहीं।',
+      pricingTitle:'कीमत', feature1:'ZO AI चैट तक पूरी पहुंच', feature2:'ऑटोमैटिक एक्सेस कोड', feature3:'क्रिप्टो से भुगतान करें — USDT, BTC, ETH',
+      subscribeNow:'अभी सब्सक्राइब करें', footerText:'© 2026 ZO AI. सर्वाधिकार सुरक्षित।' },
+  };
+
+  function applyLandingLanguage(lang){
+    const dict = landingTranslations[lang] || landingTranslations.en;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.getElementById('getStartedBtn').textContent = dict.getStarted;
+    document.getElementById('eyebrowText').textContent = dict.alwaysOn;
+    document.getElementById('heroTitle').textContent = dict.heroTitle;
+    document.getElementById('heroSub').textContent = dict.heroSub;
+    document.getElementById('tryFreeBtn').textContent = dict.tryFree;
+    document.getElementById('walletBtn').textContent = dict.startWallet;
+    document.getElementById('stat1').textContent = dict.stat1;
+    document.getElementById('stat2').textContent = dict.stat2;
+    document.getElementById('stat3').textContent = dict.stat3;
+    document.getElementById('cardTag1').textContent = dict.chatTag;
+    document.getElementById('cardTitle1').textContent = dict.chatTitle;
+    document.getElementById('cardDesc1').textContent = dict.chatDesc;
+    document.getElementById('cardTag2').textContent = dict.paymentsTag;
+    document.getElementById('cardTitle2').textContent = dict.paymentsTitle;
+    document.getElementById('cardDesc2').textContent = dict.paymentsDesc;
+    document.getElementById('cardTag3').textContent = dict.walletTag;
+    document.getElementById('cardTitle3').textContent = dict.walletTitle;
+    document.getElementById('cardDesc3').textContent = dict.walletDesc;
+    document.getElementById('cardTag4').textContent = dict.accessTag;
+    document.getElementById('cardTitle4').textContent = dict.accessTitle;
+    document.getElementById('cardDesc4').textContent = dict.accessDesc;
+    document.getElementById('pricingTitle').textContent = dict.pricingTitle;
+    document.getElementById('feature1').textContent = dict.feature1;
+    document.getElementById('feature2').textContent = dict.feature2;
+    document.getElementById('feature3').textContent = dict.feature3;
+    document.getElementById('subscribeBtn').textContent = dict.subscribeNow;
+    document.getElementById('footerText').textContent = dict.footerText;
+  }
+
+  // Bahasa disimpen di localStorage key yang SAMA dengan chat.html ('zo_voice_lang'),
+  // jadi begitu user ganti bahasa di salah satu halaman, halaman lain ikut nyambung.
+  const savedLang = localStorage.getItem('zo_voice_lang') || 'en-US';
+  const langCode = savedLang.split('-')[0];
+  const langSelect = document.getElementById('langSelect');
+  langSelect.value = landingTranslations[langCode] ? savedLang : 'en-US';
+  applyLandingLanguage(landingTranslations[langCode] ? langCode : 'en');
+
+  langSelect.addEventListener('change', () => {
+    localStorage.setItem('zo_voice_lang', langSelect.value);
+    applyLandingLanguage(langSelect.value.split('-')[0]);
+  });
+</script>
 </body>
 </html>
