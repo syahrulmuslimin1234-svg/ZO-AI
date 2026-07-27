@@ -122,19 +122,35 @@
 
 <header>
   <a href="index.html" class="brand"><img src="assets/logo2-96.png" class="zmark" alt="ZO AI"><span class="logo">ZO <span class="red">AI</span></span></a>
+  <div style="position:relative; display:flex; align-items:center;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute; left:9px; pointer-events:none;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <select id="langSelect" style="appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:100px; padding:6px 12px 6px 26px; font-size:11.5px; font-family:var(--font-body);">
+      <option value="en-US">English</option>
+      <option value="id-ID">Bahasa Indonesia</option>
+      <option value="es-ES">Español</option>
+      <option value="pt-BR">Português</option>
+      <option value="fr-FR">Français</option>
+      <option value="de-DE">Deutsch</option>
+      <option value="ja-JP">日本語</option>
+      <option value="ko-KR">한국어</option>
+      <option value="zh-CN">中文</option>
+      <option value="ar-SA">العربية</option>
+      <option value="hi-IN">हिन्दी</option>
+    </select>
+  </div>
 </header>
 
 <div class="wrap">
   <div class="hero">
-    <div class="eyebrow">Non-custodial wallet</div>
-    <h1>Connect your wallet</h1>
-    <p>ZO AI only reads your address and balance. Your keys never leave your wallet.</p>
+    <div class="eyebrow" id="nonCustodialLabel">Non-custodial wallet</div>
+    <h1 id="connectTitle">Connect your wallet</h1>
+    <p id="heroDesc">ZO AI only reads your address and balance. Your keys never leave your wallet.</p>
   </div>
 
   <div class="connect-box" id="connectBox">
     <div class="wallet-icon">◈</div>
     <h3 id="statusTitle">Choose a wallet</h3>
-    <p>Detected providers show a green dot</p>
+    <p id="detectedHint">Detected providers show a green dot</p>
     <div class="provider-row" id="providerRow">
       <button class="provider" id="btnMetaMask">
         <span class="dot"></span> MetaMask
@@ -158,27 +174,27 @@
           <div class="addr-net" id="addrNet">—</div>
         </div>
       </div>
-      <div class="disconnect" onclick="disconnectWallet()">disconnect</div>
+      <div class="disconnect" id="disconnectLabel" onclick="disconnectWallet()">disconnect</div>
     </div>
 
     <div class="balance-card">
-      <div class="balance-label">Total balance</div>
-      <div class="balance-amount" id="balanceAmount"><span class="loader"></span>loading</div>
+      <div class="balance-label" id="totalBalanceLabel">Total balance</div>
+      <div class="balance-amount" id="balanceAmount"><span class="loader"></span><span id="loadingLabel">loading</span></div>
       <div class="balance-sub" id="balanceSub"></div>
     </div>
 
     <div class="action-row">
-      <button class="action-btn" onclick="openDeposit()"><span class="ic">↓</span>Deposit</button>
-      <button class="action-btn" onclick="openSwap()"><span class="ic">⇄</span>Swap</button>
-      <button class="action-btn" onclick="openWithdraw()"><span class="ic">↑</span>Withdraw</button>
+      <button class="action-btn" onclick="openDeposit()"><span class="ic">↓</span><span id="actionDepositLabel">Deposit</span></button>
+      <button class="action-btn" onclick="openSwap()"><span class="ic">⇄</span><span id="actionSwapLabel">Swap</span></button>
+      <button class="action-btn" onclick="openWithdraw()"><span class="ic">↑</span><span id="actionWithdrawLabel">Withdraw</span></button>
     </div>
 
     <div class="token-list">
-      <h2>Your tokens</h2>
+      <h2 id="yourTokensLabel">Your tokens</h2>
       <div id="tokenListInner"></div>
     </div>
 
-    <div class="note">Ask ZO AI in <a href="chat.html">Chat</a> to explain any of these tokens.</div>
+    <div class="note"><span id="noteTextPrefix">Ask ZO AI in</span> <a href="chat.html" id="noteChatLink">Chat</a> <span id="noteTextSuffix">to explain any of these tokens.</span></div>
   </div>
 </div>
 
@@ -186,13 +202,13 @@
 <div class="modal-overlay" id="depositOverlay">
   <div class="modal-sheet">
     <div class="modal-head">
-      <h3>Deposit</h3>
+      <h3 id="depositModalTitle">Deposit</h3>
       <div class="modal-close" onclick="closeModal('depositOverlay')">✕</div>
     </div>
     <div class="qr-box"><div id="qrcodeBox"></div></div>
     <div class="deposit-addr" id="depositAddrFull">—</div>
-    <button class="copy-btn" onclick="copyAddress()">Copy address</button>
-    <div class="deposit-warn">Only send assets on the same network shown above (e.g. Ethereum mainnet). Sending from a different network may result in permanent loss of funds.</div>
+    <button class="copy-btn" id="copyAddressBtn" onclick="copyAddress()">Copy address</button>
+    <div class="deposit-warn" id="depositWarnText">Only send assets on the same network shown above (e.g. Ethereum mainnet). Sending from a different network may result in permanent loss of funds.</div>
   </div>
 </div>
 
@@ -200,17 +216,17 @@
 <div class="modal-overlay" id="withdrawOverlay">
   <div class="modal-sheet">
     <div class="modal-head">
-      <h3>Withdraw</h3>
+      <h3 id="withdrawModalTitle">Withdraw</h3>
       <div class="modal-close" onclick="closeModal('withdrawOverlay')">✕</div>
     </div>
 
-    <div class="field-label">Asset</div>
+    <div class="field-label" id="assetLabel">Asset</div>
     <select class="field-select" id="withdrawAsset"></select>
 
-    <div class="field-label">Recipient address</div>
+    <div class="field-label" id="recipientLabel">Recipient address</div>
     <input class="field-input" id="withdrawTo" placeholder="0x...">
 
-    <div class="field-label">Amount</div>
+    <div class="field-label" id="amountLabel">Amount</div>
     <input class="field-input" id="withdrawAmount" placeholder="0.00" type="number" step="any">
 
     <button class="withdraw-submit" id="withdrawSubmitBtn" onclick="sendWithdraw()">Send</button>
@@ -222,12 +238,12 @@
 <div class="modal-overlay" id="swapOverlay">
   <div class="modal-sheet">
     <div class="modal-head">
-      <h3>Swap</h3>
+      <h3 id="swapModalTitle">Swap</h3>
       <div class="modal-close" onclick="closeModal('swapOverlay')">✕</div>
     </div>
 
     <div class="swap-field">
-      <div class="swap-field-label"><span>Sell</span><span id="swapSellBalance">—</span></div>
+      <div class="swap-field-label"><span id="sellLabel">Sell</span><span id="swapSellBalance">—</span></div>
       <div class="swap-field-row">
         <input class="swap-amount-input" id="swapSellAmount" placeholder="0.0" type="number" step="any" oninput="onSwapAmountChange()">
         <select class="swap-token-select" id="swapSellToken" onchange="onSwapAmountChange()"></select>
@@ -239,7 +255,7 @@
     </div>
 
     <div class="swap-field">
-      <div class="swap-field-label"><span>Buy (estimated)</span><span id="swapBuyBalance">—</span></div>
+      <div class="swap-field-label"><span id="buyEstLabel">Buy (estimated)</span><span id="swapBuyBalance">—</span></div>
       <div class="swap-field-row">
         <input class="swap-amount-input" id="swapBuyAmount" placeholder="0.0" readonly>
         <select class="swap-token-select" id="swapBuyToken" onchange="onSwapAmountChange()"></select>
@@ -247,9 +263,9 @@
     </div>
 
     <div class="swap-rate-box">
-      <div class="swap-rate-row"><span class="k">Rate</span><span class="v" id="swapRate">—</span></div>
-      <div class="swap-rate-row"><span class="k">ZO AI fee</span><span class="v fee" id="swapFee">0.3%</span></div>
-      <div class="swap-rate-row"><span class="k">Est. network fee</span><span class="v" id="swapGas">—</span></div>
+      <div class="swap-rate-row"><span class="k" id="rateLabel">Rate</span><span class="v" id="swapRate">—</span></div>
+      <div class="swap-rate-row"><span class="k" id="zoFeeLabel">ZO AI fee</span><span class="v fee" id="swapFee">0.3%</span></div>
+      <div class="swap-rate-row"><span class="k" id="estFeeLabel">Est. network fee</span><span class="v" id="swapGas">—</span></div>
     </div>
 
     <button class="swap-submit" id="swapSubmitBtn" onclick="executeSwap()" disabled>Enter an amount</button>
@@ -261,6 +277,267 @@
 <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
 
 <script>
+  // ---- Terjemahan (localStorage key SAMA dengan chat.html/landing.html/index.html) ----
+  const walletTranslations = {
+    en: { nonCustodial:'Non-custodial wallet', connectTitle:'Connect your wallet', heroDesc:'ZO AI only reads your address and balance. Your keys never leave your wallet.',
+      chooseWallet:'Choose a wallet', detectedHint:'Detected providers show a green dot',
+      openInApp:"Open this page inside your wallet app's browser for a direct connection, or tap a provider to try a deep link.",
+      disconnect:'disconnect', totalBalance:'Total balance', loading:'loading',
+      deposit:'Deposit', swap:'Swap', withdraw:'Withdraw', yourTokens:'Your tokens',
+      notePrefix:'Ask ZO AI in', noteSuffix:'to explain any of these tokens.',
+      depositTitle:'Deposit', copyAddress:'Copy address', copied:'Copied!',
+      depositWarn:'Only send assets on the same network shown above (e.g. Ethereum mainnet). Sending from a different network may result in permanent loss of funds.',
+      withdrawTitle:'Withdraw', asset:'Asset', recipient:'Recipient address', amount:'Amount', send:'Send',
+      swapTitle:'Swap', sell:'Sell', buyEst:'Buy (estimated)', rate:'Rate', zoFee:'ZO AI fee', estFee:'Est. network fee',
+      enterAmount:'Enter an amount', requestingConnection:'Requesting connection...', connectionFailed:'Connection was cancelled or failed.',
+      liveFrom:(net)=>`Live from ${net} mainnet`, invalidRecipient:'Enter a valid recipient and amount.',
+      confirmTxWallet:'Confirm the transaction in your wallet app...', txSent:'Transaction sent. Balance will update shortly.',
+      txFailed:'Transaction failed or was rejected.', chooseTwoTokens:'Choose two different tokens',
+      fetchingRate:'Fetching best rate...', tryAgain:'Try again', shownBeforeConfirm:'Shown in wallet before confirming',
+      couldNotFetchQuote:'Could not fetch a quote for this pair.', checkingApproval:'Checking token approval...',
+      approveInWallet:'Approve token access in your wallet...', confirmSwapWallet:'Confirm the swap in your wallet...',
+      swapSubmitted:'Swap submitted. Your balance will update shortly.', swapFailed:'Swap failed or was rejected in your wallet.',
+      swapFor:(a,b)=>`Swap ${a} for ${b}` },
+    id: { nonCustodial:'Wallet non-custodial', connectTitle:'Hubungkan wallet kamu', heroDesc:'ZO AI cuma baca alamat dan saldo kamu. Private key kamu gak pernah keluar dari wallet.',
+      chooseWallet:'Pilih wallet', detectedHint:'Provider yang terdeteksi ditandai titik hijau',
+      openInApp:'Buka halaman ini di dalam browser app wallet kamu buat koneksi langsung, atau tap provider buat coba deep link.',
+      disconnect:'putuskan', totalBalance:'Total saldo', loading:'memuat',
+      deposit:'Deposit', swap:'Swap', withdraw:'Tarik', yourTokens:'Token kamu',
+      notePrefix:'Tanya ZO AI di', noteSuffix:'buat jelasin token-token ini.',
+      depositTitle:'Deposit', copyAddress:'Salin alamat', copied:'Tersalin!',
+      depositWarn:'Cuma kirim aset di jaringan yang sama kayak yang ditampilkan di atas (misal Ethereum mainnet). Kirim dari jaringan beda bisa bikin dana hilang permanen.',
+      withdrawTitle:'Tarik dana', asset:'Aset', recipient:'Alamat penerima', amount:'Jumlah', send:'Kirim',
+      swapTitle:'Swap', sell:'Jual', buyEst:'Beli (estimasi)', rate:'Kurs', zoFee:'Biaya ZO AI', estFee:'Estimasi biaya jaringan',
+      enterAmount:'Masukkan jumlah', requestingConnection:'Meminta koneksi...', connectionFailed:'Koneksi dibatalkan atau gagal.',
+      liveFrom:(net)=>`Live dari ${net} mainnet`, invalidRecipient:'Masukkan penerima dan jumlah yang valid.',
+      confirmTxWallet:'Konfirmasi transaksi di app wallet kamu...', txSent:'Transaksi terkirim. Saldo bakal update sebentar lagi.',
+      txFailed:'Transaksi gagal atau ditolak.', chooseTwoTokens:'Pilih dua token yang beda',
+      fetchingRate:'Ambil kurs terbaik...', tryAgain:'Coba lagi', shownBeforeConfirm:'Ditampilkan di wallet sebelum konfirmasi',
+      couldNotFetchQuote:'Gagal ambil kurs buat pasangan ini.', checkingApproval:'Cek izin token...',
+      approveInWallet:'Setujui akses token di wallet kamu...', confirmSwapWallet:'Konfirmasi swap di wallet kamu...',
+      swapSubmitted:'Swap terkirim. Saldo bakal update sebentar lagi.', swapFailed:'Swap gagal atau ditolak di wallet kamu.',
+      swapFor:(a,b)=>`Swap ${a} ke ${b}` },
+    es: { nonCustodial:'Wallet no custodial', connectTitle:'Conecta tu wallet', heroDesc:'ZO AI solo lee tu dirección y saldo. Tus claves nunca salen de tu wallet.',
+      chooseWallet:'Elige una wallet', detectedHint:'Los proveedores detectados muestran un punto verde',
+      openInApp:'Abre esta página dentro del navegador de tu app de wallet para una conexión directa, o toca un proveedor para probar un enlace directo.',
+      disconnect:'desconectar', totalBalance:'Saldo total', loading:'cargando',
+      deposit:'Depositar', swap:'Intercambiar', withdraw:'Retirar', yourTokens:'Tus tokens',
+      notePrefix:'Pregúntale a ZO AI en', noteSuffix:'para que explique cualquiera de estos tokens.',
+      depositTitle:'Depositar', copyAddress:'Copiar dirección', copied:'¡Copiado!',
+      depositWarn:'Envía solo activos en la misma red mostrada arriba (ej. Ethereum mainnet). Enviar desde otra red puede causar pérdida permanente de fondos.',
+      withdrawTitle:'Retirar', asset:'Activo', recipient:'Dirección del destinatario', amount:'Cantidad', send:'Enviar',
+      swapTitle:'Intercambiar', sell:'Vender', buyEst:'Comprar (estimado)', rate:'Tasa', zoFee:'Comisión de ZO AI', estFee:'Comisión de red estimada',
+      enterAmount:'Ingresa una cantidad', requestingConnection:'Solicitando conexión...', connectionFailed:'La conexión fue cancelada o falló.',
+      liveFrom:(net)=>`En vivo desde ${net} mainnet`, invalidRecipient:'Ingresa un destinatario y cantidad válidos.',
+      confirmTxWallet:'Confirma la transacción en tu app de wallet...', txSent:'Transacción enviada. El saldo se actualizará pronto.',
+      txFailed:'La transacción falló o fue rechazada.', chooseTwoTokens:'Elige dos tokens diferentes',
+      fetchingRate:'Buscando mejor tasa...', tryAgain:'Intentar de nuevo', shownBeforeConfirm:'Se muestra en la wallet antes de confirmar',
+      couldNotFetchQuote:'No se pudo obtener una cotización para este par.', checkingApproval:'Verificando aprobación del token...',
+      approveInWallet:'Aprueba el acceso al token en tu wallet...', confirmSwapWallet:'Confirma el intercambio en tu wallet...',
+      swapSubmitted:'Intercambio enviado. Tu saldo se actualizará pronto.', swapFailed:'El intercambio falló o fue rechazado en tu wallet.',
+      swapFor:(a,b)=>`Cambiar ${a} por ${b}` },
+    pt: { nonCustodial:'Wallet não-custodial', connectTitle:'Conecte sua wallet', heroDesc:'ZO AI só lê seu endereço e saldo. Suas chaves nunca saem da sua wallet.',
+      chooseWallet:'Escolha uma wallet', detectedHint:'Provedores detectados mostram um ponto verde',
+      openInApp:'Abra esta página dentro do navegador do app da sua wallet para uma conexão direta, ou toque em um provedor para tentar um link direto.',
+      disconnect:'desconectar', totalBalance:'Saldo total', loading:'carregando',
+      deposit:'Depositar', swap:'Trocar', withdraw:'Sacar', yourTokens:'Seus tokens',
+      notePrefix:'Pergunte ao ZO AI no', noteSuffix:'para explicar qualquer um desses tokens.',
+      depositTitle:'Depositar', copyAddress:'Copiar endereço', copied:'Copiado!',
+      depositWarn:'Envie apenas ativos na mesma rede mostrada acima (ex. Ethereum mainnet). Enviar de uma rede diferente pode causar perda permanente de fundos.',
+      withdrawTitle:'Sacar', asset:'Ativo', recipient:'Endereço do destinatário', amount:'Quantia', send:'Enviar',
+      swapTitle:'Trocar', sell:'Vender', buyEst:'Comprar (estimado)', rate:'Taxa', zoFee:'Taxa da ZO AI', estFee:'Taxa de rede estimada',
+      enterAmount:'Digite uma quantia', requestingConnection:'Solicitando conexão...', connectionFailed:'A conexão foi cancelada ou falhou.',
+      liveFrom:(net)=>`Ao vivo da ${net} mainnet`, invalidRecipient:'Digite um destinatário e quantia válidos.',
+      confirmTxWallet:'Confirme a transação no app da sua wallet...', txSent:'Transação enviada. O saldo será atualizado em breve.',
+      txFailed:'A transação falhou ou foi rejeitada.', chooseTwoTokens:'Escolha dois tokens diferentes',
+      fetchingRate:'Buscando melhor taxa...', tryAgain:'Tentar novamente', shownBeforeConfirm:'Mostrado na wallet antes de confirmar',
+      couldNotFetchQuote:'Não foi possível obter uma cotação para este par.', checkingApproval:'Verificando aprovação do token...',
+      approveInWallet:'Aprove o acesso ao token na sua wallet...', confirmSwapWallet:'Confirme a troca na sua wallet...',
+      swapSubmitted:'Troca enviada. Seu saldo será atualizado em breve.', swapFailed:'A troca falhou ou foi rejeitada na sua wallet.',
+      swapFor:(a,b)=>`Trocar ${a} por ${b}` },
+    fr: { nonCustodial:'Wallet non-custodial', connectTitle:'Connecte ton wallet', heroDesc:'ZO AI lit seulement ton adresse et ton solde. Tes clés ne quittent jamais ton wallet.',
+      chooseWallet:'Choisis un wallet', detectedHint:'Les fournisseurs détectés affichent un point vert',
+      openInApp:"Ouvre cette page dans le navigateur de ton app wallet pour une connexion directe, ou touche un fournisseur pour essayer un lien direct.",
+      disconnect:'déconnecter', totalBalance:'Solde total', loading:'chargement',
+      deposit:'Déposer', swap:'Échanger', withdraw:'Retirer', yourTokens:'Tes tokens',
+      notePrefix:'Demande à ZO AI dans', noteSuffix:"d'expliquer n'importe lequel de ces tokens.",
+      depositTitle:'Déposer', copyAddress:"Copier l'adresse", copied:'Copié !',
+      depositWarn:"N'envoie des actifs que sur le même réseau affiché ci-dessus (ex. Ethereum mainnet). Envoyer depuis un autre réseau peut entraîner une perte permanente de fonds.",
+      withdrawTitle:'Retirer', asset:'Actif', recipient:'Adresse du destinataire', amount:'Montant', send:'Envoyer',
+      swapTitle:'Échanger', sell:'Vendre', buyEst:'Acheter (estimé)', rate:'Taux', zoFee:'Frais ZO AI', estFee:'Frais réseau estimés',
+      enterAmount:'Entre un montant', requestingConnection:'Demande de connexion...', connectionFailed:"La connexion a été annulée ou a échoué.",
+      liveFrom:(net)=>`En direct depuis ${net} mainnet`, invalidRecipient:'Entre un destinataire et un montant valides.',
+      confirmTxWallet:'Confirme la transaction dans ton app wallet...', txSent:'Transaction envoyée. Le solde sera mis à jour bientôt.',
+      txFailed:'La transaction a échoué ou a été rejetée.', chooseTwoTokens:'Choisis deux tokens différents',
+      fetchingRate:'Recherche du meilleur taux...', tryAgain:'Réessayer', shownBeforeConfirm:'Affiché dans le wallet avant confirmation',
+      couldNotFetchQuote:"Impossible d'obtenir un devis pour cette paire.", checkingApproval:"Vérification de l'approbation du token...",
+      approveInWallet:"Approuve l'accès au token dans ton wallet...", confirmSwapWallet:'Confirme l\'échange dans ton wallet...',
+      swapSubmitted:'Échange envoyé. Ton solde sera mis à jour bientôt.', swapFailed:'L\'échange a échoué ou a été rejeté dans ton wallet.',
+      swapFor:(a,b)=>`Échanger ${a} contre ${b}` },
+    de: { nonCustodial:'Non-Custodial-Wallet', connectTitle:'Verbinde deine Wallet', heroDesc:'ZO AI liest nur deine Adresse und dein Guthaben. Deine Schlüssel verlassen nie deine Wallet.',
+      chooseWallet:'Wähle eine Wallet', detectedHint:'Erkannte Anbieter zeigen einen grünen Punkt',
+      openInApp:'Öffne diese Seite im Browser deiner Wallet-App für eine direkte Verbindung, oder tippe auf einen Anbieter für einen Deep-Link.',
+      disconnect:'trennen', totalBalance:'Gesamtguthaben', loading:'lädt',
+      deposit:'Einzahlen', swap:'Tauschen', withdraw:'Abheben', yourTokens:'Deine Tokens',
+      notePrefix:'Frag ZO AI im', noteSuffix:'um dir einen dieser Tokens erklären zu lassen.',
+      depositTitle:'Einzahlen', copyAddress:'Adresse kopieren', copied:'Kopiert!',
+      depositWarn:'Sende nur Assets im gleichen Netzwerk, das oben angezeigt wird (z.B. Ethereum Mainnet). Senden von einem anderen Netzwerk kann zu dauerhaftem Verlust der Gelder führen.',
+      withdrawTitle:'Abheben', asset:'Asset', recipient:'Empfängeradresse', amount:'Betrag', send:'Senden',
+      swapTitle:'Tauschen', sell:'Verkaufen', buyEst:'Kaufen (geschätzt)', rate:'Kurs', zoFee:'ZO AI Gebühr', estFee:'Geschätzte Netzwerkgebühr',
+      enterAmount:'Gib einen Betrag ein', requestingConnection:'Verbindung wird angefragt...', connectionFailed:'Die Verbindung wurde abgebrochen oder ist fehlgeschlagen.',
+      liveFrom:(net)=>`Live von ${net} Mainnet`, invalidRecipient:'Gib einen gültigen Empfänger und Betrag ein.',
+      confirmTxWallet:'Bestätige die Transaktion in deiner Wallet-App...', txSent:'Transaktion gesendet. Das Guthaben wird bald aktualisiert.',
+      txFailed:'Die Transaktion ist fehlgeschlagen oder wurde abgelehnt.', chooseTwoTokens:'Wähle zwei unterschiedliche Tokens',
+      fetchingRate:'Bester Kurs wird gesucht...', tryAgain:'Erneut versuchen', shownBeforeConfirm:'Wird in der Wallet vor Bestätigung angezeigt',
+      couldNotFetchQuote:'Für dieses Paar konnte kein Kurs abgerufen werden.', checkingApproval:'Token-Freigabe wird geprüft...',
+      approveInWallet:'Genehmige den Token-Zugriff in deiner Wallet...', confirmSwapWallet:'Bestätige den Tausch in deiner Wallet...',
+      swapSubmitted:'Tausch gesendet. Dein Guthaben wird bald aktualisiert.', swapFailed:'Der Tausch ist fehlgeschlagen oder wurde in deiner Wallet abgelehnt.',
+      swapFor:(a,b)=>`${a} gegen ${b} tauschen` },
+    ja: { nonCustodial:'ノンカストディアルウォレット', connectTitle:'ウォレットを接続', heroDesc:'ZO AIはアドレスと残高のみを読み取ります。秘密鍵はウォレットから外に出ることはありません。',
+      chooseWallet:'ウォレットを選択', detectedHint:'検出されたプロバイダーには緑の点が表示されます',
+      openInApp:'直接接続するにはウォレットアプリ内のブラウザでこのページを開くか、プロバイダーをタップしてディープリンクを試してください。',
+      disconnect:'切断', totalBalance:'合計残高', loading:'読み込み中',
+      deposit:'入金', swap:'交換', withdraw:'出金', yourTokens:'あなたのトークン',
+      notePrefix:'ZO AIに', noteSuffix:'でこれらのトークンについて聞いてみましょう。',
+      depositTitle:'入金', copyAddress:'アドレスをコピー', copied:'コピーしました!',
+      depositWarn:'上に表示されているのと同じネットワーク(例:Ethereumメインネット)でのみ資産を送金してください。別のネットワークから送金すると資金が永久に失われる可能性があります。',
+      withdrawTitle:'出金', asset:'アセット', recipient:'受取人アドレス', amount:'金額', send:'送信',
+      swapTitle:'交換', sell:'売る', buyEst:'買う(推定)', rate:'レート', zoFee:'ZO AI手数料', estFee:'推定ネットワーク手数料',
+      enterAmount:'金額を入力', requestingConnection:'接続をリクエスト中...', connectionFailed:'接続がキャンセルされたか失敗しました。',
+      liveFrom:(net)=>`${net}メインネットからライブ`, invalidRecipient:'有効な受取人と金額を入力してください。',
+      confirmTxWallet:'ウォレットアプリでトランザクションを確認してください...', txSent:'トランザクション送信済み。残高はまもなく更新されます。',
+      txFailed:'トランザクションが失敗したか拒否されました。', chooseTwoTokens:'2つの異なるトークンを選択してください',
+      fetchingRate:'最良レートを取得中...', tryAgain:'再試行', shownBeforeConfirm:'確認前にウォレットに表示されます',
+      couldNotFetchQuote:'このペアの見積もりを取得できませんでした。', checkingApproval:'トークンの承認を確認中...',
+      approveInWallet:'ウォレットでトークンアクセスを承認してください...', confirmSwapWallet:'ウォレットで交換を確認してください...',
+      swapSubmitted:'交換が送信されました。残高はまもなく更新されます。', swapFailed:'交換が失敗したか、ウォレットで拒否されました。',
+      swapFor:(a,b)=>`${a}を${b}に交換` },
+    ko: { nonCustodial:'비수탁형 지갑', connectTitle:'지갑을 연결하세요', heroDesc:'ZO AI는 주소와 잔액만 읽습니다. 개인 키는 절대 지갑을 벗어나지 않습니다.',
+      chooseWallet:'지갑 선택', detectedHint:'감지된 제공업체는 초록 점으로 표시됩니다',
+      openInApp:'직접 연결하려면 지갑 앱 내 브라우저에서 이 페이지를 열거나, 제공업체를 탭하여 딥링크를 시도하세요.',
+      disconnect:'연결 해제', totalBalance:'총 잔액', loading:'로딩 중',
+      deposit:'입금', swap:'교환', withdraw:'출금', yourTokens:'내 토큰',
+      notePrefix:'ZO AI에게', noteSuffix:'에서 이 토큰들에 대해 설명해달라고 물어보세요.',
+      depositTitle:'입금', copyAddress:'주소 복사', copied:'복사됨!',
+      depositWarn:'위에 표시된 것과 동일한 네트워크(예: 이더리움 메인넷)에서만 자산을 보내세요. 다른 네트워크에서 보내면 자금이 영구적으로 손실될 수 있습니다.',
+      withdrawTitle:'출금', asset:'자산', recipient:'수신자 주소', amount:'금액', send:'보내기',
+      swapTitle:'교환', sell:'판매', buyEst:'구매(예상)', rate:'환율', zoFee:'ZO AI 수수료', estFee:'예상 네트워크 수수료',
+      enterAmount:'금액을 입력하세요', requestingConnection:'연결 요청 중...', connectionFailed:'연결이 취소되었거나 실패했습니다.',
+      liveFrom:(net)=>`${net} 메인넷에서 실시간`, invalidRecipient:'유효한 수신자와 금액을 입력하세요.',
+      confirmTxWallet:'지갑 앱에서 거래를 확인하세요...', txSent:'거래가 전송되었습니다. 잔액이 곧 업데이트됩니다.',
+      txFailed:'거래가 실패했거나 거부되었습니다.', chooseTwoTokens:'서로 다른 두 토큰을 선택하세요',
+      fetchingRate:'최적 환율 조회 중...', tryAgain:'다시 시도', shownBeforeConfirm:'확인 전 지갑에 표시됨',
+      couldNotFetchQuote:'이 페어의 견적을 가져올 수 없습니다.', checkingApproval:'토큰 승인 확인 중...',
+      approveInWallet:'지갑에서 토큰 접근을 승인하세요...', confirmSwapWallet:'지갑에서 교환을 확인하세요...',
+      swapSubmitted:'교환이 전송되었습니다. 잔액이 곧 업데이트됩니다.', swapFailed:'교환이 실패했거나 지갑에서 거부되었습니다.',
+      swapFor:(a,b)=>`${a}를 ${b}로 교환` },
+    zh: { nonCustodial:'非托管钱包', connectTitle:'连接你的钱包', heroDesc:'ZO AI仅读取你的地址和余额。你的私钥永远不会离开你的钱包。',
+      chooseWallet:'选择钱包', detectedHint:'检测到的提供商会显示绿点',
+      openInApp:'在钱包应用内的浏览器中打开此页面以直接连接,或点击提供商尝试深度链接。',
+      disconnect:'断开连接', totalBalance:'总余额', loading:'加载中',
+      deposit:'充值', swap:'兑换', withdraw:'提现', yourTokens:'你的代币',
+      notePrefix:'在', noteSuffix:'中询问ZO AI解释这些代币。',
+      depositTitle:'充值', copyAddress:'复制地址', copied:'已复制!',
+      depositWarn:'仅发送与上方显示相同网络的资产(例如以太坊主网)。从不同网络发送可能导致资金永久丢失。',
+      withdrawTitle:'提现', asset:'资产', recipient:'接收地址', amount:'数量', send:'发送',
+      swapTitle:'兑换', sell:'卖出', buyEst:'买入(预估)', rate:'汇率', zoFee:'ZO AI手续费', estFee:'预计网络费用',
+      enterAmount:'输入数量', requestingConnection:'请求连接中...', connectionFailed:'连接已取消或失败。',
+      liveFrom:(net)=>`来自${net}主网的实时数据`, invalidRecipient:'请输入有效的接收方和数量。',
+      confirmTxWallet:'请在你的钱包应用中确认交易...', txSent:'交易已发送。余额将很快更新。',
+      txFailed:'交易失败或被拒绝。', chooseTwoTokens:'请选择两种不同的代币',
+      fetchingRate:'正在获取最佳汇率...', tryAgain:'重试', shownBeforeConfirm:'确认前将在钱包中显示',
+      couldNotFetchQuote:'无法获取此交易对的报价。', checkingApproval:'正在检查代币授权...',
+      approveInWallet:'请在钱包中批准代币访问...', confirmSwapWallet:'请在钱包中确认兑换...',
+      swapSubmitted:'兑换已提交。你的余额将很快更新。', swapFailed:'兑换失败或在钱包中被拒绝。',
+      swapFor:(a,b)=>`将${a}兑换为${b}` },
+    ar: { nonCustodial:'محفظة غير وصائية', connectTitle:'اربط محفظتك', heroDesc:'يقرأ ZO AI عنوانك ورصيدك فقط. مفاتيحك لا تغادر محفظتك أبداً.',
+      chooseWallet:'اختر محفظة', detectedHint:'مزودو الخدمة المكتشفون يظهرون بنقطة خضراء',
+      openInApp:'افتح هذه الصفحة داخل متصفح تطبيق محفظتك للحصول على اتصال مباشر، أو اضغط على مزود لتجربة رابط مباشر.',
+      disconnect:'قطع الاتصال', totalBalance:'الرصيد الإجمالي', loading:'جارٍ التحميل',
+      deposit:'إيداع', swap:'تبديل', withdraw:'سحب', yourTokens:'رموزك',
+      notePrefix:'اسأل ZO AI في', noteSuffix:'لشرح أي من هذه الرموز.',
+      depositTitle:'إيداع', copyAddress:'نسخ العنوان', copied:'تم النسخ!',
+      depositWarn:'أرسل الأصول فقط على نفس الشبكة الموضحة أعلاه (مثل Ethereum mainnet). الإرسال من شبكة مختلفة قد يؤدي إلى فقدان دائم للأموال.',
+      withdrawTitle:'سحب', asset:'الأصل', recipient:'عنوان المستلم', amount:'المبلغ', send:'إرسال',
+      swapTitle:'تبديل', sell:'بيع', buyEst:'شراء (تقديري)', rate:'السعر', zoFee:'رسوم ZO AI', estFee:'رسوم الشبكة المقدرة',
+      enterAmount:'أدخل مبلغاً', requestingConnection:'جارٍ طلب الاتصال...', connectionFailed:'تم إلغاء الاتصال أو فشل.',
+      liveFrom:(net)=>`مباشر من ${net} mainnet`, invalidRecipient:'أدخل مستلماً ومبلغاً صالحين.',
+      confirmTxWallet:'أكد المعاملة في تطبيق محفظتك...', txSent:'تم إرسال المعاملة. سيتم تحديث الرصيد قريباً.',
+      txFailed:'فشلت المعاملة أو تم رفضها.', chooseTwoTokens:'اختر رمزين مختلفين',
+      fetchingRate:'جارٍ البحث عن أفضل سعر...', tryAgain:'حاول مرة أخرى', shownBeforeConfirm:'يظهر في المحفظة قبل التأكيد',
+      couldNotFetchQuote:'تعذر الحصول على عرض سعر لهذا الزوج.', checkingApproval:'جارٍ التحقق من موافقة الرمز...',
+      approveInWallet:'وافق على الوصول للرمز في محفظتك...', confirmSwapWallet:'أكد التبديل في محفظتك...',
+      swapSubmitted:'تم إرسال التبديل. سيتم تحديث رصيدك قريباً.', swapFailed:'فشل التبديل أو تم رفضه في محفظتك.',
+      swapFor:(a,b)=>`تبديل ${a} مقابل ${b}` },
+    hi: { nonCustodial:'नॉन-कस्टोडियल वॉलेट', connectTitle:'अपना वॉलेट कनेक्ट करें', heroDesc:'ZO AI केवल आपका पता और बैलेंस पढ़ता है। आपकी कीज़ कभी भी आपके वॉलेट से बाहर नहीं जातीं।',
+      chooseWallet:'एक वॉलेट चुनें', detectedHint:'पहचाने गए प्रोवाइडर हरे डॉट के साथ दिखते हैं',
+      openInApp:'सीधे कनेक्शन के लिए इस पेज को अपने वॉलेट ऐप के ब्राउज़र में खोलें, या डीप लिंक आज़माने के लिए किसी प्रोवाइडर पर टैप करें।',
+      disconnect:'डिस्कनेक्ट करें', totalBalance:'कुल बैलेंस', loading:'लोड हो रहा है',
+      deposit:'जमा करें', swap:'स्वैप', withdraw:'निकालें', yourTokens:'आपके टोकन',
+      notePrefix:'ZO AI से', noteSuffix:'में इनमें से किसी भी टोकन के बारे में पूछें।',
+      depositTitle:'जमा करें', copyAddress:'पता कॉपी करें', copied:'कॉपी हो गया!',
+      depositWarn:'केवल ऊपर दिखाए गए समान नेटवर्क (जैसे Ethereum mainnet) पर एसेट भेजें। किसी अलग नेटवर्क से भेजने पर फंड स्थायी रूप से खो सकता है।',
+      withdrawTitle:'निकालें', asset:'एसेट', recipient:'प्राप्तकर्ता पता', amount:'राशि', send:'भेजें',
+      swapTitle:'स्वैप', sell:'बेचें', buyEst:'खरीदें (अनुमानित)', rate:'दर', zoFee:'ZO AI शुल्क', estFee:'अनुमानित नेटवर्क शुल्क',
+      enterAmount:'राशि डालें', requestingConnection:'कनेक्शन का अनुरोध किया जा रहा है...', connectionFailed:'कनेक्शन रद्द या विफल हो गया।',
+      liveFrom:(net)=>`${net} mainnet से लाइव`, invalidRecipient:'एक मान्य प्राप्तकर्ता और राशि डालें।',
+      confirmTxWallet:'अपने वॉलेट ऐप में लेनदेन की पुष्टि करें...', txSent:'लेनदेन भेजा गया। बैलेंस जल्द अपडेट होगा।',
+      txFailed:'लेनदेन विफल हुआ या अस्वीकार कर दिया गया।', chooseTwoTokens:'दो अलग-अलग टोकन चुनें',
+      fetchingRate:'सबसे अच्छी दर खोजी जा रही है...', tryAgain:'फिर कोशिश करें', shownBeforeConfirm:'पुष्टि से पहले वॉलेट में दिखाया गया',
+      couldNotFetchQuote:'इस जोड़ी के लिए कोटेशन नहीं मिल सका।', checkingApproval:'टोकन अनुमोदन जांचा जा रहा है...',
+      approveInWallet:'अपने वॉलेट में टोकन एक्सेस को अनुमोदित करें...', confirmSwapWallet:'अपने वॉलेट में स्वैप की पुष्टि करें...',
+      swapSubmitted:'स्वैप भेजा गया। आपका बैलेंस जल्द अपडेट होगा।', swapFailed:'स्वैप विफल हुआ या आपके वॉलेट में अस्वीकार कर दिया गया।',
+      swapFor:(a,b)=>`${a} को ${b} में स्वैप करें` },
+  };
+
+  function wl(key){
+    const lang = (localStorage.getItem('zo_voice_lang') || 'en-US').split('-')[0];
+    return (walletTranslations[lang] || walletTranslations.en)[key];
+  }
+
+  function applyWalletLanguage(){
+    document.documentElement.dir = wl('nonCustodial') && (localStorage.getItem('zo_voice_lang')||'en-US').startsWith('ar') ? 'rtl' : 'ltr';
+    document.getElementById('nonCustodialLabel').textContent = wl('nonCustodial');
+    document.getElementById('connectTitle').textContent = wl('connectTitle');
+    document.getElementById('heroDesc').textContent = wl('heroDesc');
+    document.getElementById('statusTitle').textContent = wl('chooseWallet');
+    document.getElementById('detectedHint').textContent = wl('detectedHint');
+    document.getElementById('statusLine').textContent = wl('openInApp');
+    document.getElementById('disconnectLabel').textContent = wl('disconnect');
+    document.getElementById('totalBalanceLabel').textContent = wl('totalBalance');
+    document.getElementById('loadingLabel').textContent = wl('loading');
+    document.getElementById('actionDepositLabel').textContent = wl('deposit');
+    document.getElementById('actionSwapLabel').textContent = wl('swap');
+    document.getElementById('actionWithdrawLabel').textContent = wl('withdraw');
+    document.getElementById('yourTokensLabel').textContent = wl('yourTokens');
+    document.getElementById('noteTextPrefix').textContent = wl('notePrefix');
+    document.getElementById('noteChatLink').textContent = 'Chat';
+    document.getElementById('noteTextSuffix').textContent = wl('noteSuffix');
+    document.getElementById('depositModalTitle').textContent = wl('depositTitle');
+    document.getElementById('copyAddressBtn').textContent = wl('copyAddress');
+    document.getElementById('depositWarnText').textContent = wl('depositWarn');
+    document.getElementById('withdrawModalTitle').textContent = wl('withdrawTitle');
+    document.getElementById('assetLabel').textContent = wl('asset');
+    document.getElementById('recipientLabel').textContent = wl('recipient');
+    document.getElementById('amountLabel').textContent = wl('amount');
+    document.getElementById('withdrawSubmitBtn').textContent = wl('send');
+    document.getElementById('swapModalTitle').textContent = wl('swapTitle');
+    document.getElementById('sellLabel').textContent = wl('sell');
+    document.getElementById('buyEstLabel').textContent = wl('buyEst');
+    document.getElementById('rateLabel').textContent = wl('rate');
+    document.getElementById('zoFeeLabel').textContent = wl('zoFee');
+    document.getElementById('estFeeLabel').textContent = wl('estFee');
+    document.getElementById('swapSubmitBtn').textContent = wl('enterAmount');
+  }
+
+  const savedWalletLang = localStorage.getItem('zo_voice_lang') || 'en-US';
+  document.getElementById('langSelect').value = savedWalletLang;
+  applyWalletLanguage();
+  document.getElementById('langSelect').addEventListener('change', (e) => {
+    localStorage.setItem('zo_voice_lang', e.target.value);
+    applyWalletLanguage();
+  });
+
   const ETH_RPC = 'https://cloudflare-eth.com';
   const SOL_RPC = 'https://api.mainnet-beta.solana.com';
   const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec';
@@ -317,14 +594,14 @@
       return;
     }
     try {
-      document.getElementById('statusLine').textContent = 'Requesting connection...';
+      document.getElementById('statusLine').textContent = wl('requestingConnection');
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       currentAddress = accounts[0];
       currentNetwork = 'ethereum';
       showConnected(name, currentAddress, 'Ethereum');
       loadEthBalances(currentAddress);
     } catch (err) {
-      document.getElementById('statusLine').textContent = err && err.message ? err.message : 'Connection was cancelled or failed.';
+      document.getElementById('statusLine').textContent = err && err.message ? err.message : wl('connectionFailed');
     }
   }
 
@@ -335,14 +612,14 @@
       return;
     }
     try {
-      document.getElementById('statusLine').textContent = 'Requesting connection...';
+      document.getElementById('statusLine').textContent = wl('requestingConnection');
       const resp = await window.solana.connect();
       currentAddress = resp.publicKey.toString();
       currentNetwork = 'solana';
       showConnected('Phantom', currentAddress, 'Solana');
       loadSolBalance(currentAddress);
     } catch (err) {
-      document.getElementById('statusLine').textContent = err && err.message ? err.message : 'Connection was cancelled or failed.';
+      document.getElementById('statusLine').textContent = err && err.message ? err.message : wl('connectionFailed');
     }
   }
 
@@ -358,7 +635,7 @@
     currentNetwork = null;
     document.getElementById('connectBox').classList.remove('hide');
     document.getElementById('connected').classList.remove('show');
-    document.getElementById('statusLine').textContent = 'Open this page inside your wallet app\'s browser for a direct connection, or tap a provider to try a deep link.';
+    document.getElementById('statusLine').textContent = wl('openInApp');
   }
 
   async function rpcCall(url, method, params) {
@@ -397,7 +674,7 @@
     const totalUsd = ethBal * ethPrice + usdtBal * usdtPrice;
 
     document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
-    document.getElementById('balanceSub').textContent = 'Live from Ethereum mainnet';
+    document.getElementById('balanceSub').textContent = wl('liveFrom')('Ethereum');
 
     renderTokens([
       { symbol: 'ETH', icon: 'Ξ', amount: ethBal.toFixed(4), usd: (ethBal * ethPrice).toFixed(2) },
@@ -414,7 +691,7 @@
     const totalUsd = solBal * solPrice;
 
     document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
-    document.getElementById('balanceSub').textContent = 'Live from Solana mainnet';
+    document.getElementById('balanceSub').textContent = wl('liveFrom')('Solana');
 
     renderTokens([
       { symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }
@@ -454,7 +731,7 @@
     navigator.clipboard.writeText(currentAddress).then(() => {
       const btn = document.querySelector('.copy-btn');
       const original = btn.textContent;
-      btn.textContent = 'Copied!';
+      btn.textContent = wl('copied');
       setTimeout(() => { btn.textContent = original; }, 1500);
     });
   }
@@ -493,12 +770,12 @@
     const btn = document.getElementById('withdrawSubmitBtn');
 
     if (!to || !amountStr || Number(amountStr) <= 0) {
-      setWithdrawStatus('Enter a valid recipient and amount.', 'error');
+      setWithdrawStatus(wl('invalidRecipient'), 'error');
       return;
     }
 
     btn.disabled = true;
-    setWithdrawStatus('Confirm the transaction in your wallet app...', '');
+    setWithdrawStatus(wl('confirmTxWallet'), '');
 
     try {
       if (currentNetwork === 'solana') {
@@ -508,14 +785,14 @@
       } else if (asset === 'USDT') {
         await sendUsdtWithdraw(to, Number(amountStr));
       }
-      setWithdrawStatus('Transaction sent. Balance will update shortly.', 'success');
+      setWithdrawStatus(wl('txSent'), 'success');
       setTimeout(() => {
         closeModal('withdrawOverlay');
         if (currentNetwork === 'solana') loadSolBalance(currentAddress);
         else loadEthBalances(currentAddress);
       }, 1800);
     } catch (err) {
-      setWithdrawStatus(err.message && err.message.length < 90 ? err.message : 'Transaction failed or was rejected.', 'error');
+      setWithdrawStatus(err.message && err.message.length < 90 ? err.message : wl('txFailed'), 'error');
     } finally {
       btn.disabled = false;
     }
@@ -588,7 +865,7 @@
     document.getElementById('swapRate').textContent = '—';
     document.getElementById('swapGas').textContent = '—';
     setSwapStatus('', '');
-    setSwapButtonState('Enter an amount', true);
+    setSwapButtonState(wl('enterAmount'), true);
     latestQuote = null;
 
     document.getElementById('swapSellBalance').textContent =
@@ -627,16 +904,16 @@
     const buySym = document.getElementById('swapBuyToken').value;
 
     if (sellSym === buySym) {
-      setSwapButtonState('Choose two different tokens', true);
+      setSwapButtonState(wl('chooseTwoTokens'), true);
       return;
     }
     if (!amountStr || Number(amountStr) <= 0) {
       document.getElementById('swapBuyAmount').value = '';
-      setSwapButtonState('Enter an amount', true);
+      setSwapButtonState(wl('enterAmount'), true);
       return;
     }
 
-    setSwapButtonState('Fetching best rate...', true);
+    setSwapButtonState(wl('fetchingRate'), true);
     setSwapStatus('', '');
     swapQuoteTimer = setTimeout(() => fetchSwapQuote(sellSym, buySym, Number(amountStr)), 450);
   }
@@ -678,15 +955,15 @@
       if (data.quote.transaction && data.quote.transaction.gas) {
         document.getElementById('swapGas').textContent = data.quote.transaction.gas + ' gas units (est.)';
       } else {
-        document.getElementById('swapGas').textContent = 'Shown in wallet before confirming';
+        document.getElementById('swapGas').textContent = wl('shownBeforeConfirm');
       }
 
-      setSwapButtonState('Swap ' + sellSym + ' for ' + buySym, false);
+      setSwapButtonState(wl('swapFor')(sellSym, buySym), false);
     } catch (err) {
       console.error('Quote error:', err);
       document.getElementById('swapBuyAmount').value = '';
-      setSwapStatus(err.message && err.message.length < 100 ? err.message : 'Could not fetch a quote for this pair.', 'error');
-      setSwapButtonState('Try again', true);
+      setSwapStatus(err.message && err.message.length < 100 ? err.message : wl('couldNotFetchQuote'), 'error');
+      setSwapButtonState(wl('tryAgain'), true);
     }
   }
 
@@ -701,7 +978,7 @@
       } else {
         await executeEvmSwap(latestQuote);
       }
-      setSwapStatus('Swap submitted. Your balance will update shortly.', 'success');
+      setSwapStatus(wl('swapSubmitted'), 'success');
       setTimeout(() => {
         closeModal('swapOverlay');
         if (currentNetwork === 'solana') loadSolBalance(currentAddress);
@@ -709,7 +986,7 @@
       }, 1800);
     } catch (err) {
       console.error('Swap execution error:', err);
-      setSwapStatus(err.message && err.message.length < 100 ? err.message : 'Swap failed or was rejected in your wallet.', 'error');
+      setSwapStatus(err.message && err.message.length < 100 ? err.message : wl('swapFailed'), 'error');
       btn.disabled = false;
     }
   }
@@ -720,15 +997,15 @@
 
     // Native ETH never needs an ERC20 approval.
     if (sellTok.address.toLowerCase() !== NATIVE_EVM.toLowerCase() && spender) {
-      setSwapStatus('Checking token approval...', '');
+      setSwapStatus(wl('checkingApproval'), '');
       const needsApproval = await checkNeedsApproval(sellTok.address, currentAddress, spender, quote.sellAmount);
       if (needsApproval) {
-        setSwapStatus('Approve token access in your wallet...', '');
+        setSwapStatus(wl('approveInWallet'), '');
         await sendErc20Approve(sellTok.address, spender, quote.sellAmount);
       }
     }
 
-    setSwapStatus('Confirm the swap in your wallet...', '');
+    setSwapStatus(wl('confirmSwapWallet'), '');
     const tx = quote.transaction;
     await window.ethereum.request({
       method: 'eth_sendTransaction',
