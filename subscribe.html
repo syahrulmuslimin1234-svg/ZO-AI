@@ -75,18 +75,18 @@
 <div class="wrap">
 
   <div class="hero">
-    <div class="eyebrow">Subscription</div>
-    <h1>Upgrade to ZO AI</h1>
+    <div class="eyebrow" id="subEyebrow">Subscription</div>
+    <h1 id="upgradeTitle">Upgrade to ZO AI</h1>
   </div>
 
   <div class="price-card">
     <div class="amount">$15<span>/month</span></div>
 
-    <div class="email-label">Your email</div>
+    <div class="email-label" id="emailLabel">Your email</div>
     <input type="email" class="email-input" id="emailInput" placeholder="you@example.com" autocomplete="email">
-    <div class="email-hint">Used to activate your subscription and sign in — must match the email you'll log in with.</div>
+    <div class="email-hint" id="emailHint">Used to activate your subscription and sign in — must match the email you'll log in with.</div>
 
-    <div class="method-label">Choose payment method</div>
+    <div class="method-label" id="methodLabel">Choose payment method</div>
     <div class="methods" id="methods">
       <button class="method active" data-currency="usdttrc20">USDT</button>
       <button class="method" data-currency="btc">BTC</button>
@@ -97,11 +97,11 @@
 
     <div class="invoice-box" id="invoiceBox">
       <div class="invoice-row">
-        <div class="invoice-label">Send to address</div>
+        <div class="invoice-label" id="sendToLabel">Send to address</div>
         <div class="invoice-value" id="payAddress">—</div>
       </div>
       <div class="invoice-row">
-        <div class="invoice-label">Amount</div>
+        <div class="invoice-label" id="amountLabel2">Amount</div>
         <div class="invoice-value" id="payAmount">—</div>
       </div>
       <button class="copy-btn" id="copyBtn">Copy Address</button>
@@ -109,18 +109,18 @@
   </div>
 
   <div class="flow">
-    <h2>How it works</h2>
+    <h2 id="howItWorksLabel">How it works</h2>
     <div class="step">
       <div class="step-num">1</div>
-      <div class="step-text">Enter your email, choose a payment method (USDT/BTC/ETH), then tap Pay Now.</div>
+      <div class="step-text" id="step1Text">Enter your email, choose a payment method (USDT/BTC/ETH), then tap Pay Now.</div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div class="step-text">Send the exact amount shown to the address provided.</div>
+      <div class="step-text" id="step2Text">Send the exact amount shown to the address provided.</div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-text">Your account activates automatically for that email once the payment is confirmed on-chain.</div>
+      <div class="step-text" id="step3Text">Your account activates automatically for that email once the payment is confirmed on-chain.</div>
     </div>
   </div>
 
@@ -129,6 +129,155 @@
 </div>
 
 <script>
+  // ---- Terjemahan (baca localStorage yang SAMA — kontrolnya cuma di landing.html) ----
+  const subTranslations = {
+    en: { subscription:'Subscription', upgradeTitle:'Upgrade to ZO AI', yourEmail:'Your email',
+      emailHint:"Used to activate your subscription and sign in — must match the email you'll log in with.",
+      choosePayment:'Choose payment method', payNow:'Pay Now', processing:'Processing...',
+      sendToAddress:'Send to address', amount:'Amount', copyAddress:'Copy Address', copied:'Copied!',
+      howItWorks:'How it works', step1:'Enter your email, choose a payment method (USDT/BTC/ETH), then tap Pay Now.',
+      step2:'Send the exact amount shown to the address provided.', step3:'Your account activates automatically for that email once the payment is confirmed on-chain.',
+      noPayment:'No payment created yet.', invalidEmail:'Enter a valid email before paying.',
+      creatingInvoice:'Creating payment invoice...', failedInvoice:'Failed to create invoice: ',
+      waitingPayment:'Waiting for payment...', formatUnrecognized:'Invoice created, but response format not recognized.',
+      networkError:'Could not reach the server. Please try again.', paymentConfirmed:'Payment confirmed! Redirecting...',
+      paymentFailed:'Payment failed or expired. Please create a new invoice.', statusPrefix:'Status: ', waitingConfirmation:'waiting for confirmation...' },
+    id: { subscription:'Langganan', upgradeTitle:'Upgrade ke ZO AI', yourEmail:'Email kamu',
+      emailHint:'Dipakai buat aktivasi langganan dan login — harus sama dengan email yang bakal kamu pakai login.',
+      choosePayment:'Pilih metode pembayaran', payNow:'Bayar Sekarang', processing:'Memproses...',
+      sendToAddress:'Kirim ke alamat', amount:'Jumlah', copyAddress:'Salin Alamat', copied:'Tersalin!',
+      howItWorks:'Cara kerjanya', step1:'Masukkan email, pilih metode pembayaran (USDT/BTC/ETH), lalu tap Bayar Sekarang.',
+      step2:'Kirim jumlah persis yang ditampilkan ke alamat yang diberikan.', step3:'Akun kamu otomatis aktif buat email itu begitu pembayaran terkonfirmasi on-chain.',
+      noPayment:'Belum ada pembayaran dibuat.', invalidEmail:'Masukkan email yang valid sebelum bayar.',
+      creatingInvoice:'Membuat invoice pembayaran...', failedInvoice:'Gagal membuat invoice: ',
+      waitingPayment:'Menunggu pembayaran...', formatUnrecognized:'Invoice dibuat, tapi format respons gak dikenali.',
+      networkError:'Gak bisa terhubung ke server. Coba lagi ya.', paymentConfirmed:'Pembayaran terkonfirmasi! Mengalihkan...',
+      paymentFailed:'Pembayaran gagal atau kedaluwarsa. Buat invoice baru ya.', statusPrefix:'Status: ', waitingConfirmation:'menunggu konfirmasi...' },
+    es: { subscription:'Suscripción', upgradeTitle:'Mejora a ZO AI', yourEmail:'Tu correo',
+      emailHint:'Se usa para activar tu suscripción e iniciar sesión — debe coincidir con el correo con el que iniciarás sesión.',
+      choosePayment:'Elige método de pago', payNow:'Pagar ahora', processing:'Procesando...',
+      sendToAddress:'Enviar a la dirección', amount:'Cantidad', copyAddress:'Copiar dirección', copied:'¡Copiado!',
+      howItWorks:'Cómo funciona', step1:'Ingresa tu correo, elige un método de pago (USDT/BTC/ETH), luego toca Pagar ahora.',
+      step2:'Envía la cantidad exacta mostrada a la dirección proporcionada.', step3:'Tu cuenta se activa automáticamente para ese correo una vez que el pago se confirme en la cadena.',
+      noPayment:'Aún no se ha creado ningún pago.', invalidEmail:'Ingresa un correo válido antes de pagar.',
+      creatingInvoice:'Creando factura de pago...', failedInvoice:'Error al crear la factura: ',
+      waitingPayment:'Esperando el pago...', formatUnrecognized:'Factura creada, pero el formato de respuesta no fue reconocido.',
+      networkError:'No se pudo conectar con el servidor. Inténtalo de nuevo.', paymentConfirmed:'¡Pago confirmado! Redirigiendo...',
+      paymentFailed:'El pago falló o expiró. Crea una nueva factura.', statusPrefix:'Estado: ', waitingConfirmation:'esperando confirmación...' },
+    pt: { subscription:'Assinatura', upgradeTitle:'Faça upgrade para ZO AI', yourEmail:'Seu e-mail',
+      emailHint:'Usado para ativar sua assinatura e fazer login — deve corresponder ao e-mail que você usará para entrar.',
+      choosePayment:'Escolha o método de pagamento', payNow:'Pagar agora', processing:'Processando...',
+      sendToAddress:'Enviar para o endereço', amount:'Quantia', copyAddress:'Copiar endereço', copied:'Copiado!',
+      howItWorks:'Como funciona', step1:'Digite seu e-mail, escolha um método de pagamento (USDT/BTC/ETH), depois toque em Pagar agora.',
+      step2:'Envie a quantia exata mostrada para o endereço fornecido.', step3:'Sua conta é ativada automaticamente para esse e-mail assim que o pagamento for confirmado on-chain.',
+      noPayment:'Nenhum pagamento criado ainda.', invalidEmail:'Digite um e-mail válido antes de pagar.',
+      creatingInvoice:'Criando fatura de pagamento...', failedInvoice:'Falha ao criar fatura: ',
+      waitingPayment:'Aguardando pagamento...', formatUnrecognized:'Fatura criada, mas o formato da resposta não foi reconhecido.',
+      networkError:'Não foi possível conectar ao servidor. Tente novamente.', paymentConfirmed:'Pagamento confirmado! Redirecionando...',
+      paymentFailed:'O pagamento falhou ou expirou. Crie uma nova fatura.', statusPrefix:'Status: ', waitingConfirmation:'aguardando confirmação...' },
+    fr: { subscription:'Abonnement', upgradeTitle:'Passer à ZO AI', yourEmail:'Ton e-mail',
+      emailHint:"Utilisé pour activer ton abonnement et te connecter — doit correspondre à l'e-mail avec lequel tu te connecteras.",
+      choosePayment:'Choisis un mode de paiement', payNow:'Payer maintenant', processing:'Traitement...',
+      sendToAddress:"Envoyer à l'adresse", amount:'Montant', copyAddress:"Copier l'adresse", copied:'Copié !',
+      howItWorks:'Comment ça marche', step1:"Entre ton e-mail, choisis un mode de paiement (USDT/BTC/ETH), puis touche Payer maintenant.",
+      step2:"Envoie le montant exact indiqué à l'adresse fournie.", step3:'Ton compte s\'active automatiquement pour cet e-mail dès que le paiement est confirmé sur la blockchain.',
+      noPayment:'Aucun paiement créé pour le moment.', invalidEmail:'Entre un e-mail valide avant de payer.',
+      creatingInvoice:'Création de la facture de paiement...', failedInvoice:'Échec de la création de la facture : ',
+      waitingPayment:'En attente du paiement...', formatUnrecognized:"Facture créée, mais le format de réponse n'est pas reconnu.",
+      networkError:'Impossible de joindre le serveur. Réessaie.', paymentConfirmed:'Paiement confirmé ! Redirection...',
+      paymentFailed:'Le paiement a échoué ou a expiré. Crée une nouvelle facture.', statusPrefix:'Statut : ', waitingConfirmation:'en attente de confirmation...' },
+    de: { subscription:'Abonnement', upgradeTitle:'Upgrade auf ZO AI', yourEmail:'Deine E-Mail',
+      emailHint:'Wird verwendet, um dein Abonnement zu aktivieren und dich anzumelden — muss mit der E-Mail übereinstimmen, mit der du dich anmeldest.',
+      choosePayment:'Zahlungsmethode wählen', payNow:'Jetzt bezahlen', processing:'Wird verarbeitet...',
+      sendToAddress:'An Adresse senden', amount:'Betrag', copyAddress:'Adresse kopieren', copied:'Kopiert!',
+      howItWorks:'So funktioniert es', step1:'Gib deine E-Mail ein, wähle eine Zahlungsmethode (USDT/BTC/ETH) und tippe dann auf Jetzt bezahlen.',
+      step2:'Sende den genau angezeigten Betrag an die angegebene Adresse.', step3:'Dein Konto wird für diese E-Mail automatisch aktiviert, sobald die Zahlung on-chain bestätigt wurde.',
+      noPayment:'Noch keine Zahlung erstellt.', invalidEmail:'Gib vor der Zahlung eine gültige E-Mail-Adresse ein.',
+      creatingInvoice:'Zahlungsrechnung wird erstellt...', failedInvoice:'Rechnung konnte nicht erstellt werden: ',
+      waitingPayment:'Warten auf Zahlung...', formatUnrecognized:'Rechnung erstellt, aber Antwortformat nicht erkannt.',
+      networkError:'Server konnte nicht erreicht werden. Bitte versuche es erneut.', paymentConfirmed:'Zahlung bestätigt! Weiterleitung...',
+      paymentFailed:'Zahlung fehlgeschlagen oder abgelaufen. Bitte erstelle eine neue Rechnung.', statusPrefix:'Status: ', waitingConfirmation:'warte auf Bestätigung...' },
+    ja: { subscription:'サブスクリプション', upgradeTitle:'ZO AIにアップグレード', yourEmail:'あなたのメールアドレス',
+      emailHint:'サブスクリプションの有効化とサインインに使用されます — ログインに使うメールアドレスと一致している必要があります。',
+      choosePayment:'支払い方法を選択', payNow:'今すぐ支払う', processing:'処理中...',
+      sendToAddress:'送金先アドレス', amount:'金額', copyAddress:'アドレスをコピー', copied:'コピーしました!',
+      howItWorks:'仕組み', step1:'メールアドレスを入力し、支払い方法(USDT/BTC/ETH)を選んで、今すぐ支払うをタップします。',
+      step2:'表示された正確な金額を指定のアドレスに送金してください。', step3:'オンチェーンで支払いが確認されると、そのメールアドレスのアカウントが自動的に有効化されます。',
+      noPayment:'まだ支払いは作成されていません。', invalidEmail:'支払い前に有効なメールアドレスを入力してください。',
+      creatingInvoice:'請求書を作成中...', failedInvoice:'請求書の作成に失敗しました: ',
+      waitingPayment:'支払いを待っています...', formatUnrecognized:'請求書は作成されましたが、応答形式が認識されませんでした。',
+      networkError:'サーバーに接続できませんでした。もう一度お試しください。', paymentConfirmed:'支払いが確認されました!リダイレクト中...',
+      paymentFailed:'支払いが失敗したか期限切れです。新しい請求書を作成してください。', statusPrefix:'ステータス: ', waitingConfirmation:'確認待ち...' },
+    ko: { subscription:'구독', upgradeTitle:'ZO AI로 업그레이드', yourEmail:'이메일',
+      emailHint:'구독 활성화 및 로그인에 사용됩니다 — 로그인할 이메일과 일치해야 합니다.',
+      choosePayment:'결제 방법 선택', payNow:'지금 결제', processing:'처리 중...',
+      sendToAddress:'보낼 주소', amount:'금액', copyAddress:'주소 복사', copied:'복사됨!',
+      howItWorks:'작동 방식', step1:'이메일을 입력하고 결제 방법(USDT/BTC/ETH)을 선택한 후 지금 결제를 누르세요.',
+      step2:'표시된 정확한 금액을 제공된 주소로 보내세요.', step3:'온체인에서 결제가 확인되면 해당 이메일의 계정이 자동으로 활성화됩니다.',
+      noPayment:'아직 생성된 결제가 없습니다.', invalidEmail:'결제 전에 유효한 이메일을 입력하세요.',
+      creatingInvoice:'결제 인보이스 생성 중...', failedInvoice:'인보이스 생성 실패: ',
+      waitingPayment:'결제 대기 중...', formatUnrecognized:'인보이스는 생성되었지만 응답 형식을 인식할 수 없습니다.',
+      networkError:'서버에 연결할 수 없습니다. 다시 시도해주세요.', paymentConfirmed:'결제가 확인되었습니다! 이동 중...',
+      paymentFailed:'결제가 실패했거나 만료되었습니다. 새 인보이스를 생성하세요.', statusPrefix:'상태: ', waitingConfirmation:'확인 대기 중...' },
+    zh: { subscription:'订阅', upgradeTitle:'升级到ZO AI', yourEmail:'你的邮箱',
+      emailHint:'用于激活订阅和登录——必须与你登录时使用的邮箱一致。',
+      choosePayment:'选择支付方式', payNow:'立即支付', processing:'处理中...',
+      sendToAddress:'发送至地址', amount:'金额', copyAddress:'复制地址', copied:'已复制!',
+      howItWorks:'工作原理', step1:'输入你的邮箱,选择支付方式(USDT/BTC/ETH),然后点击立即支付。',
+      step2:'将显示的确切金额发送到提供的地址。', step3:'链上支付确认后,该邮箱的账户将自动激活。',
+      noPayment:'尚未创建支付。', invalidEmail:'请在支付前输入有效的邮箱。',
+      creatingInvoice:'正在创建支付发票...', failedInvoice:'创建发票失败: ',
+      waitingPayment:'等待支付中...', formatUnrecognized:'发票已创建,但响应格式无法识别。',
+      networkError:'无法连接到服务器,请重试。', paymentConfirmed:'支付已确认!正在跳转...',
+      paymentFailed:'支付失败或已过期,请创建新发票。', statusPrefix:'状态: ', waitingConfirmation:'等待确认中...' },
+    ar: { subscription:'الاشتراك', upgradeTitle:'الترقية إلى ZO AI', yourEmail:'بريدك الإلكتروني',
+      emailHint:'يُستخدم لتفعيل اشتراكك وتسجيل الدخول — يجب أن يتطابق مع البريد الإلكتروني الذي ستسجل الدخول به.',
+      choosePayment:'اختر طريقة الدفع', payNow:'ادفع الآن', processing:'جارٍ المعالجة...',
+      sendToAddress:'أرسل إلى العنوان', amount:'المبلغ', copyAddress:'نسخ العنوان', copied:'تم النسخ!',
+      howItWorks:'كيف يعمل', step1:'أدخل بريدك الإلكتروني، اختر طريقة دفع (USDT/BTC/ETH)، ثم اضغط على ادفع الآن.',
+      step2:'أرسل المبلغ المحدد بالضبط إلى العنوان المُقدَّم.', step3:'يتم تفعيل حسابك تلقائياً لذلك البريد الإلكتروني بمجرد تأكيد الدفع على السلسلة.',
+      noPayment:'لم يتم إنشاء أي دفعة بعد.', invalidEmail:'أدخل بريداً إلكترونياً صالحاً قبل الدفع.',
+      creatingInvoice:'جارٍ إنشاء فاتورة الدفع...', failedInvoice:'فشل إنشاء الفاتورة: ',
+      waitingPayment:'في انتظار الدفع...', formatUnrecognized:'تم إنشاء الفاتورة، لكن لم يتم التعرف على تنسيق الاستجابة.',
+      networkError:'تعذر الوصول إلى الخادم. يرجى المحاولة مرة أخرى.', paymentConfirmed:'تم تأكيد الدفع! جارٍ إعادة التوجيه...',
+      paymentFailed:'فشل الدفع أو انتهت صلاحيته. يرجى إنشاء فاتورة جديدة.', statusPrefix:'الحالة: ', waitingConfirmation:'في انتظار التأكيد...' },
+    hi: { subscription:'सब्सक्रिप्शन', upgradeTitle:'ZO AI में अपग्रेड करें', yourEmail:'आपका ईमेल',
+      emailHint:'आपकी सदस्यता सक्रिय करने और साइन इन करने के लिए उपयोग किया जाता है — यह उस ईमेल से मेल खाना चाहिए जिससे आप लॉग इन करेंगे।',
+      choosePayment:'भुगतान का तरीका चुनें', payNow:'अभी भुगतान करें', processing:'प्रोसेस हो रहा है...',
+      sendToAddress:'इस पते पर भेजें', amount:'राशि', copyAddress:'पता कॉपी करें', copied:'कॉपी हो गया!',
+      howItWorks:'यह कैसे काम करता है', step1:'अपना ईमेल डालें, भुगतान का तरीका (USDT/BTC/ETH) चुनें, फिर अभी भुगतान करें पर टैप करें।',
+      step2:'दिखाई गई सटीक राशि दिए गए पते पर भेजें।', step3:'चेन पर भुगतान की पुष्टि होते ही उस ईमेल के लिए आपका खाता अपने आप सक्रिय हो जाता है।',
+      noPayment:'अभी तक कोई भुगतान नहीं बनाया गया।', invalidEmail:'भुगतान से पहले एक मान्य ईमेल डालें।',
+      creatingInvoice:'भुगतान इनवॉइस बनाई जा रही है...', failedInvoice:'इनवॉइस बनाने में विफल: ',
+      waitingPayment:'भुगतान का इंतज़ार हो रहा है...', formatUnrecognized:'इनवॉइस बन गई, लेकिन प्रतिक्रिया प्रारूप पहचाना नहीं गया।',
+      networkError:'सर्वर से कनेक्ट नहीं हो सका। कृपया फिर से कोशिश करें।', paymentConfirmed:'भुगतान की पुष्टि हो गई! रीडायरेक्ट किया जा रहा है...',
+      paymentFailed:'भुगतान विफल हुआ या समय सीमा समाप्त हो गई। कृपया नई इनवॉइस बनाएं।', statusPrefix:'स्थिति: ', waitingConfirmation:'पुष्टि का इंतज़ार हो रहा है...' },
+  };
+
+  function sl(key){
+    const lang = (localStorage.getItem('zo_voice_lang') || 'en-US').split('-')[0];
+    return (subTranslations[lang] || subTranslations.en)[key];
+  }
+
+  function applySubLanguage(){
+    document.documentElement.dir = (localStorage.getItem('zo_voice_lang')||'en-US').startsWith('ar') ? 'rtl' : 'ltr';
+    document.getElementById('subEyebrow').textContent = sl('subscription');
+    document.getElementById('upgradeTitle').textContent = sl('upgradeTitle');
+    document.getElementById('emailLabel').textContent = sl('yourEmail');
+    document.getElementById('emailHint').textContent = sl('emailHint');
+    document.getElementById('methodLabel').textContent = sl('choosePayment');
+    document.getElementById('payBtn').textContent = sl('payNow');
+    document.getElementById('sendToLabel').textContent = sl('sendToAddress');
+    document.getElementById('amountLabel2').textContent = sl('amount');
+    document.getElementById('copyBtn').textContent = sl('copyAddress');
+    document.getElementById('howItWorksLabel').textContent = sl('howItWorks');
+    document.getElementById('step1Text').textContent = sl('step1');
+    document.getElementById('step2Text').textContent = sl('step2');
+    document.getElementById('step3Text').textContent = sl('step3');
+    document.getElementById('statusNote').textContent = sl('noPayment');
+  }
+  applySubLanguage();
+
   const emailInput = document.getElementById('emailInput');
   const methodsEl = document.getElementById('methods');
   const payBtn = document.getElementById('payBtn');
@@ -154,8 +303,8 @@
     const val = payAddressEl.textContent;
     if (val && val !== '—') {
       navigator.clipboard.writeText(val);
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => copyBtn.textContent = 'Copy Address', 1500);
+      copyBtn.textContent = sl('copied');
+      setTimeout(() => copyBtn.textContent = sl('copyAddress'), 1500);
     }
   });
 
@@ -173,15 +322,15 @@
 
     if (!isValidEmail(email)) {
       emailInput.classList.add('invalid');
-      setStatus('Enter a valid email before paying.', 'error');
+      setStatus(sl('invalidEmail'), 'error');
       emailInput.focus();
       return;
     }
     emailInput.classList.remove('invalid');
 
     payBtn.disabled = true;
-    payBtn.textContent = 'Processing...';
-    setStatus('Creating payment invoice...');
+    payBtn.textContent = sl('processing');
+    setStatus(sl('creatingInvoice'));
 
     try {
       const res = await fetch('/api/create-invoice', {
@@ -197,9 +346,9 @@
       const data = await res.json();
 
       if (data.error) {
-        setStatus('Failed to create invoice: ' + (data.error.message || data.error), 'error');
+        setStatus(sl('failedInvoice') + (data.error.message || data.error), 'error');
         payBtn.disabled = false;
-        payBtn.textContent = 'Pay Now';
+        payBtn.textContent = sl('payNow');
         return;
       }
 
@@ -218,18 +367,18 @@
         payAddressEl.textContent = address;
         payAmountEl.textContent = (amount ? amount + ' ' : '') + selectedCurrency.toUpperCase();
         invoiceBox.classList.add('show');
-        setStatus('Waiting for payment...');
+        setStatus(sl('waitingPayment'));
         startPolling();
       } else {
-        setStatus('Invoice created, but response format not recognized.', 'error');
+        setStatus(sl('formatUnrecognized'), 'error');
       }
 
     } catch (err) {
-      setStatus('Could not reach the server. Please try again.', 'error');
+      setStatus(sl('networkError'), 'error');
     }
 
     payBtn.disabled = false;
-    payBtn.textContent = 'Pay Now';
+    payBtn.textContent = sl('payNow');
   }
 
   function startPolling(){
@@ -246,13 +395,13 @@
       const status = data.payment_status || data.status;
       if (status === 'finished' || status === 'confirmed' || status === 'paid') {
         clearInterval(pollTimer);
-        setStatus('Payment confirmed! Redirecting...', 'success');
+        setStatus(sl('paymentConfirmed'), 'success');
         setTimeout(() => window.location.href = 'success.html', 1200);
       } else if (status === 'failed' || status === 'expired') {
         clearInterval(pollTimer);
-        setStatus('Payment failed or expired. Please create a new invoice.', 'error');
+        setStatus(sl('paymentFailed'), 'error');
       } else {
-        setStatus('Status: ' + (status || 'waiting for confirmation...'));
+        setStatus(sl('statusPrefix') + (status || sl('waitingConfirmation')));
       }
     } catch (err) {
       // silent fail, keep polling
