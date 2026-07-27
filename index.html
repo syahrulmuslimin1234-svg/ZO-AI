@@ -53,28 +53,9 @@
   .step.active{display:block;}
 
   .foot-note{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); text-align:center; margin-top:24px; letter-spacing:0.02em; line-height:1.6;}
-
-  .lang-picker{position:fixed; top:16px; right:16px;}
-  .lang-picker select{appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:100px; padding:7px 12px; font-size:11.5px; font-family:var(--font-body);}
 </style>
 </head>
 <body>
-
-<div class="lang-picker">
-  <select id="langSelect">
-    <option value="en-US">English</option>
-    <option value="id-ID">Bahasa Indonesia</option>
-    <option value="es-ES">Español</option>
-    <option value="pt-BR">Português</option>
-    <option value="fr-FR">Français</option>
-    <option value="de-DE">Deutsch</option>
-    <option value="ja-JP">日本語</option>
-    <option value="ko-KR">한국어</option>
-    <option value="zh-CN">中文</option>
-    <option value="ar-SA">العربية</option>
-    <option value="hi-IN">हिन्दी</option>
-  </select>
-</div>
 
 <div class="wrap">
   <div class="brand">
@@ -231,14 +212,7 @@
 
   const savedIndexLang = localStorage.getItem('zo_voice_lang') || 'en-US';
   const indexLangCode = savedIndexLang.split('-')[0];
-  const langSelect = document.getElementById('langSelect');
-  langSelect.value = indexTranslations[indexLangCode] ? savedIndexLang : 'en-US';
   applyIndexLanguage(indexTranslations[indexLangCode] ? indexLangCode : 'en');
-
-  langSelect.addEventListener('change', () => {
-    localStorage.setItem('zo_voice_lang', langSelect.value);
-    applyIndexLanguage(langSelect.value.split('-')[0]);
-  });
 
   function il(key){
     const lang = (localStorage.getItem('zo_voice_lang') || 'en-US').split('-')[0];
