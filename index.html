@@ -53,9 +53,28 @@
   .step.active{display:block;}
 
   .foot-note{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); text-align:center; margin-top:24px; letter-spacing:0.02em; line-height:1.6;}
+
+  .lang-picker{position:fixed; top:16px; right:16px;}
+  .lang-picker select{appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:100px; padding:7px 12px; font-size:11.5px; font-family:var(--font-body);}
 </style>
 </head>
 <body>
+
+<div class="lang-picker">
+  <select id="langSelect">
+    <option value="en-US">English</option>
+    <option value="id-ID">Bahasa Indonesia</option>
+    <option value="es-ES">Español</option>
+    <option value="pt-BR">Português</option>
+    <option value="fr-FR">Français</option>
+    <option value="de-DE">Deutsch</option>
+    <option value="ja-JP">日本語</option>
+    <option value="ko-KR">한국어</option>
+    <option value="zh-CN">中文</option>
+    <option value="ar-SA">العربية</option>
+    <option value="hi-IN">हिन्दी</option>
+  </select>
+</div>
 
 <div class="wrap">
   <div class="brand">
@@ -64,20 +83,20 @@
   </div>
 
   <div class="hero">
-    <div class="hero-eyebrow">Always on</div>
-    <h2>Your everyday intelligence, unlocked with just your email</h2>
-    <p>No password, no forms. One code sent to your inbox is all it takes.</p>
+    <div class="hero-eyebrow" id="heroEyebrow">Always on</div>
+    <h2 id="heroTitle">Your everyday intelligence, unlocked with just your email</h2>
+    <p id="heroSub">No password, no forms. One code sent to your inbox is all it takes.</p>
   </div>
 
   <div class="card">
 
     <!-- Step 1: email -->
     <div class="step active" id="stepEmail">
-      <div class="eyebrow">Sign in</div>
-      <h1>Enter your email</h1>
-      <div class="sub">We'll send a 6-digit code to verify it's you. No password needed.</div>
+      <div class="eyebrow" id="signInLabel">Sign in</div>
+      <h1 id="enterEmailTitle">Enter your email</h1>
+      <div class="sub" id="emailSub">We'll send a 6-digit code to verify it's you. No password needed.</div>
 
-      <label class="field-label">Email address</label>
+      <label class="field-label" id="emailFieldLabel">Email address</label>
       <input class="field-input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email">
 
       <button class="primary-btn" id="sendCodeBtn" onclick="sendCode()">Send code</button>
@@ -86,9 +105,9 @@
 
     <!-- Step 2: OTP -->
     <div class="step" id="stepOtp">
-      <div class="eyebrow">Verify</div>
-      <h1>Enter the code</h1>
-      <div class="sub">Sent to <b id="sentToEmail" style="color:var(--text);"></b></div>
+      <div class="eyebrow" id="verifyLabel">Verify</div>
+      <h1 id="enterCodeTitle">Enter the code</h1>
+      <div class="sub"><span id="sentToLabel">Sent to</span> <b id="sentToEmail" style="color:var(--text);"></b></div>
 
       <div class="otp-row">
         <input class="otp-box" maxlength="1" inputmode="numeric" data-i="0">
@@ -100,13 +119,13 @@
       </div>
 
       <button class="primary-btn" id="verifyBtn" onclick="verifyCode()">Verify & continue</button>
-      <button class="ghost-btn" onclick="resendCode()">Didn't get it? <b>Resend code</b></button>
+      <button class="ghost-btn" onclick="resendCode()"><span id="resendPrefix">Didn't get it?</span> <b id="resendLabel">Resend code</b></button>
       <div class="status" id="otpStatus"></div>
     </div>
 
   </div>
 
-  <div class="foot-note">By continuing you agree this device will stay signed in until you log out.</div>
+  <div class="foot-note" id="footNote">By continuing you agree this device will stay signed in until you log out.</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -119,6 +138,112 @@
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let pendingEmail = '';
+
+  // ---- Terjemahan (pakai localStorage key yang SAMA dengan chat.html/landing.html) ----
+  const indexTranslations = {
+    en: { alwaysOn:'Always on', heroTitle:"Your everyday intelligence, unlocked with just your email", heroSub:'No password, no forms. One code sent to your inbox is all it takes.',
+      signIn:'Sign in', enterEmail:'Enter your email', emailSub:"We'll send a 6-digit code to verify it's you. No password needed.", emailLabel:'Email address',
+      sendCode:'Send code', verify:'Verify', enterCode:'Enter the code', sentTo:'Sent to', verifyContinue:'Verify & continue',
+      resendPrefix:"Didn't get it?", resendLabel:'Resend code', footNote:'By continuing you agree this device will stay signed in until you log out.',
+      invalidEmail:'Enter a valid email address.', sendingCode:'Sending code...', fullCode:'Enter the full 6-digit code.',
+      verifying:'Verifying...', verified:'Verified. Redirecting...', resending:'Resending...', codeResent:'Code resent.' },
+    id: { alwaysOn:'Selalu aktif', heroTitle:'Kecerdasan harianmu, terbuka cukup dengan email', heroSub:'Tanpa password, tanpa formulir. Satu kode ke email kamu itu doang yang perlu.',
+      signIn:'Masuk', enterEmail:'Masukkan email kamu', emailSub:'Kami akan kirim kode 6 digit buat verifikasi. Gak perlu password.', emailLabel:'Alamat email',
+      sendCode:'Kirim kode', verify:'Verifikasi', enterCode:'Masukkan kode', sentTo:'Dikirim ke', verifyContinue:'Verifikasi & lanjut',
+      resendPrefix:'Gak dapat kode?', resendLabel:'Kirim ulang', footNote:'Dengan lanjut, kamu setuju perangkat ini tetap login sampai kamu logout.',
+      invalidEmail:'Masukkan alamat email yang valid.', sendingCode:'Mengirim kode...', fullCode:'Masukkan kode 6 digit lengkap.',
+      verifying:'Memverifikasi...', verified:'Terverifikasi. Mengalihkan...', resending:'Mengirim ulang...', codeResent:'Kode terkirim ulang.' },
+    es: { alwaysOn:'Siempre activo', heroTitle:'Tu inteligencia diaria, desbloqueada solo con tu correo', heroSub:'Sin contraseña, sin formularios. Un código a tu correo es todo lo que hace falta.',
+      signIn:'Iniciar sesión', enterEmail:'Ingresa tu correo', emailSub:'Enviaremos un código de 6 dígitos para verificarte. Sin contraseña.', emailLabel:'Correo electrónico',
+      sendCode:'Enviar código', verify:'Verificar', enterCode:'Ingresa el código', sentTo:'Enviado a', verifyContinue:'Verificar y continuar',
+      resendPrefix:'¿No lo recibiste?', resendLabel:'Reenviar código', footNote:'Al continuar aceptas que este dispositivo seguirá conectado hasta que cierres sesión.',
+      invalidEmail:'Ingresa un correo válido.', sendingCode:'Enviando código...', fullCode:'Ingresa el código completo de 6 dígitos.',
+      verifying:'Verificando...', verified:'Verificado. Redirigiendo...', resending:'Reenviando...', codeResent:'Código reenviado.' },
+    pt: { alwaysOn:'Sempre ativo', heroTitle:'Sua inteligência do dia a dia, desbloqueada só com seu e-mail', heroSub:'Sem senha, sem formulários. Um código no seu e-mail é tudo que precisa.',
+      signIn:'Entrar', enterEmail:'Digite seu e-mail', emailSub:'Enviaremos um código de 6 dígitos para verificar. Sem senha.', emailLabel:'Endereço de e-mail',
+      sendCode:'Enviar código', verify:'Verificar', enterCode:'Digite o código', sentTo:'Enviado para', verifyContinue:'Verificar e continuar',
+      resendPrefix:'Não recebeu?', resendLabel:'Reenviar código', footNote:'Ao continuar você concorda que este dispositivo ficará conectado até você sair.',
+      invalidEmail:'Digite um e-mail válido.', sendingCode:'Enviando código...', fullCode:'Digite o código completo de 6 dígitos.',
+      verifying:'Verificando...', verified:'Verificado. Redirecionando...', resending:'Reenviando...', codeResent:'Código reenviado.' },
+    fr: { alwaysOn:'Toujours actif', heroTitle:'Ton intelligence quotidienne, débloquée avec juste ton e-mail', heroSub:"Pas de mot de passe, pas de formulaire. Un code envoyé à ton e-mail, c'est tout.",
+      signIn:'Connexion', enterEmail:'Entre ton e-mail', emailSub:'Nous enverrons un code à 6 chiffres pour te vérifier. Pas de mot de passe.', emailLabel:'Adresse e-mail',
+      sendCode:'Envoyer le code', verify:'Vérifier', enterCode:'Entre le code', sentTo:'Envoyé à', verifyContinue:'Vérifier et continuer',
+      resendPrefix:'Pas reçu ?', resendLabel:'Renvoyer le code', footNote:'En continuant, tu acceptes que cet appareil reste connecté jusqu\'à ta déconnexion.',
+      invalidEmail:'Entre une adresse e-mail valide.', sendingCode:'Envoi du code...', fullCode:'Entre le code complet à 6 chiffres.',
+      verifying:'Vérification...', verified:'Vérifié. Redirection...', resending:'Renvoi en cours...', codeResent:'Code renvoyé.' },
+    de: { alwaysOn:'Immer aktiv', heroTitle:'Deine tägliche Intelligenz, freigeschaltet nur mit deiner E-Mail', heroSub:'Kein Passwort, keine Formulare. Ein Code an deine E-Mail reicht.',
+      signIn:'Anmelden', enterEmail:'Gib deine E-Mail ein', emailSub:'Wir senden einen 6-stelligen Code zur Bestätigung. Kein Passwort nötig.', emailLabel:'E-Mail-Adresse',
+      sendCode:'Code senden', verify:'Bestätigen', enterCode:'Code eingeben', sentTo:'Gesendet an', verifyContinue:'Bestätigen & fortfahren',
+      resendPrefix:'Nicht erhalten?', resendLabel:'Code erneut senden', footNote:'Wenn du fortfährst, bleibt dieses Gerät angemeldet, bis du dich abmeldest.',
+      invalidEmail:'Gib eine gültige E-Mail-Adresse ein.', sendingCode:'Code wird gesendet...', fullCode:'Gib den vollständigen 6-stelligen Code ein.',
+      verifying:'Wird überprüft...', verified:'Bestätigt. Weiterleitung...', resending:'Wird erneut gesendet...', codeResent:'Code erneut gesendet.' },
+    ja: { alwaysOn:'常時稼働', heroTitle:'メールだけで解放される、あなたの日常の知性', heroSub:'パスワード不要、フォーム不要。受信箱に届く1つのコードだけで大丈夫。',
+      signIn:'サインイン', enterEmail:'メールアドレスを入力', emailSub:'本人確認のため6桁のコードを送信します。パスワードは不要です。', emailLabel:'メールアドレス',
+      sendCode:'コードを送信', verify:'確認', enterCode:'コードを入力', sentTo:'送信先', verifyContinue:'確認して続ける',
+      resendPrefix:'届きませんか?', resendLabel:'コードを再送信', footNote:'続行すると、ログアウトするまでこの端末はサインインしたままになります。',
+      invalidEmail:'有効なメールアドレスを入力してください。', sendingCode:'コードを送信中...', fullCode:'6桁のコードをすべて入力してください。',
+      verifying:'確認中...', verified:'確認済み。リダイレクト中...', resending:'再送信中...', codeResent:'コードを再送信しました。' },
+    ko: { alwaysOn:'상시 가동', heroTitle:'이메일만으로 열리는 당신의 일상 지능', heroSub:'비밀번호도, 양식도 필요 없어요. 받은편지함으로 코드 하나면 충분해요.',
+      signIn:'로그인', enterEmail:'이메일을 입력하세요', emailSub:'본인 확인을 위해 6자리 코드를 보내드려요. 비밀번호는 필요 없어요.', emailLabel:'이메일 주소',
+      sendCode:'코드 보내기', verify:'확인', enterCode:'코드를 입력하세요', sentTo:'전송 대상', verifyContinue:'확인 후 계속',
+      resendPrefix:'못 받으셨나요?', resendLabel:'코드 재전송', footNote:'계속하면 로그아웃할 때까지 이 기기가 로그인 상태로 유지되는 것에 동의하는 것입니다.',
+      invalidEmail:'유효한 이메일 주소를 입력하세요.', sendingCode:'코드 전송 중...', fullCode:'6자리 코드를 모두 입력하세요.',
+      verifying:'확인 중...', verified:'확인됨. 이동 중...', resending:'재전송 중...', codeResent:'코드가 재전송되었습니다.' },
+    zh: { alwaysOn:'全天候在线', heroTitle:'只需邮箱,即可解锁你的日常智能', heroSub:'无需密码,无需表单。只需一个发送到邮箱的验证码。',
+      signIn:'登录', enterEmail:'输入你的邮箱', emailSub:'我们会发送6位验证码以确认身份。无需密码。', emailLabel:'邮箱地址',
+      sendCode:'发送验证码', verify:'验证', enterCode:'输入验证码', sentTo:'已发送至', verifyContinue:'验证并继续',
+      resendPrefix:'没收到?', resendLabel:'重新发送', footNote:'继续即表示你同意此设备将保持登录状态,直到你退出登录。',
+      invalidEmail:'请输入有效的邮箱地址。', sendingCode:'正在发送验证码...', fullCode:'请输入完整的6位验证码。',
+      verifying:'正在验证...', verified:'验证成功,正在跳转...', resending:'正在重新发送...', codeResent:'验证码已重新发送。' },
+    ar: { alwaysOn:'يعمل دائماً', heroTitle:'ذكاؤك اليومي، يُفتح فقط ببريدك الإلكتروني', heroSub:'بدون كلمة مرور، بدون نماذج. رمز واحد يُرسل إلى بريدك هو كل ما يلزم.',
+      signIn:'تسجيل الدخول', enterEmail:'أدخل بريدك الإلكتروني', emailSub:'سنرسل رمزاً من 6 أرقام للتحقق من هويتك. بدون كلمة مرور.', emailLabel:'البريد الإلكتروني',
+      sendCode:'إرسال الرمز', verify:'تحقق', enterCode:'أدخل الرمز', sentTo:'أُرسل إلى', verifyContinue:'تحقق واستمر',
+      resendPrefix:'لم تستلمه؟', resendLabel:'إعادة إرسال الرمز', footNote:'بالمتابعة، فإنك توافق على بقاء هذا الجهاز مسجلاً حتى تسجل الخروج.',
+      invalidEmail:'أدخل عنوان بريد إلكتروني صالحاً.', sendingCode:'جارٍ إرسال الرمز...', fullCode:'أدخل الرمز الكامل المكون من 6 أرقام.',
+      verifying:'جارٍ التحقق...', verified:'تم التحقق. جارٍ إعادة التوجيه...', resending:'جارٍ إعادة الإرسال...', codeResent:'تمت إعادة إرسال الرمز.' },
+    hi: { alwaysOn:'हमेशा सक्रिय', heroTitle:'सिर्फ़ आपके ईमेल से अनलॉक होने वाली आपकी रोज़ की बुद्धिमत्ता', heroSub:'कोई पासवर्ड नहीं, कोई फॉर्म नहीं। बस आपके इनबॉक्स में एक कोड काफ़ी है।',
+      signIn:'साइन इन करें', enterEmail:'अपना ईमेल डालें', emailSub:'हम पहचान के लिए 6 अंकों का कोड भेजेंगे। पासवर्ड की ज़रूरत नहीं।', emailLabel:'ईमेल पता',
+      sendCode:'कोड भेजें', verify:'सत्यापित करें', enterCode:'कोड डालें', sentTo:'भेजा गया', verifyContinue:'सत्यापित करें और जारी रखें',
+      resendPrefix:'नहीं मिला?', resendLabel:'कोड दोबारा भेजें', footNote:'जारी रखने पर आप सहमत होते हैं कि यह डिवाइस लॉग आउट होने तक साइन-इन रहेगा।',
+      invalidEmail:'एक मान्य ईमेल पता डालें।', sendingCode:'कोड भेजा जा रहा है...', fullCode:'पूरा 6 अंकों का कोड डालें।',
+      verifying:'सत्यापित किया जा रहा है...', verified:'सत्यापित। रीडायरेक्ट किया जा रहा है...', resending:'दोबारा भेजा जा रहा है...', codeResent:'कोड दोबारा भेज दिया गया।' },
+  };
+
+  function applyIndexLanguage(lang){
+    const d = indexTranslations[lang] || indexTranslations.en;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.getElementById('heroEyebrow').textContent = d.alwaysOn;
+    document.getElementById('heroTitle').textContent = d.heroTitle;
+    document.getElementById('heroSub').textContent = d.heroSub;
+    document.getElementById('signInLabel').textContent = d.signIn;
+    document.getElementById('enterEmailTitle').textContent = d.enterEmail;
+    document.getElementById('emailSub').textContent = d.emailSub;
+    document.getElementById('emailFieldLabel').textContent = d.emailLabel;
+    document.getElementById('sendCodeBtn').textContent = d.sendCode;
+    document.getElementById('verifyLabel').textContent = d.verify;
+    document.getElementById('enterCodeTitle').textContent = d.enterCode;
+    document.getElementById('sentToLabel').textContent = d.sentTo;
+    document.getElementById('verifyBtn').textContent = d.verifyContinue;
+    document.getElementById('resendPrefix').textContent = d.resendPrefix;
+    document.getElementById('resendLabel').textContent = d.resendLabel;
+    document.getElementById('footNote').textContent = d.footNote;
+  }
+
+  const savedIndexLang = localStorage.getItem('zo_voice_lang') || 'en-US';
+  const indexLangCode = savedIndexLang.split('-')[0];
+  const langSelect = document.getElementById('langSelect');
+  langSelect.value = indexTranslations[indexLangCode] ? savedIndexLang : 'en-US';
+  applyIndexLanguage(indexTranslations[indexLangCode] ? indexLangCode : 'en');
+
+  langSelect.addEventListener('change', () => {
+    localStorage.setItem('zo_voice_lang', langSelect.value);
+    applyIndexLanguage(langSelect.value.split('-')[0]);
+  });
+
+  function il(key){
+    const lang = (localStorage.getItem('zo_voice_lang') || 'en-US').split('-')[0];
+    return (indexTranslations[lang] || indexTranslations.en)[key];
+  }
 
   function setStatus(id, msg, type) {
     const el = document.getElementById(id);
@@ -134,12 +259,12 @@
   async function sendCode() {
     const email = document.getElementById('emailInput').value.trim();
     if (!email || !email.includes('@')) {
-      setStatus('emailStatus', 'Enter a valid email address.', 'error');
+      setStatus('emailStatus', il('invalidEmail'), 'error');
       return;
     }
     const btn = document.getElementById('sendCodeBtn');
     btn.disabled = true;
-    setStatus('emailStatus', 'Sending code...', '');
+    setStatus('emailStatus', il('sendingCode'), '');
 
     const { error } = await sb.auth.signInWithOtp({
       email,
@@ -162,21 +287,21 @@
 
   async function resendCode() {
     if (!pendingEmail) return;
-    setStatus('otpStatus', 'Resending...', '');
+    setStatus('otpStatus', il('resending'), '');
     const { error } = await sb.auth.signInWithOtp({ email: pendingEmail, options: { shouldCreateUser: true } });
-    setStatus('otpStatus', error ? error.message : 'Code resent.', error ? 'error' : 'success');
+    setStatus('otpStatus', error ? error.message : il('codeResent'), error ? 'error' : 'success');
   }
 
   async function verifyCode() {
     const boxes = document.querySelectorAll('.otp-box');
     const code = Array.from(boxes).map(b => b.value).join('');
     if (code.length !== 6) {
-      setStatus('otpStatus', 'Enter the full 6-digit code.', 'error');
+      setStatus('otpStatus', il('fullCode'), 'error');
       return;
     }
     const btn = document.getElementById('verifyBtn');
     btn.disabled = true;
-    setStatus('otpStatus', 'Verifying...', '');
+    setStatus('otpStatus', il('verifying'), '');
 
     const { data, error } = await sb.auth.verifyOtp({
       email: pendingEmail,
@@ -191,7 +316,7 @@
       return;
     }
 
-    setStatus('otpStatus', 'Verified. Redirecting...', 'success');
+    setStatus('otpStatus', il('verified'), 'success');
     setTimeout(() => { window.location.href = REDIRECT_AFTER_LOGIN; }, 700);
   }
 
