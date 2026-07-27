@@ -122,23 +122,6 @@
   <div class="settings-panel">
     <div class="settings-title">Settings</div>
 
-    <div class="settings-row">
-      <label>Voice language</label>
-      <select id="voiceLangSelect">
-        <option value="id-ID">Bahasa Indonesia</option>
-        <option value="en-US">English</option>
-        <option value="es-ES">Español</option>
-        <option value="pt-BR">Português</option>
-        <option value="fr-FR">Français</option>
-        <option value="de-DE">Deutsch</option>
-        <option value="ja-JP">日本語</option>
-        <option value="ko-KR">한국어</option>
-        <option value="zh-CN">中文</option>
-        <option value="ar-SA">العربية</option>
-        <option value="hi-IN">हिन्दी</option>
-      </select>
-    </div>
-
     <div class="settings-row settings-toggle-row">
       <div>
         <div>Web search</div>
@@ -213,7 +196,6 @@
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsOverlay = document.getElementById('settingsOverlay');
   const settingsCloseBtn = document.getElementById('settingsCloseBtn');
-  const voiceLangSelect = document.getElementById('voiceLangSelect');
   const webSearchToggle = document.getElementById('webSearchToggle');
   const brandBtn = document.getElementById('brandBtn');
   const profileOverlay = document.getElementById('profileOverlay');
@@ -480,10 +462,164 @@
       networkError: 'Tidak bisa terhubung ke server. Cek koneksi internet kamu, lalu coba lagi.',
       profile: 'Profil', name: 'Nama', email: 'Email', saveProfile: 'Simpan profil',
     },
+    es: {
+      logout: 'Cerrar sesión', settings: 'Ajustes', voiceLanguage: 'Idioma de voz',
+      webSearch: 'Búsqueda web', webSearchDesc: 'Permite que la IA busque en internet información en tiempo real',
+      done: 'Listo', listening: 'Escuchando...', thinking: 'Pensando...', speaking: 'Hablando...',
+      welcome: '¡Hola! Puedo ayudarte a escribir, investigar, planear — lo que sea. Pregúntame algo.',
+      placeholder: 'Escribe a ZO AI...', freeGpt: 'Gratis · GPT', proClaude: 'Pro · Claude',
+      typeFirst: 'Escribe una descripción primero y luego toca este botón para generar una imagen.',
+      generatingImage: 'Generando imagen...', imagesLeft: 'imágenes restantes hoy',
+      questionsLeftFree: 'preguntas gratis restantes hoy', questionsLeftPro: 'preguntas Pro restantes hoy',
+      dailyLimitPaid: (limit) => `Has alcanzado tu límite de ${limit} preguntas de hoy.`,
+      dailyLimitFree: (limit) => `Has alcanzado tu límite gratuito de ${limit} preguntas de hoy. Mejora a Pro para más cuota.`,
+      aiBusy: 'El servicio de IA está ocupado ahora. Inténtalo de nuevo en un momento.',
+      serverError: 'Algo salió mal de nuestro lado. Inténtalo de nuevo en un momento.',
+      genericError: 'Algo salió mal. Inténtalo de nuevo.',
+      networkError: 'No se pudo conectar al servidor. Revisa tu conexión e inténtalo de nuevo.',
+      profile: 'Perfil', name: 'Nombre', email: 'Correo electrónico', saveProfile: 'Guardar perfil',
+    },
+    pt: {
+      logout: 'Sair', settings: 'Configurações', voiceLanguage: 'Idioma de voz',
+      webSearch: 'Pesquisa na web', webSearchDesc: 'Permite que a IA pesquise na internet informações em tempo real',
+      done: 'Concluído', listening: 'Ouvindo...', thinking: 'Pensando...', speaking: 'Falando...',
+      welcome: 'Oi! Posso ajudar com escrita, pesquisa, planejamento — qualquer coisa. Me pergunte algo.',
+      placeholder: 'Mensagem para ZO AI...', freeGpt: 'Grátis · GPT', proClaude: 'Pro · Claude',
+      typeFirst: 'Digite uma descrição primeiro e depois toque neste botão para gerar uma imagem.',
+      generatingImage: 'Gerando imagem...', imagesLeft: 'imagens restantes hoje',
+      questionsLeftFree: 'perguntas grátis restantes hoje', questionsLeftPro: 'perguntas Pro restantes hoje',
+      dailyLimitPaid: (limit) => `Você atingiu seu limite de ${limit} perguntas de hoje.`,
+      dailyLimitFree: (limit) => `Você atingiu seu limite gratuito de ${limit} perguntas hoje. Faça upgrade para Pro para mais cota.`,
+      aiBusy: 'O serviço de IA está ocupado agora. Tente novamente em instantes.',
+      serverError: 'Algo deu errado do nosso lado. Tente novamente em instantes.',
+      genericError: 'Algo deu errado. Tente novamente.',
+      networkError: 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.',
+      profile: 'Perfil', name: 'Nome', email: 'E-mail', saveProfile: 'Salvar perfil',
+    },
+    fr: {
+      logout: 'Déconnexion', settings: 'Paramètres', voiceLanguage: 'Langue vocale',
+      webSearch: 'Recherche web', webSearchDesc: "Permet à l'IA de rechercher des informations en temps réel sur le web",
+      done: 'Terminé', listening: 'Écoute...', thinking: 'Réflexion...', speaking: 'Parle...',
+      welcome: "Salut ! Je peux t'aider à écrire, faire des recherches, planifier — vraiment tout. Demande-moi quelque chose.",
+      placeholder: 'Message à ZO AI...', freeGpt: 'Gratuit · GPT', proClaude: 'Pro · Claude',
+      typeFirst: "Tape d'abord une description, puis appuie sur ce bouton pour générer une image.",
+      generatingImage: "Génération de l'image...", imagesLeft: "images restantes aujourd'hui",
+      questionsLeftFree: "questions gratuites restantes aujourd'hui", questionsLeftPro: "questions Pro restantes aujourd'hui",
+      dailyLimitPaid: (limit) => `Tu as atteint ta limite de ${limit} questions pour aujourd'hui.`,
+      dailyLimitFree: (limit) => `Tu as atteint ta limite gratuite de ${limit} questions aujourd'hui. Passe à Pro pour un quota plus large.`,
+      aiBusy: "Le service IA est occupé en ce moment. Réessaie dans un instant.",
+      serverError: "Un problème est survenu de notre côté. Réessaie dans un instant.",
+      genericError: "Une erreur s'est produite. Réessaie.",
+      networkError: "Impossible de joindre le serveur. Vérifie ta connexion et réessaie.",
+      profile: 'Profil', name: 'Nom', email: 'E-mail', saveProfile: 'Enregistrer le profil',
+    },
+    de: {
+      logout: 'Abmelden', settings: 'Einstellungen', voiceLanguage: 'Sprachsprache',
+      webSearch: 'Websuche', webSearchDesc: 'Erlaubt der KI, im Internet nach aktuellen Infos zu suchen',
+      done: 'Fertig', listening: 'Höre zu...', thinking: 'Denke nach...', speaking: 'Spreche...',
+      welcome: 'Hallo! Ich kann beim Schreiben, Recherchieren, Planen helfen — bei fast allem. Frag mich einfach.',
+      placeholder: 'Nachricht an ZO AI...', freeGpt: 'Kostenlos · GPT', proClaude: 'Pro · Claude',
+      typeFirst: 'Gib zuerst eine Beschreibung ein und tippe dann auf diesen Button, um ein Bild zu erstellen.',
+      generatingImage: 'Bild wird erstellt...', imagesLeft: 'Bilder heute übrig',
+      questionsLeftFree: 'kostenlose Fragen heute übrig', questionsLeftPro: 'Pro-Fragen heute übrig',
+      dailyLimitPaid: (limit) => `Du hast dein Limit von ${limit} Fragen für heute erreicht.`,
+      dailyLimitFree: (limit) => `Du hast dein kostenloses Limit von ${limit} Fragen heute erreicht. Upgrade auf Pro für mehr Kontingent.`,
+      aiBusy: 'Der KI-Dienst ist gerade ausgelastet. Bitte versuch es gleich noch einmal.',
+      serverError: 'Bei uns ist etwas schiefgelaufen. Bitte versuch es in Kürze erneut.',
+      genericError: 'Etwas ist schiefgelaufen. Bitte versuch es erneut.',
+      networkError: 'Server konnte nicht erreicht werden. Prüfe deine Verbindung und versuch es erneut.',
+      profile: 'Profil', name: 'Name', email: 'E-Mail', saveProfile: 'Profil speichern',
+    },
+    ja: {
+      logout: 'ログアウト', settings: '設定', voiceLanguage: '音声の言語',
+      webSearch: 'ウェブ検索', webSearchDesc: 'AIがウェブでリアルタイム情報を検索できるようにします',
+      done: '完了', listening: '聞いています...', thinking: '考えています...', speaking: '話しています...',
+      welcome: 'こんにちは！文章作成、リサーチ、計画など、何でもお手伝いします。何か聞いてみてください。',
+      placeholder: 'ZO AIにメッセージ...', freeGpt: '無料・GPT', proClaude: 'Pro・Claude',
+      typeFirst: 'まず説明を入力してから、このボタンをタップして画像を生成してください。',
+      generatingImage: '画像を生成中...', imagesLeft: '本日の残り画像数',
+      questionsLeftFree: '本日の無料質問の残り回数', questionsLeftPro: '本日のPro質問の残り回数',
+      dailyLimitPaid: (limit) => `本日の${limit}回の質問上限に達しました。`,
+      dailyLimitFree: (limit) => `本日の無料質問上限${limit}回に達しました。Proにアップグレードすると上限が増えます。`,
+      aiBusy: 'AIサービスが混み合っています。しばらくしてからもう一度お試しください。',
+      serverError: 'サーバー側で問題が発生しました。しばらくしてからもう一度お試しください。',
+      genericError: '問題が発生しました。もう一度お試しください。',
+      networkError: 'サーバーに接続できませんでした。接続を確認してもう一度お試しください。',
+      profile: 'プロフィール', name: '名前', email: 'メール', saveProfile: 'プロフィールを保存',
+    },
+    ko: {
+      logout: '로그아웃', settings: '설정', voiceLanguage: '음성 언어',
+      webSearch: '웹 검색', webSearchDesc: 'AI가 웹에서 실시간 정보를 검색하도록 허용합니다',
+      done: '완료', listening: '듣는 중...', thinking: '생각 중...', speaking: '말하는 중...',
+      welcome: '안녕하세요! 글쓰기, 조사, 계획 등 무엇이든 도와드릴 수 있어요. 무엇이든 물어보세요.',
+      placeholder: 'ZO AI에게 메시지...', freeGpt: '무료 · GPT', proClaude: 'Pro · Claude',
+      typeFirst: '먼저 설명을 입력한 다음 이 버튼을 눌러 이미지를 생성하세요.',
+      generatingImage: '이미지 생성 중...', imagesLeft: '오늘 남은 이미지 수',
+      questionsLeftFree: '오늘 남은 무료 질문 수', questionsLeftPro: '오늘 남은 Pro 질문 수',
+      dailyLimitPaid: (limit) => `오늘의 질문 한도 ${limit}개에 도달했습니다.`,
+      dailyLimitFree: (limit) => `오늘의 무료 한도 ${limit}개에 도달했습니다. Pro로 업그레이드하면 더 많은 할당량을 받을 수 있습니다.`,
+      aiBusy: 'AI 서비스가 지금 혼잡합니다. 잠시 후 다시 시도해주세요.',
+      serverError: '서버 쪽에서 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      genericError: '문제가 발생했습니다. 다시 시도해주세요.',
+      networkError: '서버에 연결할 수 없습니다. 연결 상태를 확인하고 다시 시도해주세요.',
+      profile: '프로필', name: '이름', email: '이메일', saveProfile: '프로필 저장',
+    },
+    zh: {
+      logout: '退出登录', settings: '设置', voiceLanguage: '语音语言',
+      webSearch: '网络搜索', webSearchDesc: '允许AI在网络上搜索实时信息',
+      done: '完成', listening: '正在聆听...', thinking: '思考中...', speaking: '正在说话...',
+      welcome: '你好！我可以帮你写作、研究、规划——任何事情都可以。问我点什么吧。',
+      placeholder: '给ZO AI发消息...', freeGpt: '免费 · GPT', proClaude: 'Pro · Claude',
+      typeFirst: '请先输入描述，然后点击此按钮生成图片。',
+      generatingImage: '正在生成图片...', imagesLeft: '今日剩余图片数',
+      questionsLeftFree: '今日剩余免费问题数', questionsLeftPro: '今日剩余Pro问题数',
+      dailyLimitPaid: (limit) => `你已达到今日${limit}个问题的上限。`,
+      dailyLimitFree: (limit) => `你已达到今日${limit}个免费问题的上限。升级到Pro可获得更大额度。`,
+      aiBusy: 'AI服务当前繁忙，请稍后再试。',
+      serverError: '我们这边出了点问题，请稍后再试。',
+      genericError: '出了点问题，请重试。',
+      networkError: '无法连接到服务器，请检查网络连接后重试。',
+      profile: '个人资料', name: '姓名', email: '邮箱', saveProfile: '保存资料',
+    },
+    ar: {
+      logout: 'تسجيل الخروج', settings: 'الإعدادات', voiceLanguage: 'لغة الصوت',
+      webSearch: 'البحث على الويب', webSearchDesc: 'يسمح للذكاء الاصطناعي بالبحث على الويب عن معلومات فورية',
+      done: 'تم', listening: 'يستمع...', thinking: 'يفكر...', speaking: 'يتحدث...',
+      welcome: 'مرحبًا! يمكنني المساعدة في الكتابة والبحث والتخطيط — أي شيء تقريبًا. اسألني عن أي شيء.',
+      placeholder: 'راسل ZO AI...', freeGpt: 'مجاني · GPT', proClaude: 'Pro · Claude',
+      typeFirst: 'اكتب وصفًا أولًا، ثم اضغط على هذا الزر لإنشاء صورة.',
+      generatingImage: 'جارٍ إنشاء الصورة...', imagesLeft: 'الصور المتبقية اليوم',
+      questionsLeftFree: 'الأسئلة المجانية المتبقية اليوم', questionsLeftPro: 'أسئلة Pro المتبقية اليوم',
+      dailyLimitPaid: (limit) => `لقد وصلت إلى حد ${limit} سؤال لهذا اليوم.`,
+      dailyLimitFree: (limit) => `لقد وصلت إلى الحد المجاني ${limit} أسئلة اليوم. قم بالترقية إلى Pro للحصول على حصة أكبر.`,
+      aiBusy: 'خدمة الذكاء الاصطناعي مشغولة الآن. يرجى المحاولة مرة أخرى بعد قليل.',
+      serverError: 'حدث خطأ من جانبنا. يرجى المحاولة مرة أخرى بعد قليل.',
+      genericError: 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
+      networkError: 'تعذر الوصول إلى الخادم. تحقق من اتصالك وحاول مرة أخرى.',
+      profile: 'الملف الشخصي', name: 'الاسم', email: 'البريد الإلكتروني', saveProfile: 'حفظ الملف الشخصي',
+    },
+    hi: {
+      logout: 'लॉग आउट', settings: 'सेटिंग्स', voiceLanguage: 'आवाज़ की भाषा',
+      webSearch: 'वेब खोज', webSearchDesc: 'AI को रीयल-टाइम जानकारी के लिए वेब खोजने की अनुमति दें',
+      done: 'हो गया', listening: 'सुन रहा है...', thinking: 'सोच रहा है...', speaking: 'बोल रहा है...',
+      welcome: 'नमस्ते! मैं लेखन, शोध, योजना — कुछ भी में मदद कर सकता हूँ। मुझसे कुछ भी पूछें।',
+      placeholder: 'ZO AI को संदेश...', freeGpt: 'मुफ़्त · GPT', proClaude: 'Pro · Claude',
+      typeFirst: 'पहले एक विवरण लिखें, फिर छवि बनाने के लिए इस बटन पर टैप करें।',
+      generatingImage: 'छवि बनाई जा रही है...', imagesLeft: 'आज बची हुई छवियाँ',
+      questionsLeftFree: 'आज बचे मुफ़्त प्रश्न', questionsLeftPro: 'आज बचे Pro प्रश्न',
+      dailyLimitPaid: (limit) => `आपने आज की ${limit} प्रश्नों की सीमा पूरी कर ली है।`,
+      dailyLimitFree: (limit) => `आपने आज की मुफ़्त सीमा ${limit} प्रश्न पूरी कर ली है। बड़े कोटे के लिए Pro में अपग्रेड करें।`,
+      aiBusy: 'AI सेवा अभी व्यस्त है। कृपया थोड़ी देर में फिर कोशिश करें।',
+      serverError: 'हमारी तरफ़ से कुछ गड़बड़ हुई। कृपया थोड़ी देर में फिर कोशिश करें।',
+      genericError: 'कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।',
+      networkError: 'सर्वर से जुड़ नहीं सका। अपना कनेक्शन जांचें और फिर कोशिश करें।',
+      profile: 'प्रोफ़ाइल', name: 'नाम', email: 'ईमेल', saveProfile: 'प्रोफ़ाइल सहेजें',
+    },
   };
 
   function currentLang(){
-    return voiceLang.startsWith('id') ? 'id' : 'en';
+    const code = voiceLang.split('-')[0];
+    return translations[code] ? code : 'en';
   }
 
   function t(key){
@@ -491,9 +627,9 @@
   }
 
   function applyUILanguage(){
+    document.documentElement.dir = currentLang() === 'ar' ? 'rtl' : 'ltr';
     logoutBtn.textContent = t('logout');
     document.querySelector('.settings-title').textContent = t('settings');
-    document.querySelector('.settings-row label').textContent = t('voiceLanguage');
     const webSearchLabel = document.querySelectorAll('.settings-toggle-row > div > div');
     if (webSearchLabel[0]) webSearchLabel[0].textContent = t('webSearch');
     if (webSearchLabel[1]) webSearchLabel[1].textContent = t('webSearchDesc');
@@ -520,20 +656,16 @@
     }
   }
 
-  // ---- Settings: bahasa suara & toggle web search, disimpan di localStorage ----
+  // ---- Settings: bahasa (ikut landing page) & toggle web search, disimpan di localStorage ----
   let voiceLang = localStorage.getItem('zo_voice_lang') || 'en-US';
   let webSearchEnabled = localStorage.getItem('zo_web_search') !== 'off';
-  voiceLangSelect.value = voiceLang;
   webSearchToggle.checked = webSearchEnabled;
   applyUILanguage();
 
   settingsBtn.addEventListener('click', () => settingsOverlay.classList.add('show'));
   settingsCloseBtn.addEventListener('click', () => {
-    voiceLang = voiceLangSelect.value;
     webSearchEnabled = webSearchToggle.checked;
-    localStorage.setItem('zo_voice_lang', voiceLang);
     localStorage.setItem('zo_web_search', webSearchEnabled ? 'on' : 'off');
-    applyUILanguage();
     settingsOverlay.classList.remove('show');
   });
   settingsOverlay.addEventListener('click', (e) => {
