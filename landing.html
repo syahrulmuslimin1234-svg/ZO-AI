@@ -83,19 +83,22 @@
     <div class="logo">ZO <span class="red">AI</span></div>
   </a>
   <div style="display:flex; align-items:center; gap:8px;">
-    <select id="langSelect" style="background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:100px; padding:6px 10px; font-size:12px;">
-      <option value="en-US">English</option>
-      <option value="id-ID">Bahasa Indonesia</option>
-      <option value="es-ES">Español</option>
-      <option value="pt-BR">Português</option>
-      <option value="fr-FR">Français</option>
-      <option value="de-DE">Deutsch</option>
-      <option value="ja-JP">日本語</option>
-      <option value="ko-KR">한국어</option>
-      <option value="zh-CN">中文</option>
-      <option value="ar-SA">العربية</option>
-      <option value="hi-IN">हिन्दी</option>
-    </select>
+    <div style="position:relative; display:flex; align-items:center;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute; left:10px; pointer-events:none;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <select id="langSelect" style="appearance:none; -webkit-appearance:none; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:100px; padding:7px 14px 7px 30px; font-size:12px; font-family:var(--font-body);">
+        <option value="en-US">English</option>
+        <option value="id-ID">Bahasa Indonesia</option>
+        <option value="es-ES">Español</option>
+        <option value="pt-BR">Português</option>
+        <option value="fr-FR">Français</option>
+        <option value="de-DE">Deutsch</option>
+        <option value="ja-JP">日本語</option>
+        <option value="ko-KR">한국어</option>
+        <option value="zh-CN">中文</option>
+        <option value="ar-SA">العربية</option>
+        <option value="hi-IN">हिन्दी</option>
+      </select>
+    </div>
     <a href="subscribe.html"><button class="btn-ghost" id="getStartedBtn">Get started</button></a>
   </div>
 </header>
