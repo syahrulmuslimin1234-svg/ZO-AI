@@ -6,6 +6,7 @@
 <title>ZO AI — Subscribe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg:#000000; --surface:#0d0d0d; --line:rgba(255,255,255,0.09);
@@ -34,6 +35,7 @@
   .email-input{width:100%; background:#000; border:1px solid var(--line); border-radius:12px; padding:14px; font-size:14px; color:var(--text); font-family:var(--font-body); text-align:left;}
   .email-input:focus{outline:none; border-color:var(--red);}
   .email-input.invalid{border-color:var(--red);}
+  .email-input:read-only{opacity:0.7; background:#0a0a0a;}
   .email-hint{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); text-align:left; margin-top:6px; line-height:1.5;}
 
   .method-label{font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; text-align:left; margin:20px 0 8px;}
@@ -289,7 +291,27 @@
 
   let selectedCurrency = 'usdttrc20';
   let pollTimer = null;
+  let pollAttempts = 0;
+  const MAX_POLL_ATTEMPTS = 300; // 300 x 6s = 30 menit
   let currentPaymentId = null;
+
+  // ---- Sinkron email sama akun yang lagi login (kalau ada) ----
+  const SUPABASE_URL = 'https://pjrkzujhrngllagxawxv.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  (async () => {
+    try {
+      const { data } = await sb.auth.getSession();
+      const sessionEmail = data?.session?.user?.email;
+      if (sessionEmail) {
+        emailInput.value = sessionEmail;
+        emailInput.readOnly = true;
+      }
+    } catch (e) {
+      // kalau gagal ambil sesi, biarin user isi manual
+    }
+  })();
 
   methodsEl.addEventListener('click', (e) => {
     const btn = e.target.closest('.method');
@@ -314,7 +336,8 @@
   }
 
   function isValidEmail(val) {
-    return val && val.includes('@') && val.includes('.') && val.length > 5;
+    // Regex standar: local-part@domain.tld, nggak bisa "a@.c" atau "a@b"
+    return /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(val || '');
   }
 
   async function createInvoice(){
@@ -383,11 +406,20 @@
 
   function startPolling(){
     if (pollTimer) clearInterval(pollTimer);
+    pollAttempts = 0;
     pollTimer = setInterval(checkPayment, 6000);
   }
 
   async function checkPayment(){
     if (!currentPaymentId) return;
+
+    pollAttempts++;
+    if (pollAttempts > MAX_POLL_ATTEMPTS) {
+      clearInterval(pollTimer);
+      setStatus('Payment window expired. Please create a new invoice.', 'error');
+      return;
+    }
+
     try {
       const res = await fetch('/api/check-payment?payment_id=' + encodeURIComponent(currentPaymentId));
       const data = await res.json();
