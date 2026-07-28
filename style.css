@@ -1,0 +1,22 @@
+/* ZO AI — shared base styles
+   Common reset + color/font variables used across index, landing, chat,
+   subscribe, and wallet pages. Page-specific colors (e.g. a slightly
+   different --surface) are kept as local :root overrides in that page's
+   own <style> block, right after this file is linked — so only the
+   variables that differ need to stay local; everything else lives here.
+*/
+
+:root{
+  --bg:#000000;
+  --surface:#0d0d0d;
+  --line:rgba(255,255,255,0.09);
+  --text:#ffffff;
+  --muted:#96959b;
+  --red:#e3242b;
+  --green:#2ee6a6;
+  --warn:#e9a13c;
+  --font-body:'Inter', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
