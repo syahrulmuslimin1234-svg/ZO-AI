@@ -516,8 +516,21 @@
 
   applyWalletLanguage();
 
-  const ETH_RPC = 'https://cloudflare-eth.com';
-  const SOL_RPC = 'https://api.mainnet-beta.solana.com';
+  // ---- RPC endpoints, dicoba berurutan kalau yang di atas gagal/rate-limited ----
+  // TODO waktu udah rame: ganti index [0] jadi endpoint provider berbayar
+  // (Alchemy/Infura buat ETH_RPC_LIST, Helius buat SOL_RPC_LIST) — paling gampang
+  // tinggal taruh URL-nya (dengan API key) di posisi pertama array ini.
+  const ETH_RPC_LIST = [
+    'https://cloudflare-eth.com',
+    'https://ethereum-rpc.publicnode.com',
+    'https://rpc.ankr.com/eth'
+  ];
+  const SOL_RPC_LIST = [
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-rpc.publicnode.com'
+  ];
+  // Dipakai buat solanaWeb3.Connection() yang cuma nerima satu URL (bukan array).
+  const SOL_RPC = SOL_RPC_LIST[0];
   const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec';
 
   // ---- Swap token maps ----
@@ -616,14 +629,26 @@
     document.getElementById('statusLine').textContent = wl('openInApp');
   }
 
-  async function rpcCall(url, method, params) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
-    });
-    const data = await res.json();
-    return data.result;
+  async function rpcCall(urlOrList, method, params) {
+    const urls = Array.isArray(urlOrList) ? urlOrList : [urlOrList];
+    let lastErr = null;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+        });
+        const data = await res.json();
+        if (data.error) { lastErr = data.error; continue; }
+        return data.result;
+      } catch (err) {
+        lastErr = err;
+        // coba endpoint berikutnya di list
+      }
+    }
+    console.error('All RPC endpoints failed:', lastErr);
+    return null;
   }
 
   async function getPrices() {
@@ -641,12 +666,12 @@
     const usdtPrice = prices.tether?.usd || 1;
 
     // ETH balance
-    const weiHex = await rpcCall(ETH_RPC, 'eth_getBalance', [address, 'latest']);
+    const weiHex = await rpcCall(ETH_RPC_LIST, 'eth_getBalance', [address, 'latest']);
     const ethBal = weiHex ? Number(BigInt(weiHex)) / 1e18 : 0;
 
     // USDT balance (ERC20)
     const data = '0x70a08231' + '000000000000000000000000' + address.slice(2).toLowerCase();
-    const usdtHex = await rpcCall(ETH_RPC, 'eth_call', [{ to: USDT_CONTRACT, data }, 'latest']);
+    const usdtHex = await rpcCall(ETH_RPC_LIST, 'eth_call', [{ to: USDT_CONTRACT, data }, 'latest']);
     const usdtBal = usdtHex ? Number(BigInt(usdtHex)) / 1e6 : 0;
 
     const totalUsd = ethBal * ethPrice + usdtBal * usdtPrice;
@@ -664,7 +689,7 @@
     const prices = await getPrices();
     const solPrice = prices.solana?.usd || 0;
 
-    const lamports = await rpcCall(SOL_RPC, 'getBalance', [address]);
+    const lamports = await rpcCall(SOL_RPC_LIST, 'getBalance', [address]);
     const solBal = lamports ? lamports.value / 1e9 : 0;
     const totalUsd = solBal * solPrice;
 
@@ -1000,7 +1025,7 @@
     const data = '0xdd62ed3e'
       + owner.replace('0x', '').toLowerCase().padStart(64, '0')
       + spender.replace('0x', '').toLowerCase().padStart(64, '0');
-    const result = await rpcCall(ETH_RPC, 'eth_call', [{ to: tokenAddress, data }, 'latest']);
+    const result = await rpcCall(ETH_RPC_LIST, 'eth_call', [{ to: tokenAddress, data }, 'latest']);
     const currentAllowance = result ? BigInt(result) : 0n;
     return currentAllowance < BigInt(requiredAmount);
   }
