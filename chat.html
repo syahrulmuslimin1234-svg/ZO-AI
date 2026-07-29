@@ -73,6 +73,18 @@
   .img-btn:disabled{opacity:0.5;}
   .msg.ai img{max-width:100%; border-radius:14px; margin-top:4px; display:block;}
 
+  .msg-meta{display:flex; align-items:center; gap:10px; margin-top:6px; font-family:var(--font-mono); font-size:10px; opacity:0.65;}
+  .msg.user .msg-meta{justify-content:flex-end; color:#fff;}
+  .msg.ai .msg-meta{color:var(--muted);}
+  .msg-edit-btn{background:none; border:none; color:inherit; font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.04em; cursor:pointer; padding:0;}
+  .msg-edit-btn:active{opacity:0.6;}
+  .msg-edit-box{width:100%; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.35); border-radius:12px; padding:10px; font-size:14.5px; font-family:var(--font-body); color:#fff; resize:none;}
+  .msg-edit-actions{display:flex; gap:8px; margin-top:8px; justify-content:flex-end;}
+  .msg-edit-actions button{font-family:var(--font-mono); font-size:11px; padding:6px 14px; border-radius:100px; border:none; cursor:pointer;}
+  .msg-edit-save{background:#fff; color:#000; font-weight:700;}
+  .msg-edit-save:disabled{opacity:0.5;}
+  .msg-edit-cancel{background:rgba(255,255,255,0.18); color:#fff;}
+
   .live-overlay{position:fixed; inset:0; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:100;}
   .live-overlay.show{display:flex;}
   .live-orb{width:140px; height:140px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff6a6f, var(--red) 70%); box-shadow:0 0 60px rgba(227,36,43,0.5);}
@@ -225,7 +237,12 @@
     }
   }
 
-  function addMessage(text, who){
+  function nowTimeLabel(iso){
+    const d = iso ? new Date(iso) : new Date();
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function addMessage(text, who, entry){
     const div = document.createElement('div');
     div.className = 'msg ' + who;
     if (who === 'ai' || who === 'error') {
@@ -233,13 +250,110 @@
       label.className = 'label';
       label.textContent = who === 'error' ? 'Notice' : 'ZO AI';
       div.appendChild(label);
-      div.appendChild(document.createTextNode(text));
-    } else {
-      div.textContent = text;
     }
+    const textSpan = document.createElement('span');
+    textSpan.className = 'msg-text';
+    textSpan.textContent = text;
+    div.appendChild(textSpan);
+
+    // entry cuma dikasih buat pesan chat beneran (bukan bubble "thinking..." sementara),
+    // jadi timestamp & tombol edit otomatis nggak nongol di bubble loading.
+    if (entry) {
+      div.__entry = entry;
+      const meta = document.createElement('div');
+      meta.className = 'msg-meta';
+      const time = document.createElement('span');
+      time.textContent = nowTimeLabel(entry.time);
+      meta.appendChild(time);
+      if (who === 'user') {
+        const editBtn = document.createElement('button');
+        editBtn.className = 'msg-edit-btn';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', () => startEditMessage(div, entry));
+        meta.appendChild(editBtn);
+      }
+      div.appendChild(meta);
+    }
+
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
     return div;
+  }
+
+  // Ganti bubble pesan user jadi textarea buat diedit
+  function startEditMessage(div, entry){
+    const textSpan = div.querySelector('.msg-text');
+    const metaDiv = div.querySelector('.msg-meta');
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'msg-edit-box';
+    textarea.value = entry.content;
+    textarea.rows = Math.min(8, Math.max(2, Math.ceil(entry.content.length / 30)));
+
+    const actions = document.createElement('div');
+    actions.className = 'msg-edit-actions';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'msg-edit-cancel';
+    cancelBtn.textContent = 'Cancel';
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'msg-edit-save';
+    saveBtn.textContent = 'Save & resend';
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+
+    textSpan.replaceWith(textarea);
+    metaDiv.replaceWith(actions);
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    cancelBtn.addEventListener('click', () => {
+      actions.replaceWith(metaDiv);
+      textarea.replaceWith(textSpan);
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      const newText = textarea.value.trim();
+      if (!newText) return;
+      saveBtn.disabled = true;
+      await applyEditAndResend(entry, newText);
+    });
+  }
+
+  // Edit pesan lama: hapus pesan itu + semua balasan sesudahnya (dari Supabase & DOM),
+  // lalu kirim ulang versi barunya kayak pesan baru.
+  async function applyEditAndResend(entry, newText){
+    const idx = history.indexOf(entry);
+    if (idx === -1) return;
+
+    const idsToDelete = history.slice(idx).map(h => h.id).filter(Boolean);
+    if (idsToDelete.length > 0) {
+      try { await sb.from('chat_messages').delete().in('id', idsToDelete); }
+      catch (e) { console.error('Gagal hapus pesan lama:', e); }
+    }
+    history.splice(idx);
+
+    const startDiv = Array.from(messages.querySelectorAll('.msg')).find(d => d.__entry === entry);
+    if (startDiv) {
+      let el = startDiv;
+      while (el) { const next = el.nextElementSibling; el.remove(); el = next; }
+    }
+
+    const newEntry = { role: 'user', content: newText, id: null, time: new Date().toISOString() };
+    history.push(newEntry);
+    addMessage(newText, 'user', newEntry);
+    saveMessage('user', newText).then(id => { newEntry.id = id; });
+
+    sendBtn.disabled = true;
+    const loadingDiv = addMessage(t('thinking'), 'ai');
+    const result = await sendToAI();
+    loadingDiv.remove();
+
+    if (!result.ok) {
+      addMessage(result.message, 'error');
+    } else {
+      addMessage(result.reply, 'ai', result.entry);
+    }
+    sendBtn.disabled = false;
   }
 
   // Tampilan error yang ramah, gak nampilin pesan mentah dari provider AI
@@ -278,7 +392,7 @@
     try {
       const { data, error } = await sb
         .from('chat_messages')
-        .select('role, content')
+        .select('id, role, content, created_at')
         .order('created_at', { ascending: true })
         .limit(100);
 
@@ -286,20 +400,24 @@
 
       messages.innerHTML = '';
       data.forEach(m => {
-        addMessage(m.content, m.role === 'user' ? 'user' : 'ai');
-        history.push({ role: m.role, content: m.content });
+        const entry = { role: m.role, content: m.content, id: m.id, time: m.created_at };
+        addMessage(m.content, m.role === 'user' ? 'user' : 'ai', entry);
+        history.push(entry);
       });
     } catch (e) {
       console.error('Gagal memuat riwayat chat:', e);
     }
   }
 
-  // Simpan 1 pesan ke Supabase (dipanggil buat pesan user & balasan AI)
+  // Simpan 1 pesan ke Supabase, return id-nya biar bisa dipake buat edit/delete nanti
   async function saveMessage(role, content){
     try {
-      await sb.from('chat_messages').insert({ user_id: userId, role, content });
+      const { data, error } = await sb.from('chat_messages').insert({ user_id: userId, role, content }).select('id').single();
+      if (error) throw error;
+      return data?.id ?? null;
     } catch (e) {
       console.error('Gagal menyimpan pesan:', e);
+      return null;
     }
   }
 
@@ -319,11 +437,12 @@
       if (data.error) {
         return { ok: false, message: friendlyErrorFor(res.status, data) };
       }
-      history.push({ role: 'assistant', content: data.reply });
-      saveMessage('assistant', data.reply);
+      const entry = { role: 'assistant', content: data.reply, id: null, time: new Date().toISOString() };
+      history.push(entry);
+      saveMessage('assistant', data.reply).then(id => { entry.id = id; });
       updateBadge(data.tier);
       updateQuotaBar(data.tier, data.remaining);
-      return { ok: true, reply: data.reply };
+      return { ok: true, reply: data.reply, entry };
     } catch (err) {
       return { ok: false, message: t('networkError') };
     }
@@ -332,9 +451,10 @@
   async function send(){
     const val = input.value.trim();
     if(!val) return;
-    addMessage(val, 'user');
-    history.push({ role: 'user', content: val });
-    saveMessage('user', val);
+    const entry = { role: 'user', content: val, id: null, time: new Date().toISOString() };
+    history.push(entry);
+    addMessage(val, 'user', entry);
+    saveMessage('user', val).then(id => { entry.id = id; });
     input.value = '';
     input.style.height = 'auto';
     sendBtn.disabled = true;
@@ -346,7 +466,7 @@
     if (!result.ok) {
       addMessage(result.message, 'error');
     } else {
-      addMessage(result.reply, 'ai');
+      addMessage(result.reply, 'ai', result.entry);
     }
 
     sendBtn.disabled = false;
