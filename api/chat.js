@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages, webSearchEnabled = true } = req.body;
+    const { messages, webSearchEnabled = true, userMemory = "" } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Invalid message format" });
@@ -143,8 +143,14 @@ export default async function handler(req, res) {
 
     let replyText = "";
 
+    // Gabungin system prompt dasar + memori user (kalau ada), dipake kedua tier
+    const effectiveSystemPrompt =
+      userMemory && userMemory.trim()
+        ? `${SYSTEM_PROMPT}\n\nBerikut catatan/memori tentang user ini yang perlu kamu ingat & pakai kalau relevan:\n${userMemory.trim()}`
+        : SYSTEM_PROMPT;
+
     if (tier === "paid") {
-      replyText = await callClaudeWithTools(messages, webSearchEnabled);
+      replyText = await callClaudeWithTools(messages, webSearchEnabled, effectiveSystemPrompt);
     } else {
       // Gemini pakai format {role, parts:[{text}]}, beda dari format OpenAI
       // {role, content} yang dikirim client -> perlu dikonversi dulu.
@@ -163,7 +169,7 @@ export default async function handler(req, res) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: geminiContents,
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
           generationConfig: { temperature: 0.7 },
         }),
       });
@@ -224,7 +230,7 @@ const MARKET_DATA_TOOL = {
 // Loop tool-use: Claude bisa minta data pasar (client-side tool) sekaligus
 // pakai web_search (server-side tool, dieksekusi otomatis oleh Anthropic).
 // Kita hanya perlu menangani get_market_data secara manual.
-async function callClaudeWithTools(messages, webSearchEnabled) {
+async function callClaudeWithTools(messages, webSearchEnabled, systemPrompt) {
   let workingMessages = [...messages];
   const maxRounds = 3;
   const tools = webSearchEnabled
@@ -242,7 +248,7 @@ async function callClaudeWithTools(messages, webSearchEnabled) {
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt || SYSTEM_PROMPT,
         tools: tools,
         messages: workingMessages,
       }),
