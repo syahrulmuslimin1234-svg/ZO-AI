@@ -174,7 +174,16 @@ export default async function handler(req, res) {
           error: "The AI service is busy or our server quota is exhausted. Please try again in a few minutes.",
         });
       }
-      replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, tidak ada respons.";
+      // Gemini 3.x defaultnya "thinking" -> responsnya bisa punya beberapa part,
+      // sebagian ditandai thought:true (proses mikir internal, bukan jawaban final).
+      // Kita buang part yang thought, gabungin sisanya jadi jawaban beneran.
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      replyText =
+        parts
+          .filter((p) => !p.thought && p.text)
+          .map((p) => p.text)
+          .join("\n")
+          .trim() || "Maaf, tidak ada respons.";
     }
 
     const remaining = limit - new_count;
