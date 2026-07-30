@@ -146,26 +146,35 @@ export default async function handler(req, res) {
     if (tier === "paid") {
       replyText = await callClaudeWithTools(messages, webSearchEnabled);
     } else {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      // Gemini pakai format {role, parts:[{text}]}, beda dari format OpenAI
+      // {role, content} yang dikirim client -> perlu dikonversi dulu.
+      // Gemini juga cuma kenal role "user" & "model" (bukan "assistant").
+      const geminiContents = messages.map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
+
+      const geminiUrl =
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" +
+        process.env.GEMINI_API_KEY;
+
+      const response = await fetch(geminiUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gpt-4.1-nano",
-          max_tokens: 1024,
-          messages,
+          contents: geminiContents,
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          generationConfig: { temperature: 0.7 },
         }),
       });
       const data = await response.json();
       if (data.error) {
-        console.error("OpenAI error:", data.error.message);
+        console.error("Gemini error:", data.error.message);
         return res.status(503).json({
           error: "The AI service is busy or our server quota is exhausted. Please try again in a few minutes.",
         });
       }
-      replyText = data.choices?.[0]?.message?.content || "Maaf, tidak ada respons.";
+      replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, tidak ada respons.";
     }
 
     const remaining = limit - new_count;
