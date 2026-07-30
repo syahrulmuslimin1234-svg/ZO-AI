@@ -1,3 +1,39 @@
+// ---- Helper Upstash Redis (REST API, tanpa perlu install package apapun) ----
+// Kalau env var belum keset atau Upstash lagi down, fungsi ini balikin null/gagal
+// dengan aman -> fitur chat tetap jalan normal, cuma nggak dapet manfaat cache.
+async function redisGet(key) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(["GET", key]),
+    });
+    const data = await res.json();
+    return data?.result ?? null;
+  } catch (e) {
+    console.error("Redis GET failed:", e);
+    return null;
+  }
+}
+
+async function redisSet(key, value, ttlSeconds) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(["SET", key, value, "EX", String(ttlSeconds)]),
+    });
+  } catch (e) {
+    console.error("Redis SET failed:", e);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -243,6 +279,12 @@ async function getMarketData(symbol, assetType) {
 
   const ticker = assetType === "crypto" ? `X:${symbol.toUpperCase()}USD` : symbol.toUpperCase();
 
+  // Cek cache dulu -- kalau ada user lain baru aja nanya simbol yang sama
+  // dalam 2 menit terakhir, langsung pake hasil itu, nggak usah hit Polygon lagi.
+  const cacheKey = `market:${assetType}:${symbol.toUpperCase()}`;
+  const cached = await redisGet(cacheKey);
+  if (cached) return cached;
+
   // Harga terakhir (previous close aggregate — cocok untuk free tier Polygon)
   let priceSummary = "Harga tidak tersedia.";
   try {
@@ -282,5 +324,11 @@ async function getMarketData(symbol, assetType) {
     console.error("Polygon news error:", e);
   }
 
-  return `SYMBOL: ${symbol.toUpperCase()} (${assetType})\n\nHARGA:\n${priceSummary}\n\nBERITA & SENTIMENT TERBARU:\n${newsSummary}`;
+  const result = `SYMBOL: ${symbol.toUpperCase()} (${assetType})\n\nHARGA:\n${priceSummary}\n\nBERITA & SENTIMENT TERBARU:\n${newsSummary}`;
+
+  // Simpen ke cache 2 menit -- cukup singkat biar harga tetep relevan,
+  // tapi cukup buat nampung lonjakan banyak user nanya simbol populer bareng2.
+  await redisSet(cacheKey, result, 120);
+
+  return result;
 }
