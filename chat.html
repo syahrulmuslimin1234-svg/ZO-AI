@@ -26,6 +26,14 @@
   .header-right{display:flex; align-items:center; gap:8px;}
   .logout-btn{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:100px; padding:5px 10px;}
   .settings-btn{background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center;}
+  .new-chat-btn{background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center;}
+  .new-chat-btn.pulse{color:var(--red); border-color:var(--red); animation:pulseGlow 1.4s ease-in-out infinite;}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(227,36,43,0.35);} 50%{box-shadow:0 0 0 6px rgba(227,36,43,0);}}
+  .memory-item{display:flex; align-items:center; justify-content:space-between; gap:8px; background:#000; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:13px;}
+  .memory-item span{flex:1; word-break:break-word;}
+  .memory-del-btn{background:none; border:none; color:var(--muted); font-size:18px; line-height:1; cursor:pointer; padding:0 4px;}
+  .memory-del-btn:active{color:var(--red);}
+  .memory-add-btn{background:var(--text); color:#000; border:none; border-radius:10px; padding:0 16px; font-weight:700; font-size:14px; cursor:pointer;}
 
   .settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:flex-end; justify-content:center; z-index:110;}
   .settings-overlay.show{display:flex;}
@@ -111,6 +119,10 @@
   let userEmail = '';
   let userId = '';
   let accessToken = '';
+  let currentConversationId = null;
+  let memoryItems = [];
+  let userMemoryText = '';
+  const MAX_MESSAGES_PER_CONVERSATION = 40;
 </script>
 
 <header>
@@ -120,6 +132,9 @@
   </button>
   <div class="header-right">
     <div class="tier-badge" id="tierBadge">Free · GPT</div>
+    <button class="new-chat-btn" id="newChatBtn" title="Obrolan Baru">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
     <button class="settings-btn" id="settingsBtn" title="Settings">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
@@ -140,6 +155,18 @@
         <input type="checkbox" id="webSearchToggle" checked>
         <span class="switch-track"></span>
       </label>
+    </div>
+
+    <div class="settings-row" style="align-items:stretch;">
+      <div>
+        <div>Memori</div>
+        <div class="settings-desc">Catatan tentang kamu yang selalu diingat AI di obrolan manapun (misal: preferensi, konteks trading kamu)</div>
+      </div>
+      <div id="memoryList"></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="memoryInput" placeholder="misal: saya suka analisis teknikal" style="flex:1; background:#000; color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13.5px;">
+        <button id="memoryAddBtn" class="memory-add-btn">+</button>
+      </div>
     </div>
 
     <button class="settings-close-btn" id="settingsCloseBtn">Done</button>
@@ -203,6 +230,10 @@
   const micBtn = document.getElementById('micBtn');
   const imgBtn = document.getElementById('imgBtn');
   const settingsBtn = document.getElementById('settingsBtn');
+  const newChatBtn = document.getElementById('newChatBtn');
+  const memoryList = document.getElementById('memoryList');
+  const memoryInput = document.getElementById('memoryInput');
+  const memoryAddBtn = document.getElementById('memoryAddBtn');
   const settingsOverlay = document.getElementById('settingsOverlay');
   const settingsCloseBtn = document.getElementById('settingsCloseBtn');
   const webSearchToggle = document.getElementById('webSearchToggle');
@@ -356,6 +387,7 @@
       addMessage(result.reply, 'ai', result.entry);
     }
     sendBtn.disabled = false;
+    checkConversationLimit();
   }
 
   // Tampilan error yang ramah, gak nampilin pesan mentah dari provider AI
@@ -391,10 +423,12 @@
 
   // Muat riwayat chat sebelumnya dari Supabase (RLS: cuma punya user sendiri)
   async function loadHistory(){
+    if (!currentConversationId) return;
     try {
       const { data, error } = await sb
         .from('chat_messages')
         .select('id, role, content, created_at')
+        .eq('conversation_id', currentConversationId)
         .order('created_at', { ascending: true })
         .limit(100);
 
@@ -406,16 +440,181 @@
         addMessage(m.content, m.role === 'user' ? 'user' : 'ai', entry);
         history.push(entry);
       });
+
+      checkConversationLimit();
     } catch (e) {
       console.error('Gagal memuat riwayat chat:', e);
     }
   }
 
+  // Cari conversation terbaru user, atau bikin baru kalau belum ada sama sekali
+  async function initConversation(){
+    try {
+      const { data, error } = await sb
+        .from('conversations')
+        .select('id')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        currentConversationId = data[0].id;
+      } else {
+        const { data: newConv, error: insertErr } = await sb
+          .from('conversations')
+          .insert({ user_id: userId, title: 'New chat' })
+          .select('id')
+          .single();
+        if (insertErr) throw insertErr;
+        currentConversationId = newConv.id;
+      }
+    } catch (e) {
+      console.error('Gagal init conversation:', e);
+    }
+  }
+
+  // Tombol "Obrolan Baru": bikin conversation baru, kosongin layar & history
+  async function startNewConversation(){
+    try {
+      const { data, error } = await sb
+        .from('conversations')
+        .insert({ user_id: userId, title: 'New chat' })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      currentConversationId = data.id;
+      history = [];
+      messages.innerHTML = '';
+      input.disabled = false;
+      sendBtn.disabled = false;
+      newChatBtn.classList.remove('pulse');
+      input.focus();
+    } catch (e) {
+      console.error('Gagal bikin obrolan baru:', e);
+    }
+  }
+
+  // Kalau obrolan udah kepanjangan, kunci input & ajak mulai obrolan baru
+  // (mirip UX Claude yang minta "start new chat" kalau context udah penuh)
+  function checkConversationLimit(){
+    if (history.length >= MAX_MESSAGES_PER_CONVERSATION) {
+      input.disabled = true;
+      sendBtn.disabled = true;
+      newChatBtn.classList.add('pulse');
+      addMessage(
+        `Obrolan ini udah mencapai batas ${MAX_MESSAGES_PER_CONVERSATION} pesan biar tetap rapi & AI-nya fokus. Yuk mulai obrolan baru lewat tombol "+" di atas.`,
+        'error'
+      );
+      return true;
+    }
+    return false;
+  }
+
+  // ---- Pengaturan Memori: catatan tentang user yang persisten lintas obrolan ----
+  async function loadMemory(){
+    try {
+      const { data, error } = await sb
+        .from('user_memory')
+        .select('id, content')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+
+      memoryItems = data || [];
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) {
+      console.error('Gagal memuat memori:', e);
+    }
+  }
+
+  async function addMemoryItem(text){
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    try {
+      const { data, error } = await sb
+        .from('user_memory')
+        .insert({ user_id: userId, content: trimmed })
+        .select('id, content')
+        .single();
+      if (error) throw error;
+
+      memoryItems.push(data);
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) {
+      console.error('Gagal simpan memori:', e);
+    }
+  }
+
+  async function deleteMemoryItem(id){
+    try {
+      await sb.from('user_memory').delete().eq('id', id);
+      memoryItems = memoryItems.filter(m => m.id !== id);
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) {
+      console.error('Gagal hapus memori:', e);
+    }
+  }
+
+  function renderMemoryList(){
+    memoryList.innerHTML = '';
+    if (memoryItems.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'settings-desc';
+      empty.textContent = 'Belum ada memori tersimpan.';
+      memoryList.appendChild(empty);
+      return;
+    }
+    memoryItems.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'memory-item';
+      const span = document.createElement('span');
+      span.textContent = item.content;
+      const delBtn = document.createElement('button');
+      delBtn.className = 'memory-del-btn';
+      delBtn.textContent = '×';
+      delBtn.addEventListener('click', () => deleteMemoryItem(item.id));
+      row.appendChild(span);
+      row.appendChild(delBtn);
+      memoryList.appendChild(row);
+    });
+  }
+
+  newChatBtn.addEventListener('click', startNewConversation);
+  memoryAddBtn.addEventListener('click', () => {
+    addMemoryItem(memoryInput.value);
+    memoryInput.value = '';
+  });
+  memoryInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addMemoryItem(memoryInput.value);
+      memoryInput.value = '';
+    }
+  });
+
   // Simpan 1 pesan ke Supabase, return id-nya biar bisa dipake buat edit/delete nanti
   async function saveMessage(role, content){
     try {
-      const { data, error } = await sb.from('chat_messages').insert({ user_id: userId, role, content }).select('id').single();
+      const { data, error } = await sb
+        .from('chat_messages')
+        .insert({ user_id: userId, role, content, conversation_id: currentConversationId })
+        .select('id')
+        .single();
       if (error) throw error;
+
+      // Pesan pertama di obrolan ini -> pake sebagai judul otomatis
+      if (role === 'user' && history.length <= 1) {
+        sb.from('conversations')
+          .update({ title: content.slice(0, 40) })
+          .eq('id', currentConversationId)
+          .then(() => {});
+      }
+
       return data?.id ?? null;
     } catch (e) {
       console.error('Gagal menyimpan pesan:', e);
@@ -432,7 +631,7 @@
           'Content-Type': 'application/json',
           ...(accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {})
         },
-        body: JSON.stringify({ messages: history, webSearchEnabled })
+        body: JSON.stringify({ messages: history, webSearchEnabled, userMemory: userMemoryText })
       });
       const data = await res.json();
 
@@ -472,6 +671,7 @@
     }
 
     sendBtn.disabled = false;
+    checkConversationLimit();
   }
 
   sendBtn.addEventListener('click', send);
@@ -988,7 +1188,9 @@
     userId = session.user.id;
     accessToken = session.access_token;
 
+    await initConversation();
     await loadHistory();
+    await loadMemory();
     await checkStatus();
     await loadProfile();
   })();
