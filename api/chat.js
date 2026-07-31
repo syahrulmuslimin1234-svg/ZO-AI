@@ -152,44 +152,14 @@ export default async function handler(req, res) {
     if (tier === "paid") {
       replyText = await callClaudeWithTools(messages, webSearchEnabled, effectiveSystemPrompt);
     } else {
-      // Gemini pakai format {role, parts:[{text}]}, beda dari format OpenAI
-      // {role, content} yang dikirim client -> perlu dikonversi dulu.
-      // Gemini juga cuma kenal role "user" & "model" (bukan "assistant").
-      const geminiContents = messages.map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      }));
-
-      const geminiUrl =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" +
-        process.env.GEMINI_API_KEY;
-
-      const response = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: geminiContents,
-          systemInstruction: { parts: [{ text: effectiveSystemPrompt }] },
-          generationConfig: { temperature: 0.7 },
-        }),
-      });
-      const data = await response.json();
-      if (data.error) {
-        console.error("Gemini error:", data.error.message);
+      try {
+        replyText = await callGeminiWithTools(messages, effectiveSystemPrompt);
+      } catch (e) {
+        console.error("Gemini error:", e.message);
         return res.status(503).json({
           error: "The AI service is busy or our server quota is exhausted. Please try again in a few minutes.",
         });
       }
-      // Gemini 3.x defaultnya "thinking" -> responsnya bisa punya beberapa part,
-      // sebagian ditandai thought:true (proses mikir internal, bukan jawaban final).
-      // Kita buang part yang thought, gabungin sisanya jadi jawaban beneran.
-      const parts = data.candidates?.[0]?.content?.parts || [];
-      replyText =
-        parts
-          .filter((p) => !p.thought && p.text)
-          .map((p) => p.text)
-          .join("\n")
-          .trim() || "Maaf, tidak ada respons.";
     }
 
     const remaining = limit - new_count;
@@ -226,6 +196,92 @@ const MARKET_DATA_TOOL = {
     required: ["symbol", "asset_type"],
   },
 };
+
+// Sama kayak MARKET_DATA_TOOL, cuma formatnya disesuaikan sama function-calling
+// Gemini (parameters bukan input_schema, type pake huruf besar OBJECT/STRING).
+const GEMINI_MARKET_TOOL = {
+  name: "get_market_data",
+  description:
+    "Ambil harga terkini (atau harga penutupan terakhir) dan berita terbaru beserta sentiment analysis (positif/negatif/netral) untuk sebuah aset crypto atau saham dari Polygon/Massive API.",
+  parameters: {
+    type: "OBJECT",
+    properties: {
+      symbol: {
+        type: "STRING",
+        description:
+          "Simbol aset. Untuk crypto pakai kode dasar seperti 'BTC', 'ETH', 'SOL'. Untuk saham pakai ticker seperti 'AAPL', 'TSLA'.",
+      },
+      asset_type: {
+        type: "STRING",
+        enum: ["crypto", "stocks"],
+        description: "Jenis aset: 'crypto' atau 'stocks'.",
+      },
+    },
+    required: ["symbol", "asset_type"],
+  },
+};
+
+// Loop function-calling buat Gemini: mirip callClaudeWithTools, tapi format
+// request/response beda (functionCall/functionResponse, bukan tool_use/tool_result).
+async function callGeminiWithTools(messages, systemPrompt) {
+  let contents = messages.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+
+  const geminiUrl =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" +
+    process.env.GEMINI_API_KEY;
+
+  const maxRounds = 3;
+  for (let round = 0; round < maxRounds; round++) {
+    const response = await fetch(geminiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        tools: [{ functionDeclarations: [GEMINI_MARKET_TOOL] }],
+        generationConfig: { temperature: 0.7 },
+      }),
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message || "Gemini error");
+
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const functionCallPart = parts.find((p) => p.functionCall);
+
+    if (!functionCallPart) {
+      // Nggak minta tool -> ini jawaban final. Skip part "thought" (proses mikir internal).
+      return (
+        parts
+          .filter((p) => !p.thought && p.text)
+          .map((p) => p.text)
+          .join("\n")
+          .trim() || "Maaf, tidak ada respons."
+      );
+    }
+
+    // Model minta data pasar -> jalanin beneran, kirim balik hasilnya ke Gemini
+    const { name, args } = functionCallPart.functionCall;
+    let toolResultText = "Tool tidak dikenali.";
+    if (name === "get_market_data") {
+      try {
+        toolResultText = await getMarketData(args.symbol, args.asset_type);
+      } catch (e) {
+        toolResultText = `Gagal mengambil data pasar: ${e.message}`;
+      }
+    }
+
+    contents.push({ role: "model", parts });
+    contents.push({
+      role: "user",
+      parts: [{ functionResponse: { name, response: { result: toolResultText } } }],
+    });
+  }
+
+  return "Maaf, terlalu banyak langkah pengambilan data. Coba pertanyaan yang lebih spesifik.";
+}
 
 // Loop tool-use: Claude bisa minta data pasar (client-side tool) sekaligus
 // pakai web_search (server-side tool, dieksekusi otomatis oleh Anthropic).
