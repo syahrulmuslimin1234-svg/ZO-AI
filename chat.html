@@ -34,6 +34,19 @@
   .memory-del-btn{background:none; border:none; color:var(--muted); font-size:18px; line-height:1; cursor:pointer; padding:0 4px;}
   .memory-del-btn:active{color:var(--red);}
   .memory-add-btn{background:var(--text); color:#000; border:none; border-radius:10px; padding:0 16px; font-weight:700; font-size:14px; cursor:pointer;}
+  .conversation-list{display:flex; flex-direction:column; gap:6px; max-height:50vh; overflow-y:auto;}
+  .conversation-item{display:flex; align-items:center; justify-content:space-between; gap:10px; background:#000; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.5px; color:var(--text); text-align:left; width:100%; cursor:pointer;}
+  .conversation-item.active{border-color:var(--red);}
+  .conversation-title{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .conversation-time{font-family:var(--font-mono); font-size:10.5px; color:var(--muted); flex-shrink:0;}
+  .new-conv-row{display:flex; align-items:center; gap:8px; background:transparent; border:1px dashed var(--line); border-radius:12px; padding:12px 14px; font-size:13.5px; color:var(--red); font-weight:700; width:100%; cursor:pointer;}
+  .conv-item{display:flex; align-items:center; justify-content:space-between; gap:8px; background:#000; border:1px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer;}
+  .conv-item.active{border-color:var(--red);}
+  .conv-item-info{flex:1; min-width:0;}
+  .conv-item-title{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .conv-item-time{font-size:11px; color:var(--muted); font-family:var(--font-mono); margin-top:2px;}
+  .conv-del-btn{background:none; border:none; color:var(--muted); font-size:18px; line-height:1; cursor:pointer; padding:4px 6px; flex-shrink:0;}
+  .conv-del-btn:active{color:var(--red);}
 
   .settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:flex-end; justify-content:center; z-index:110;}
   .settings-overlay.show{display:flex;}
@@ -132,6 +145,9 @@
   </button>
   <div class="header-right">
     <div class="tier-badge" id="tierBadge">Free · GPT</div>
+    <button class="new-chat-btn" id="historyBtn" title="Riwayat Obrolan">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+    </button>
     <button class="new-chat-btn" id="newChatBtn" title="Obrolan Baru">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
@@ -193,6 +209,14 @@
   </div>
 </div>
 
+<div class="settings-overlay" id="historyOverlay">
+  <div class="settings-panel">
+    <div class="settings-title">Riwayat Obrolan</div>
+    <div id="historyList" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto;"></div>
+    <button class="settings-close-btn" id="historyCloseBtn">Tutup</button>
+  </div>
+</div>
+
 <div class="live-overlay" id="liveOverlay">
   <button class="live-close" id="liveCloseBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   <div class="live-orb" id="liveOrb"></div>
@@ -231,6 +255,10 @@
   const imgBtn = document.getElementById('imgBtn');
   const settingsBtn = document.getElementById('settingsBtn');
   const newChatBtn = document.getElementById('newChatBtn');
+  const historyBtn = document.getElementById('historyBtn');
+  const historyOverlay = document.getElementById('historyOverlay');
+  const historyList = document.getElementById('historyList');
+  const historyCloseBtn = document.getElementById('historyCloseBtn');
   const memoryList = document.getElementById('memoryList');
   const memoryInput = document.getElementById('memoryInput');
   const memoryAddBtn = document.getElementById('memoryAddBtn');
@@ -495,6 +523,74 @@
       console.error('Gagal bikin obrolan baru:', e);
     }
   }
+
+  // Tampilin daftar semua obrolan user, terbaru di atas, obrolan aktif ditandain
+  async function renderConversationList(){
+    historyList.innerHTML = '<div class="settings-desc">Memuat...</div>';
+    try {
+      const { data, error } = await sb
+        .from('conversations')
+        .select('id, title, updated_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+
+      historyList.innerHTML = '';
+
+      const newRow = document.createElement('button');
+      newRow.className = 'new-conv-row';
+      newRow.textContent = '+ Obrolan Baru';
+      newRow.addEventListener('click', async () => {
+        await startNewConversation();
+        historyOverlay.classList.remove('show');
+      });
+      historyList.appendChild(newRow);
+
+      if (!data || data.length === 0) return;
+
+      data.forEach((conv) => {
+        const row = document.createElement('button');
+        row.className = 'conversation-item' + (conv.id === currentConversationId ? ' active' : '');
+        const title = document.createElement('span');
+        title.className = 'conversation-title';
+        title.textContent = conv.title || 'New chat';
+        const time = document.createElement('span');
+        time.className = 'conversation-time';
+        time.textContent = new Date(conv.updated_at).toLocaleDateString([], { day: '2-digit', month: 'short' });
+        row.appendChild(title);
+        row.appendChild(time);
+        row.addEventListener('click', () => switchConversation(conv.id));
+        historyList.appendChild(row);
+      });
+    } catch (e) {
+      console.error('Gagal memuat daftar obrolan:', e);
+      historyList.innerHTML = '<div class="settings-desc">Gagal memuat daftar obrolan.</div>';
+    }
+  }
+
+  // Pindah ke obrolan lain yang udah ada (dari daftar riwayat)
+  async function switchConversation(convId){
+    historyOverlay.classList.remove('show');
+    if (convId === currentConversationId) return;
+
+    currentConversationId = convId;
+    history = [];
+    messages.innerHTML = '';
+    input.disabled = false;
+    sendBtn.disabled = false;
+    newChatBtn.classList.remove('pulse');
+    await loadHistory();
+  }
+
+  historyBtn.addEventListener('click', () => {
+    historyOverlay.classList.add('show');
+    renderConversationList();
+  });
+  historyCloseBtn.addEventListener('click', () => historyOverlay.classList.remove('show'));
+  historyOverlay.addEventListener('click', (e) => {
+    if (e.target === historyOverlay) historyOverlay.classList.remove('show');
+  });
 
   // Kalau obrolan udah kepanjangan, kunci input & ajak mulai obrolan baru
   // (mirip UX Claude yang minta "start new chat" kalau context udah penuh)
