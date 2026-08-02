@@ -10,7 +10,8 @@
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <style>
-  :root{ --ink:#141414; --muted:#8a8a8a; --line:#ececec; --red:#e3242b; --bg-dark:#161616; --bg:#faf9f7; }
+  :root{ --ink:#141414; --muted:#8a8a8a; --line:#ececec; --red:#e3242b; --bg-dark:#161616; --bg:#faf9f7; --surface:#ffffff; --surface2:#f2f2f2; --field-bg:#f5f5f5; --dark-card:#141414; }
+  [data-theme="dark"]{ --ink:#f0f0f0; --muted:#9a9a9a; --line:#2a2a2a; --bg:#0f0f0f; --surface:#1c1c1c; --surface2:#262626; --field-bg:#262626; }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{font-family:'Inter',sans-serif; height:100vh; overflow:hidden; -webkit-tap-highlight-color:transparent;}
   button{font-family:inherit;}
@@ -45,7 +46,7 @@
   #codeStep{display:none;}
 
   /* ===== APP SHELL ===== */
-  #appScreen{display:none; height:100vh; flex-direction:column; background:#fff; color:var(--ink);}
+  #appScreen{display:none; height:100vh; flex-direction:column; background:var(--surface); color:var(--ink);}
   #appScreen.show{display:flex;}
 
   header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); flex-shrink:0;}
@@ -57,8 +58,8 @@
   .h-right button{background:none; border:none; color:var(--ink); display:flex; cursor:pointer;}
 
   .mode-bar{display:flex; gap:5px; padding:10px 14px; border-bottom:1px solid var(--line); flex-shrink:0;}
-  .mode-opt{flex:1; text-align:center; padding:8px 4px; border-radius:14px; font-size:10.5px; font-weight:700; cursor:pointer; border:1px solid var(--line); color:var(--muted); background:#fff;}
-  .mode-opt.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .mode-opt{flex:1; text-align:center; padding:8px 4px; border-radius:14px; font-size:10.5px; font-weight:700; cursor:pointer; border:1px solid var(--line); color:var(--muted); background:var(--surface);}
+  .mode-opt.active{background:var(--dark-card); color:#fff; border-color:var(--dark-card);}
   .mode-opt .tag{display:block; font-size:9.5px; font-weight:500; margin-top:1px;}
   .mode-opt.active .tag{color:#bbb;}
 
@@ -68,15 +69,15 @@
   .messages{flex:1; padding:18px; display:flex; flex-direction:column; gap:16px;}
   .msg-ai{font-size:14.5px; line-height:1.55; max-width:92%; white-space:pre-wrap;}
   .msg-ai .label{font-size:10.5px; color:var(--red); font-weight:700; margin-bottom:4px; font-family:monospace; text-transform:uppercase;}
-  .msg-me{align-self:flex-end; background:#f2f2f2; padding:11px 15px; border-radius:16px; border-bottom-right-radius:4px; font-size:14.5px; max-width:78%; white-space:pre-wrap;}
+  .msg-me{align-self:flex-end; background:var(--surface2); padding:11px 15px; border-radius:16px; border-bottom-right-radius:4px; font-size:14.5px; max-width:78%; white-space:pre-wrap;}
   .msg-time{font-family:monospace; font-size:10px; color:var(--muted); margin-top:4px;}
   .msg-note{font-size:12.5px; color:var(--muted); text-align:center; padding:8px 0;}
 
   .inputbar{border-top:1px solid var(--line); padding:12px 14px; display:flex; align-items:center; gap:9px; flex-shrink:0;}
-  .plus{width:32px; height:32px; border-radius:100px; background:#f2f2f2; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  .plus{width:32px; height:32px; border-radius:100px; background:var(--surface2); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
   #micBtn.listening{background:var(--red);}
   #micBtn.listening svg{stroke:#fff;}
-  .field{flex:1; background:#f5f5f5; border-radius:100px; padding:10px 15px; color:var(--ink); font-size:13.5px; border:none; outline:none;}
+  .field{flex:1; background:var(--field-bg); border-radius:100px; padding:10px 15px; color:var(--ink); font-size:13.5px; border:none; outline:none;}
   .field:disabled{color:var(--muted);}
   .send{width:32px; height:32px; border-radius:100px; background:var(--red); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
   .send:disabled{opacity:0.4;}
@@ -85,7 +86,7 @@
 
   /* ---- Wallet ---- */
   .wallet-wrap{padding:22px 20px;}
-  .balance-card{background:var(--ink); color:#fff; border-radius:20px; padding:24px 20px;}
+  .balance-card{background:var(--dark-card); color:#fff; border-radius:20px; padding:24px 20px;}
   .balance-label{font-size:11.5px; color:#aaa; font-family:monospace; text-transform:uppercase; letter-spacing:0.06em;}
   .balance-amt{font-size:32px; font-weight:800; margin-top:8px;}
   .balance-usd{color:#999; font-size:13px; margin-top:4px;}
@@ -95,7 +96,7 @@
   .token-list{margin-top:20px;}
   .token-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
   .token-left{display:flex; align-items:center; gap:12px;}
-  .token-icon{width:36px; height:36px; border-radius:100px; background:#f2f2f2; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;}
+  .token-icon{width:36px; height:36px; border-radius:100px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;}
   .token-name{font-weight:600; font-size:14px;}
   .token-sub{color:var(--muted); font-size:11.5px;}
   .token-val{text-align:right; font-weight:600; font-size:14px;}
@@ -104,18 +105,18 @@
 
   .connect-note{margin-top:20px; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:14px; font-size:12px; color:var(--muted); text-align:center;}
   .connect-box{background:var(--bg); border:1px solid var(--line); border-radius:22px; padding:30px 22px; text-align:center;}
-  .connect-box .w-icon{width:52px; height:52px; border-radius:16px; background:#fff; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:22px;}
+  .connect-box .w-icon{width:52px; height:52px; border-radius:16px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:22px;}
   .connect-box h3{font-size:15.5px; font-weight:700;}
   .connect-box p{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
   .provider-list{display:flex; flex-direction:column; gap:9px; margin-top:20px;}
-  .provider-btn{border:1px solid var(--line); border-radius:100px; padding:13px 16px; font-size:13.5px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; background:#fff; cursor:pointer;}
+  .provider-btn{border:1px solid var(--line); border-radius:100px; padding:13px 16px; font-size:13.5px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--surface); cursor:pointer; color:var(--ink);}
   .provider-btn .pdot{width:7px; height:7px; border-radius:50%; background:#1a9e4b;}
   .connecting-line{font-family:monospace; font-size:11px; color:var(--muted); margin-top:14px;}
 
   .wallet-connected{display:none;}
   .wallet-connected.show{display:block;}
   .connect-box.hide{display:none;}
-  .addr-card{background:var(--ink); color:#fff; border-radius:14px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .addr-card{background:var(--dark-card); color:#fff; border-radius:14px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
   .addr-left{display:flex; align-items:center; gap:9px;}
   .addr-dot{width:7px; height:7px; border-radius:50%; background:#3ecf6e;}
   .addr-text{font-family:monospace; font-size:12.5px;}
@@ -130,13 +131,33 @@
 
   /* ---- Bottom sheet (menu, riwayat, memori) ---- */
   .sheet-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:flex-end; justify-content:center; z-index:50;}
+  .confirm-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:80; padding:24px;}
+  .confirm-overlay.show{display:flex;}
+  .confirm-box{background:var(--surface); color:var(--ink); border-radius:20px; padding:24px 22px; max-width:320px; width:100%; text-align:center;}
+  .confirm-icon{width:44px; height:44px; border-radius:50%; background:#fdeceb; color:var(--red); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;}
+  .confirm-title{font-weight:700; font-size:16px; margin-bottom:8px;}
+  .confirm-msg{font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:20px;}
+  .confirm-actions{display:flex; gap:10px;}
+  .confirm-actions button{flex:1; padding:12px; border-radius:100px; border:none; font-size:13.5px; font-weight:700; cursor:pointer;}
+  .confirm-cancel{background:var(--surface2); color:var(--ink);}
+  .confirm-ok{background:var(--red); color:#fff;}
+  .live-overlay{position:fixed; inset:0; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:90;}
+  .live-overlay.show{display:flex;}
+  .live-orb{width:130px; height:130px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff6a6f, var(--red) 70%); box-shadow:0 0 60px rgba(227,36,43,0.5);}
+  .live-orb.listening{animation:orbPulse 1.4s ease-in-out infinite;}
+  .live-orb.speaking{animation:orbSpeak 0.5s ease-in-out infinite;}
+  @keyframes orbPulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.08);}}
+  @keyframes orbSpeak{0%,100%{transform:scale(1);} 50%{transform:scale(1.04);}}
+  .live-status{font-family:monospace; font-size:12.5px; color:#8a8a8a; letter-spacing:0.05em;}
+  .live-transcript{max-width:80%; text-align:center; font-size:15px; color:#fff; min-height:24px;}
+  .live-close{position:absolute; top:24px; right:24px; background:#222; border:1px solid #333; color:#fff; border-radius:50%; width:40px; height:40px; font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
   .sheet-overlay.show{display:flex;}
-  .sheet{width:100%; max-width:480px; background:#fff; border-radius:20px 20px 0 0; padding:22px 20px 26px; max-height:80vh; overflow-y:auto;}
+  .sheet{width:100%; max-width:480px; background:var(--surface); color:var(--ink); border-radius:20px 20px 0 0; padding:22px 20px 26px; max-height:80vh; overflow-y:auto;}
   .sheet-title{font-weight:800; font-size:16px; margin-bottom:14px;}
   .sheet-row{display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer; font-size:14px; font-weight:600;}
   .lang-option.active{color:var(--red);}
   .sheet-row:last-child{border-bottom:none;}
-  .sheet-close{width:100%; background:#f2f2f2; border:none; border-radius:100px; padding:14px; font-weight:700; font-size:13.5px; margin-top:14px; cursor:pointer;}
+  .sheet-close{width:100%; background:var(--surface2); color:var(--ink); border:none; border-radius:100px; padding:14px; font-weight:700; font-size:13.5px; margin-top:14px; cursor:pointer;}
 
   .conv-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
   .conv-item.active{color:var(--red);}
@@ -148,7 +169,7 @@
   .mem-del{background:none; border:none; color:var(--muted); font-size:17px; padding:0 2px;}
   .mem-add-row{display:flex; gap:8px; margin-top:6px;}
   .mem-input{flex:1; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:13.5px; outline:none;}
-  .mem-add-btn{background:var(--ink); color:#fff; border:none; border-radius:10px; padding:0 16px; font-weight:700; cursor:pointer;}
+  .mem-add-btn{background:var(--dark-card); color:#fff; border:none; border-radius:10px; padding:0 16px; font-weight:700; cursor:pointer;}
 
   .offline-progress{padding:16px; text-align:center; font-size:12.5px; color:var(--muted);}
   .offline-bar{height:6px; background:var(--line); border-radius:100px; margin-top:10px; overflow:hidden;}
@@ -211,9 +232,10 @@
     <div class="messages" id="messagesBox"></div>
     <div class="quota-line" id="quotaLine"></div>
     <div class="inputbar">
-      <button class="plus" id="plusBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button class="plus" id="plusBtn" title="Buat gambar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
       <input class="field" id="chatInput" placeholder="Ketik pesan…">
-      <button class="plus" id="micBtn" title="Pesan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      <button class="plus" id="micBtn" title="Pesan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      <button class="plus" id="liveBtn" title="Mode obrolan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="10" x2="4" y2="14"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="16" y1="6" x2="16" y2="18"/><line x1="20" y1="10" x2="20" y2="14"/></svg></button>
       <button class="send" id="sendBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
     </div>
   </div>
@@ -272,6 +294,7 @@
     <div class="sheet-title">Menu</div>
     <div class="sheet-row" id="menuMemoryRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v1.17A5 5 0 0 0 4 12v3a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-3a5 5 0 0 0-4-4.83V6a4 4 0 0 0-4-4z"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/></svg> Pengaturan Memori</div>
     <div class="sheet-row" id="menuLangRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Bahasa <span id="menuLangValue" style="color:var(--muted); font-weight:500; margin-left:auto;">English</span></div>
+    <div class="sheet-row" id="menuThemeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="menuThemeIcon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Tampilan <span id="menuThemeValue" style="color:var(--muted); font-weight:500; margin-left:auto;">Terang</span></div>
     <div class="sheet-row" id="menuUpgradeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg> Upgrade ke Premium</div>
     <div class="sheet-row" id="menuLogoutRow" style="color:var(--red);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Keluar</div>
     <button class="sheet-close" data-close-sheet="menuSheet">Tutup</button>
@@ -322,6 +345,27 @@
     </div>
     <button class="sheet-close" data-close-sheet="langSheet">Tutup</button>
   </div>
+</div>
+
+<!-- ============ CUSTOM CONFIRM MODAL (ganti window.confirm bawaan browser) ============ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+    <div class="confirm-title" id="confirmTitle">Hapus obrolan ini?</div>
+    <div class="confirm-msg" id="confirmMsg">Semua pesan di dalamnya akan hilang permanen.</div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="confirmCancelBtn">Batal</button>
+      <button class="confirm-ok" id="confirmOkBtn">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LIVE VOICE OVERLAY ============ -->
+<div class="live-overlay" id="liveOverlay">
+  <button class="live-close" id="liveCloseBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="live-orb" id="liveOrb"></div>
+  <div class="live-status" id="liveStatus">Mendengarkan...</div>
+  <div class="live-transcript" id="liveTranscript"></div>
 </div>
 
 <script>
@@ -536,6 +580,24 @@
     });
   });
 
+  // ---- Tema gelap/terang: disimpen di localStorage, langsung berubah tanpa reload ----
+  const menuThemeValue = document.getElementById('menuThemeValue');
+  const sunIconPath = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  const moonIconPath = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+
+  function applyTheme(theme){
+    document.documentElement.setAttribute('data-theme', theme);
+    menuThemeValue.textContent = theme === 'dark' ? 'Gelap' : 'Terang';
+    document.getElementById('menuThemeIcon').innerHTML = theme === 'dark' ? moonIconPath : sunIconPath;
+    localStorage.setItem('zo_theme', theme);
+  }
+  applyTheme(localStorage.getItem('zo_theme') || 'light');
+
+  document.getElementById('menuThemeRow').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
   document.getElementById('newChatBtn').addEventListener('click', startNewConversation);
   document.getElementById('historyBtn').addEventListener('click', () => {
     document.getElementById('historySheet').classList.add('show');
@@ -641,7 +703,8 @@
   }
 
   async function deleteConversation(convId){
-    if (!window.confirm('Hapus obrolan ini? Semua pesan di dalamnya akan hilang permanen.')) return;
+    const confirmed = await showConfirm('Hapus obrolan ini?', 'Semua pesan di dalamnya akan hilang permanen.');
+    if (!confirmed) return;
     try {
       await sb.from('conversations').delete().eq('id', convId);
       if (convId === currentConversationId) {
@@ -733,6 +796,31 @@
   const sendBtn = document.getElementById('sendBtn');
   const micBtn = document.getElementById('micBtn');
 
+  // ---- Modal konfirmasi custom (ganti window.confirm bawaan browser yang nampilin nama domain) ----
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  const confirmTitle = document.getElementById('confirmTitle');
+  const confirmMsg = document.getElementById('confirmMsg');
+  const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+  const confirmOkBtn = document.getElementById('confirmOkBtn');
+
+  function showConfirm(title, msg){
+    confirmTitle.textContent = title;
+    confirmMsg.textContent = msg;
+    confirmOverlay.classList.add('show');
+    return new Promise((resolve) => {
+      function cleanup(result){
+        confirmOverlay.classList.remove('show');
+        confirmOkBtn.removeEventListener('click', onOk);
+        confirmCancelBtn.removeEventListener('click', onCancel);
+        resolve(result);
+      }
+      function onOk(){ cleanup(true); }
+      function onCancel(){ cleanup(false); }
+      confirmOkBtn.addEventListener('click', onOk);
+      confirmCancelBtn.addEventListener('click', onCancel);
+    });
+  }
+
   // ---- Pesan suara: speech-to-text pake bahasa yang dipilih di menu ----
   const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRecognitionAPI) {
@@ -771,10 +859,147 @@
   } else {
     // Browser nggak support Web Speech API -> sembunyiin tombolnya aja
     micBtn.style.display = 'none';
+    document.getElementById('liveBtn').style.display = 'none';
   }
   const quotaLine = document.getElementById('quotaLine');
 
-  const modeLabels = { online: 'Gemini · Gratis Online', offline: 'Qwen3-0.6B · di HP', cloud: 'Claude · Premium' };
+  const modeLabels = { online: 'ZO AI · Gratis Online', offline: 'ZO AI · Gratis Offline', cloud: 'ZO AI · Premium' };
+
+  // ---- Generate gambar (tombol "+") ----
+  async function generateImage(){
+    const promptText = chatInput.value.trim();
+    if (!promptText) { addNote('Ketik dulu deskripsi gambarnya di kolom pesan, baru tap tombol ini.'); return; }
+
+    renderMessage(promptText, 'user', { role: 'user', content: promptText, time: new Date().toISOString() });
+    if (currentMode !== 'offline') saveMessage('user', promptText);
+    chatInput.value = '';
+    document.getElementById('plusBtn').disabled = true;
+
+    const loadingDiv = renderMessage('Membuat gambar...', 'ai');
+
+    try {
+      const res = await fetch('/api/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken },
+        body: JSON.stringify({ prompt: promptText }),
+      });
+      const data = await res.json();
+      loadingDiv.remove();
+
+      if (data.error) {
+        addNote(data.error);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'msg-ai';
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = modeLabels[currentMode] || 'ZO AI';
+        div.appendChild(label);
+        const img = document.createElement('img');
+        img.src = 'data:image/png;base64,' + data.image;
+        img.style.cssText = 'max-width:100%; border-radius:14px; margin-top:4px; display:block;';
+        div.appendChild(img);
+        messagesBox.appendChild(div);
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+        if (typeof data.remaining === 'number') quotaLine.textContent = data.remaining + ' gambar gratis tersisa hari ini';
+      }
+    } catch (e) {
+      loadingDiv.remove();
+      addNote('Gagal terhubung ke server. Coba lagi.');
+    }
+
+    document.getElementById('plusBtn').disabled = false;
+  }
+  document.getElementById('plusBtn').addEventListener('click', generateImage);
+
+  // ---- Live voice mode: dengerin terus, auto-kirim, jawaban dibacain ----
+  const liveBtn = document.getElementById('liveBtn');
+  if (SpeechRecognitionAPI && 'speechSynthesis' in window) {
+    const liveOverlay = document.getElementById('liveOverlay');
+    const liveOrb = document.getElementById('liveOrb');
+    const liveStatus = document.getElementById('liveStatus');
+    const liveTranscript = document.getElementById('liveTranscript');
+    const liveCloseBtn = document.getElementById('liveCloseBtn');
+    const liveRecognition = new SpeechRecognitionAPI();
+    liveRecognition.continuous = false;
+    liveRecognition.interimResults = false;
+    let liveActive = false;
+
+    function setLiveState(state, text){
+      liveOrb.classList.remove('listening', 'speaking');
+      if (state) liveOrb.classList.add(state);
+      liveStatus.textContent = text;
+    }
+
+    function speak(text){
+      return new Promise((resolve) => {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+        utter.onend = resolve;
+        utter.onerror = resolve;
+        window.speechSynthesis.speak(utter);
+      });
+    }
+
+    function startListening(){
+      if (!liveActive) return;
+      liveRecognition.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+      liveTranscript.textContent = '';
+      setLiveState('listening', 'Mendengarkan...');
+      try { liveRecognition.start(); } catch (e) { /* mungkin masih jalan, abaikan */ }
+    }
+
+    liveRecognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      liveTranscript.textContent = transcript;
+      setLiveState(null, 'Berpikir...');
+
+      const entry = { role: 'user', content: transcript, id: null, time: new Date().toISOString() };
+      history.push(entry);
+      renderMessage(transcript, 'user', entry);
+      if (currentMode !== 'offline') saveMessage('user', transcript).then(id => { entry.id = id; });
+
+      const result = currentMode === 'offline' ? await sendToOfflineModel(transcript) : await sendToServer();
+      if (!liveActive) return;
+
+      const replyText = result.ok ? result.reply : result.message;
+      if (result.ok) {
+        const replyEntry = { role: 'assistant', content: replyText, id: null, time: new Date().toISOString() };
+        if (currentMode !== 'offline') {
+          history.push(replyEntry);
+          saveMessage('assistant', replyText).then(id => { replyEntry.id = id; });
+        }
+        renderMessage(replyText, 'ai', replyEntry);
+      } else {
+        addNote(replyText);
+      }
+
+      setLiveState('speaking', 'Menjawab...');
+      liveTranscript.textContent = replyText;
+      await speak(replyText);
+      if (liveActive) startListening();
+    };
+
+    liveRecognition.onerror = (event) => {
+      if (liveActive && event.error !== 'aborted') setTimeout(startListening, 800);
+    };
+
+    liveBtn.addEventListener('click', () => {
+      liveActive = true;
+      liveOverlay.classList.add('show');
+      startListening();
+    });
+
+    function stopLiveMode(){
+      liveActive = false;
+      window.speechSynthesis.cancel();
+      try { liveRecognition.stop(); } catch (e) {}
+      liveOverlay.classList.remove('show');
+    }
+    liveCloseBtn.addEventListener('click', stopLiveMode);
+  } else {
+    liveBtn.style.display = 'none';
+  }
 
   function renderMessage(text, role, entry){
     const div = document.createElement('div');
