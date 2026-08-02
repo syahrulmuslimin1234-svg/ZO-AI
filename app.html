@@ -74,6 +74,8 @@
 
   .inputbar{border-top:1px solid var(--line); padding:12px 14px; display:flex; align-items:center; gap:9px; flex-shrink:0;}
   .plus{width:32px; height:32px; border-radius:100px; background:#f2f2f2; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  #micBtn.listening{background:var(--red);}
+  #micBtn.listening svg{stroke:#fff;}
   .field{flex:1; background:#f5f5f5; border-radius:100px; padding:10px 15px; color:var(--ink); font-size:13.5px; border:none; outline:none;}
   .field:disabled{color:var(--muted);}
   .send{width:32px; height:32px; border-radius:100px; background:var(--red); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
@@ -132,6 +134,7 @@
   .sheet{width:100%; max-width:480px; background:#fff; border-radius:20px 20px 0 0; padding:22px 20px 26px; max-height:80vh; overflow-y:auto;}
   .sheet-title{font-weight:800; font-size:16px; margin-bottom:14px;}
   .sheet-row{display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer; font-size:14px; font-weight:600;}
+  .lang-option.active{color:var(--red);}
   .sheet-row:last-child{border-bottom:none;}
   .sheet-close{width:100%; background:#f2f2f2; border:none; border-radius:100px; padding:14px; font-weight:700; font-size:13.5px; margin-top:14px; cursor:pointer;}
 
@@ -198,9 +201,9 @@
   </header>
 
   <div class="mode-bar" id="modeBar">
-    <div class="mode-opt active" data-mode="online" id="modeOnline">Gratis Online<span class="tag">Gemini</span></div>
-    <div class="mode-opt" data-mode="offline" id="modeOffline">Gratis Offline<span class="tag">Qwen3 di HP</span></div>
-    <div class="mode-opt" data-mode="cloud" id="modeCloud">Premium<span class="tag">Claude</span></div>
+    <div class="mode-opt active" data-mode="online" id="modeOnline">Gratis Online</div>
+    <div class="mode-opt" data-mode="offline" id="modeOffline">Gratis Offline</div>
+    <div class="mode-opt" data-mode="cloud" id="modeCloud">Premium</div>
   </div>
 
   <!-- ===== CHAT PAGE ===== -->
@@ -210,6 +213,7 @@
     <div class="inputbar">
       <button class="plus" id="plusBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       <input class="field" id="chatInput" placeholder="Ketik pesan…">
+      <button class="plus" id="micBtn" title="Pesan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
       <button class="send" id="sendBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
     </div>
   </div>
@@ -266,9 +270,10 @@
 <div class="sheet-overlay" id="menuSheet">
   <div class="sheet">
     <div class="sheet-title">Menu</div>
-    <div class="sheet-row" id="menuMemoryRow">🧠 Pengaturan Memori</div>
-    <div class="sheet-row" id="menuUpgradeRow">⭐ Upgrade ke Premium</div>
-    <div class="sheet-row" id="menuLogoutRow" style="color:var(--red);">Keluar</div>
+    <div class="sheet-row" id="menuMemoryRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v1.17A5 5 0 0 0 4 12v3a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-3a5 5 0 0 0-4-4.83V6a4 4 0 0 0-4-4z"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/></svg> Pengaturan Memori</div>
+    <div class="sheet-row" id="menuLangRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Bahasa <span id="menuLangValue" style="color:var(--muted); font-weight:500; margin-left:auto;">English</span></div>
+    <div class="sheet-row" id="menuUpgradeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg> Upgrade ke Premium</div>
+    <div class="sheet-row" id="menuLogoutRow" style="color:var(--red);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Keluar</div>
     <button class="sheet-close" data-close-sheet="menuSheet">Tutup</button>
   </div>
 </div>
@@ -294,6 +299,28 @@
       <button class="mem-add-btn" id="memoryAddBtn">+</button>
     </div>
     <button class="sheet-close" data-close-sheet="memorySheet">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ LANGUAGE SHEET ============ -->
+<div class="sheet-overlay" id="langSheet">
+  <div class="sheet">
+    <div class="sheet-title">Bahasa</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">Dipakai untuk pesan suara & disinkron dengan halaman lain.</div>
+    <div id="langOptionList" style="max-height:50vh; overflow-y:auto;">
+      <div class="sheet-row lang-option" data-value="en-US">English</div>
+      <div class="sheet-row lang-option" data-value="id-ID">Bahasa Indonesia</div>
+      <div class="sheet-row lang-option" data-value="es-ES">Español</div>
+      <div class="sheet-row lang-option" data-value="pt-BR">Português</div>
+      <div class="sheet-row lang-option" data-value="fr-FR">Français</div>
+      <div class="sheet-row lang-option" data-value="de-DE">Deutsch</div>
+      <div class="sheet-row lang-option" data-value="ja-JP">日本語</div>
+      <div class="sheet-row lang-option" data-value="ko-KR">한국어</div>
+      <div class="sheet-row lang-option" data-value="zh-CN">中文</div>
+      <div class="sheet-row lang-option" data-value="ar-SA">العربية</div>
+      <div class="sheet-row lang-option" data-value="hi-IN">हिन्दी</div>
+    </div>
+    <button class="sheet-close" data-close-sheet="langSheet">Tutup</button>
   </div>
 </div>
 
@@ -484,6 +511,29 @@
   document.getElementById('menuLogoutRow').addEventListener('click', async () => {
     await sb.auth.signOut();
     window.location.href = 'landing.html';
+  });
+
+  // ---- Bahasa: disimpen di key yang SAMA ('zo_voice_lang') dipake juga di chat.html & landing.html ----
+  const menuLangValue = document.getElementById('menuLangValue');
+  const langOptionEls = document.querySelectorAll('.lang-option');
+
+  function setActiveLang(value){
+    const match = document.querySelector('.lang-option[data-value="' + value + '"]');
+    langOptionEls.forEach(el => el.classList.toggle('active', el.dataset.value === value));
+    if (match) menuLangValue.textContent = match.textContent;
+  }
+  setActiveLang(localStorage.getItem('zo_voice_lang') || 'en-US');
+
+  document.getElementById('menuLangRow').addEventListener('click', () => {
+    document.getElementById('menuSheet').classList.remove('show');
+    document.getElementById('langSheet').classList.add('show');
+  });
+  langOptionEls.forEach(el => {
+    el.addEventListener('click', () => {
+      localStorage.setItem('zo_voice_lang', el.dataset.value);
+      setActiveLang(el.dataset.value);
+      document.getElementById('langSheet').classList.remove('show');
+    });
   });
 
   document.getElementById('newChatBtn').addEventListener('click', startNewConversation);
@@ -681,6 +731,47 @@
   const messagesBox = document.getElementById('messagesBox');
   const chatInput = document.getElementById('chatInput');
   const sendBtn = document.getElementById('sendBtn');
+  const micBtn = document.getElementById('micBtn');
+
+  // ---- Pesan suara: speech-to-text pake bahasa yang dipilih di menu ----
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognitionAPI) {
+    const recognition = new SpeechRecognitionAPI();
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    let isListening = false;
+
+    recognition.addEventListener('result', (e) => {
+      const transcript = e.results?.[0]?.[0]?.transcript || '';
+      if (transcript) chatInput.value = (chatInput.value ? chatInput.value + ' ' : '') + transcript;
+    });
+    recognition.addEventListener('end', () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+    });
+    recognition.addEventListener('error', () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+    });
+
+    micBtn.addEventListener('click', () => {
+      if (isListening) {
+        recognition.stop();
+        return;
+      }
+      recognition.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+      try {
+        recognition.start();
+        isListening = true;
+        micBtn.classList.add('listening');
+      } catch (e) {
+        console.error('Speech recognition gagal jalan:', e);
+      }
+    });
+  } else {
+    // Browser nggak support Web Speech API -> sembunyiin tombolnya aja
+    micBtn.style.display = 'none';
+  }
   const quotaLine = document.getElementById('quotaLine');
 
   const modeLabels = { online: 'Gemini · Gratis Online', offline: 'Qwen3-0.6B · di HP', cloud: 'Claude · Premium' };
