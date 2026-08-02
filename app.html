@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZO AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+  :root{ --ink:#141414; --muted:#8a8a8a; --line:#ececec; --red:#e3242b; --bg-dark:#161616; --bg:#faf9f7; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Inter',sans-serif; height:100vh; overflow:hidden; -webkit-tap-highlight-color:transparent;}
+  button{font-family:inherit;}
+
+  /* ===== LOGIN SCREEN ===== */
+  #loginScreen{background:var(--bg-dark); color:#fff; height:100vh; display:flex; flex-direction:column; padding:44px 26px 34px; overflow-y:auto;}
+  .login-brand{display:flex; align-items:center; gap:9px; justify-content:center; margin-bottom:50px;}
+  .login-brand .brand-mark{width:26px; height:26px; object-fit:contain;}
+  .login-brand .name{font-family:Georgia, serif; font-size:24px; font-weight:700; letter-spacing:-0.01em;}
+
+  .login-illustration{flex:1; display:flex; align-items:center; justify-content:center; position:relative; min-height:140px;}
+  .login-illustration::before{
+    content:''; position:absolute; width:210px; height:210px; border-radius:50%;
+    background:radial-gradient(circle, rgba(227,36,43,0.28) 0%, rgba(227,36,43,0.08) 45%, transparent 72%);
+    filter:blur(2px);
+  }
+  .login-illustration .logo-big-img{width:100px; height:100px; object-fit:contain; position:relative; z-index:1;}
+
+  .login-headline{font-family:Georgia, serif; font-size:26px; text-align:center; line-height:1.3; margin-bottom:32px; padding:0 6px;}
+
+  .g-btn{background:#fff; color:#1a1a1a; border:none; border-radius:100px; padding:16px; font-weight:700; font-size:14.5px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; width:100%; opacity:0.5;}
+  .g-btn-note{text-align:center; font-size:10.5px; color:#777; margin-top:6px;}
+  .divider{display:flex; align-items:center; gap:12px; margin:18px 0; color:#666; font-size:11px; letter-spacing:0.08em;}
+  .divider::before, .divider::after{content:''; flex:1; height:1px; background:#333;}
+  .email-input{background:transparent; border:1px solid #3a3a3a; border-radius:100px; padding:15px 18px; color:#fff; font-size:14px; width:100%; outline:none;}
+  .email-input::placeholder{color:#777;}
+  .login-btn{margin-top:12px; background:var(--red); color:#fff; border:none; border-radius:100px; padding:15px; font-weight:700; font-size:14px; width:100%; cursor:pointer;}
+  .login-btn:disabled{opacity:0.5;}
+  .login-terms{color:#777; font-size:11.5px; text-align:center; margin-top:18px; line-height:1.6;}
+  .login-back{color:#aaa; font-size:13px; text-align:center; margin-top:16px; cursor:pointer;}
+  .login-status{color:var(--red); font-size:12.5px; text-align:center; margin-top:12px; min-height:16px;}
+  #codeStep{display:none;}
+
+  /* ===== APP SHELL ===== */
+  #appScreen{display:none; height:100vh; flex-direction:column; background:#fff; color:var(--ink);}
+  #appScreen.show{display:flex;}
+
+  header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); flex-shrink:0;}
+  .h-left{display:flex; align-items:center; gap:12px;}
+  .h-left button{background:none; border:none; color:var(--ink); display:flex;}
+  .h-title{font-weight:700; font-size:15.5px;}
+  .h-sub{font-size:11.5px; color:var(--muted); margin-top:1px;}
+  .h-right{display:flex; align-items:center; gap:16px;}
+  .h-right button{background:none; border:none; color:var(--ink); display:flex; cursor:pointer;}
+
+  .mode-bar{display:flex; gap:5px; padding:10px 14px; border-bottom:1px solid var(--line); flex-shrink:0;}
+  .mode-opt{flex:1; text-align:center; padding:8px 4px; border-radius:14px; font-size:10.5px; font-weight:700; cursor:pointer; border:1px solid var(--line); color:var(--muted); background:#fff;}
+  .mode-opt.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .mode-opt .tag{display:block; font-size:9.5px; font-weight:500; margin-top:1px;}
+  .mode-opt.active .tag{color:#bbb;}
+
+  .page{flex:1; overflow-y:auto; display:none;}
+  .page.active{display:flex; flex-direction:column;}
+
+  .messages{flex:1; padding:18px; display:flex; flex-direction:column; gap:16px;}
+  .msg-ai{font-size:14.5px; line-height:1.55; max-width:92%; white-space:pre-wrap;}
+  .msg-ai .label{font-size:10.5px; color:var(--red); font-weight:700; margin-bottom:4px; font-family:monospace; text-transform:uppercase;}
+  .msg-me{align-self:flex-end; background:#f2f2f2; padding:11px 15px; border-radius:16px; border-bottom-right-radius:4px; font-size:14.5px; max-width:78%; white-space:pre-wrap;}
+  .msg-time{font-family:monospace; font-size:10px; color:var(--muted); margin-top:4px;}
+  .msg-note{font-size:12.5px; color:var(--muted); text-align:center; padding:8px 0;}
+
+  .inputbar{border-top:1px solid var(--line); padding:12px 14px; display:flex; align-items:center; gap:9px; flex-shrink:0;}
+  .plus{width:32px; height:32px; border-radius:100px; background:#f2f2f2; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  .field{flex:1; background:#f5f5f5; border-radius:100px; padding:10px 15px; color:var(--ink); font-size:13.5px; border:none; outline:none;}
+  .field:disabled{color:var(--muted);}
+  .send{width:32px; height:32px; border-radius:100px; background:var(--red); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  .send:disabled{opacity:0.4;}
+  .send svg{color:#fff;}
+  .quota-line{font-size:11px; color:var(--muted); text-align:center; padding:6px 0 0;}
+
+  /* ---- Wallet ---- */
+  .wallet-wrap{padding:22px 20px;}
+  .balance-card{background:var(--ink); color:#fff; border-radius:20px; padding:24px 20px;}
+  .balance-label{font-size:11.5px; color:#aaa; font-family:monospace; text-transform:uppercase; letter-spacing:0.06em;}
+  .balance-amt{font-size:32px; font-weight:800; margin-top:8px;}
+  .balance-usd{color:#999; font-size:13px; margin-top:4px;}
+  .wallet-actions{display:flex; gap:10px; margin-top:18px;}
+  .w-btn{flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px; border-radius:100px; font-size:12.5px; font-weight:600; text-align:center; cursor:pointer;}
+
+  .token-list{margin-top:20px;}
+  .token-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
+  .token-left{display:flex; align-items:center; gap:12px;}
+  .token-icon{width:36px; height:36px; border-radius:100px; background:#f2f2f2; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;}
+  .token-name{font-weight:600; font-size:14px;}
+  .token-sub{color:var(--muted); font-size:11.5px;}
+  .token-val{text-align:right; font-weight:600; font-size:14px;}
+  .token-change{font-size:11px; color:var(--muted); margin-top:2px;}
+  .token-change.up{color:#1a9e4b;}
+
+  .connect-note{margin-top:20px; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:14px; font-size:12px; color:var(--muted); text-align:center;}
+  .connect-box{background:var(--bg); border:1px solid var(--line); border-radius:22px; padding:30px 22px; text-align:center;}
+  .connect-box .w-icon{width:52px; height:52px; border-radius:16px; background:#fff; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:22px;}
+  .connect-box h3{font-size:15.5px; font-weight:700;}
+  .connect-box p{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
+  .provider-list{display:flex; flex-direction:column; gap:9px; margin-top:20px;}
+  .provider-btn{border:1px solid var(--line); border-radius:100px; padding:13px 16px; font-size:13.5px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; background:#fff; cursor:pointer;}
+  .provider-btn .pdot{width:7px; height:7px; border-radius:50%; background:#1a9e4b;}
+  .connecting-line{font-family:monospace; font-size:11px; color:var(--muted); margin-top:14px;}
+
+  .wallet-connected{display:none;}
+  .wallet-connected.show{display:block;}
+  .connect-box.hide{display:none;}
+  .addr-card{background:var(--ink); color:#fff; border-radius:14px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .addr-left{display:flex; align-items:center; gap:9px;}
+  .addr-dot{width:7px; height:7px; border-radius:50%; background:#3ecf6e;}
+  .addr-text{font-family:monospace; font-size:12.5px;}
+  .addr-net{font-family:monospace; font-size:10px; color:#999;}
+  .disconnect-link{font-size:11px; color:var(--red); font-family:monospace; cursor:pointer;}
+
+  .bottomnav{display:flex; border-top:1px solid var(--line); flex-shrink:0;}
+  .nav-item{flex:1; text-align:center; padding:12px 0 10px; cursor:pointer; color:var(--muted); background:none; border:none;}
+  .nav-item.active{color:var(--ink);}
+  .nav-item svg{display:block; margin:0 auto 3px;}
+  .nav-item .n-label{font-size:10.5px; font-weight:600;}
+
+  /* ---- Bottom sheet (menu, riwayat, memori) ---- */
+  .sheet-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:flex-end; justify-content:center; z-index:50;}
+  .sheet-overlay.show{display:flex;}
+  .sheet{width:100%; max-width:480px; background:#fff; border-radius:20px 20px 0 0; padding:22px 20px 26px; max-height:80vh; overflow-y:auto;}
+  .sheet-title{font-weight:800; font-size:16px; margin-bottom:14px;}
+  .sheet-row{display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer; font-size:14px; font-weight:600;}
+  .sheet-row:last-child{border-bottom:none;}
+  .sheet-close{width:100%; background:#f2f2f2; border:none; border-radius:100px; padding:14px; font-weight:700; font-size:13.5px; margin-top:14px; cursor:pointer;}
+
+  .conv-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .conv-item.active{color:var(--red);}
+  .conv-title{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:600;}
+  .conv-time{font-family:monospace; font-size:10.5px; color:var(--muted); flex-shrink:0;}
+  .conv-del{background:none; border:none; color:var(--muted); font-size:18px; padding:0 4px;}
+
+  .mem-item{display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:13px; margin-bottom:8px;}
+  .mem-del{background:none; border:none; color:var(--muted); font-size:17px; padding:0 2px;}
+  .mem-add-row{display:flex; gap:8px; margin-top:6px;}
+  .mem-input{flex:1; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:13.5px; outline:none;}
+  .mem-add-btn{background:var(--ink); color:#fff; border:none; border-radius:10px; padding:0 16px; font-weight:700; cursor:pointer;}
+
+  .offline-progress{padding:16px; text-align:center; font-size:12.5px; color:var(--muted);}
+  .offline-bar{height:6px; background:var(--line); border-radius:100px; margin-top:10px; overflow:hidden;}
+  .offline-bar-fill{height:100%; background:var(--red); width:0%; transition:width 0.2s;}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen">
+  <div class="login-brand"><img src="assets/logo2-96.png" class="brand-mark" alt="ZO AI"><span class="name"><span style="color:var(--red);">Z</span>O AI</span></div>
+  <div class="login-illustration"><img src="assets/logo2-transparent-192.png" class="logo-big-img" alt="ZO AI"></div>
+  <div class="login-headline" id="loginHeadline">Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.</div>
+
+  <div id="emailStep">
+    <button class="g-btn" id="googleLoginBtn">
+      <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Lanjutkan dengan Google
+    </button>
+    <div class="g-btn-note">Login Google segera hadir — pakai email dulu ya</div>
+    <div class="divider">ATAU</div>
+    <input type="email" class="email-input" id="emailInput" placeholder="Alamat email kamu">
+    <button class="login-btn" id="sendCodeBtn">Kirim kode</button>
+    <div class="login-status" id="loginStatus"></div>
+    <div class="login-terms">Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.</div>
+  </div>
+
+  <div id="codeStep">
+    <input type="text" inputmode="numeric" class="email-input" id="codeInput" placeholder="Kode 6 digit" maxlength="6" style="text-align:center; letter-spacing:0.3em; color:#fff;">
+    <button class="login-btn" id="verifyCodeBtn">Masuk</button>
+    <div class="login-status" id="codeStatus"></div>
+    <div class="login-back" id="backToEmailBtn">← Ganti email</div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="appScreen">
+  <header>
+    <div class="h-left">
+      <button id="menuBtn" title="Menu"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div>
+        <div class="h-title" id="pageTitle">Obrolan baru</div>
+        <div class="h-sub" id="pageSub">ZO AI</div>
+      </div>
+    </div>
+    <div class="h-right">
+      <button id="newChatBtn" title="Obrolan Baru"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+      <button id="historyBtn" title="Riwayat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+    </div>
+  </header>
+
+  <div class="mode-bar" id="modeBar">
+    <div class="mode-opt active" data-mode="online" id="modeOnline">Gratis Online<span class="tag">Gemini</span></div>
+    <div class="mode-opt" data-mode="offline" id="modeOffline">Gratis Offline<span class="tag">Qwen3 di HP</span></div>
+    <div class="mode-opt" data-mode="cloud" id="modeCloud">Premium<span class="tag">Claude</span></div>
+  </div>
+
+  <!-- ===== CHAT PAGE ===== -->
+  <div class="page active" id="pageChat">
+    <div class="messages" id="messagesBox"></div>
+    <div class="quota-line" id="quotaLine"></div>
+    <div class="inputbar">
+      <button class="plus" id="plusBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <input class="field" id="chatInput" placeholder="Ketik pesan…">
+      <button class="send" id="sendBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+
+  <!-- ===== WALLET PAGE ===== -->
+  <div class="page" id="pageWallet">
+    <div class="wallet-wrap">
+      <div class="connect-box" id="connectBox">
+        <div class="w-icon">◈</div>
+        <h3>Hubungkan wallet kamu</h3>
+        <p>ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.</p>
+        <div class="provider-list">
+          <div class="provider-btn" id="btnMetaMask"><span class="pdot"></span>MetaMask</div>
+          <div class="provider-btn" id="btnTrust"><span class="pdot"></span>Trust Wallet</div>
+          <div class="provider-btn" id="btnPhantom"><span class="pdot"></span>Phantom (Solana)</div>
+        </div>
+        <div class="connecting-line" id="connectingLine"></div>
+      </div>
+
+      <div class="wallet-connected" id="walletConnected">
+        <div class="addr-card">
+          <div class="addr-left"><div class="addr-dot"></div><div><div class="addr-text" id="connectedAddr">-</div><div class="addr-net" id="connectedNet">-</div></div></div>
+          <div class="disconnect-link" id="disconnectBtn">Putuskan</div>
+        </div>
+        <div class="balance-card">
+          <div class="balance-label">Total saldo</div>
+          <div class="balance-amt" id="balanceAmount">$0.00</div>
+          <div class="balance-usd" id="balanceSub"></div>
+          <div class="wallet-actions">
+            <div class="w-btn" id="btnSend">↑ Kirim</div>
+            <div class="w-btn" id="btnReceive">↓ Terima</div>
+            <div class="w-btn" id="btnSwap">⇄ Tukar</div>
+          </div>
+        </div>
+        <div class="token-list" id="tokenList"></div>
+        <div class="connect-note">Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottomnav">
+    <button class="nav-item active" data-page="chat" id="navChat">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <div class="n-label">Chat</div>
+    </button>
+    <button class="nav-item" data-page="wallet" id="navWallet">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/></svg>
+      <div class="n-label">Wallet</div>
+    </button>
+  </div>
+</div>
+
+<!-- ============ MENU SHEET ============ -->
+<div class="sheet-overlay" id="menuSheet">
+  <div class="sheet">
+    <div class="sheet-title">Menu</div>
+    <div class="sheet-row" id="menuMemoryRow">🧠 Pengaturan Memori</div>
+    <div class="sheet-row" id="menuUpgradeRow">⭐ Upgrade ke Premium</div>
+    <div class="sheet-row" id="menuLogoutRow" style="color:var(--red);">Keluar</div>
+    <button class="sheet-close" data-close-sheet="menuSheet">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ HISTORY SHEET ============ -->
+<div class="sheet-overlay" id="historySheet">
+  <div class="sheet">
+    <div class="sheet-title">Riwayat Obrolan</div>
+    <div class="sheet-row" id="newConvRow" style="color:var(--red);">+ Obrolan Baru</div>
+    <div id="historyList"></div>
+    <button class="sheet-close" data-close-sheet="historySheet">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ MEMORY SHEET ============ -->
+<div class="sheet-overlay" id="memorySheet">
+  <div class="sheet">
+    <div class="sheet-title">Pengaturan Memori</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">Catatan tentang kamu yang selalu diingat AI di obrolan manapun.</div>
+    <div id="memoryList"></div>
+    <div class="mem-add-row">
+      <input class="mem-input" id="memoryInput" placeholder="misal: saya suka analisis teknikal">
+      <button class="mem-add-btn" id="memoryAddBtn">+</button>
+    </div>
+    <button class="sheet-close" data-close-sheet="memorySheet">Tutup</button>
+  </div>
+</div>
+
+<script>
+  // ============ SUPABASE INIT ============
+  const SUPABASE_URL = 'https://pjrkzujhrngllagxawxv.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let userId = '', userEmail = '', accessToken = '';
+  let currentConversationId = null;
+  let history = [];
+  let memoryItems = [];
+  let userMemoryText = '';
+  let currentMode = 'online'; // online | offline | cloud
+  let isPaidSubscriber = false;
+  const MAX_MESSAGES_PER_CONVERSATION = 40;
+
+  // ============ LOGIN FLOW ============
+  const emailInput = document.getElementById('emailInput');
+  const codeInput = document.getElementById('codeInput');
+  const sendCodeBtn = document.getElementById('sendCodeBtn');
+  const verifyCodeBtn = document.getElementById('verifyCodeBtn');
+  const backToEmailBtn = document.getElementById('backToEmailBtn');
+  const emailStep = document.getElementById('emailStep');
+  const codeStep = document.getElementById('codeStep');
+  const loginStatus = document.getElementById('loginStatus');
+  const codeStatus = document.getElementById('codeStatus');
+
+  document.getElementById('googleLoginBtn').addEventListener('click', () => {
+    loginStatus.textContent = 'Login Google belum aktif, pakai email dulu ya.';
+  });
+
+  let pendingEmail = '';
+  sendCodeBtn.addEventListener('click', async () => {
+    const val = emailInput.value.trim();
+    if (!val || !/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(val)) {
+      loginStatus.textContent = 'Masukkan email yang valid ya.';
+      return;
+    }
+    sendCodeBtn.disabled = true;
+    sendCodeBtn.textContent = 'Mengirim...';
+    try {
+      const { error } = await sb.auth.signInWithOtp({ email: val });
+      if (error) throw error;
+      pendingEmail = val;
+      emailStep.style.display = 'none';
+      codeStep.style.display = 'block';
+    } catch (e) {
+      loginStatus.textContent = 'Gagal kirim kode: ' + e.message;
+    }
+    sendCodeBtn.disabled = false;
+    sendCodeBtn.textContent = 'Kirim kode';
+  });
+
+  verifyCodeBtn.addEventListener('click', async () => {
+    const code = codeInput.value.trim();
+    if (!code) return;
+    verifyCodeBtn.disabled = true;
+    verifyCodeBtn.textContent = 'Memverifikasi...';
+    try {
+      const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token: code, type: 'email' });
+      if (error) throw error;
+      await initApp();
+    } catch (e) {
+      codeStatus.textContent = 'Kode salah/kadaluarsa: ' + e.message;
+    }
+    verifyCodeBtn.disabled = false;
+    verifyCodeBtn.textContent = 'Masuk';
+  });
+
+  backToEmailBtn.addEventListener('click', () => {
+    codeStep.style.display = 'none';
+    emailStep.style.display = 'block';
+    codeStatus.textContent = '';
+  });
+
+  // ============ APP INIT ============
+  async function initApp(){
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    userEmail = session.user.email;
+    userId = session.user.id;
+    accessToken = session.access_token;
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').classList.add('show');
+
+    await checkSubscriberStatus();
+    await initConversation();
+    await loadHistory();
+    await loadMemory();
+  }
+
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await initApp();
+  })();
+
+  async function checkSubscriberStatus(){
+    try {
+      const { data, error } = await sb
+        .from('subscribers')
+        .select('expires_at')
+        .eq('email', userEmail)
+        .order('expires_at', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      const row = data && data[0];
+      isPaidSubscriber = !!(row && row.expires_at && new Date(row.expires_at) > new Date());
+    } catch (e) {
+      console.error('Gagal cek status subscriber:', e);
+      isPaidSubscriber = false;
+    }
+  }
+
+  // ============ BOTTOM NAV (Chat / Wallet) ============
+  const navItems = document.querySelectorAll('.nav-item');
+  const pages = { chat: document.getElementById('pageChat'), wallet: document.getElementById('pageWallet') };
+  const modeBar = document.getElementById('modeBar');
+  const pageTitle = document.getElementById('pageTitle');
+  const pageSub = document.getElementById('pageSub');
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      Object.values(pages).forEach(p => p.classList.remove('active'));
+      const target = item.dataset.page;
+      pages[target].classList.add('active');
+      if (target === 'chat'){
+        modeBar.style.display = 'flex';
+        pageTitle.textContent = 'Obrolan baru';
+        pageSub.textContent = 'ZO AI';
+      } else {
+        modeBar.style.display = 'none';
+        pageTitle.textContent = 'Wallet';
+        pageSub.textContent = 'Non-custodial';
+      }
+    });
+  });
+
+  // ============ MODE SWITCH (Online / Offline / Cloud) ============
+  const modeOnline = document.getElementById('modeOnline');
+  const modeOffline = document.getElementById('modeOffline');
+  const modeCloud = document.getElementById('modeCloud');
+  const modeOpts = [modeOnline, modeOffline, modeCloud];
+
+  modeOnline.addEventListener('click', () => setMode('online'));
+  modeOffline.addEventListener('click', () => setMode('offline'));
+  modeCloud.addEventListener('click', () => {
+    if (!isPaidSubscriber) {
+      addNote('Mode Premium butuh langganan aktif. Buka halaman Subscribe buat upgrade.');
+      return;
+    }
+    setMode('cloud');
+  });
+
+  function setMode(mode){
+    currentMode = mode;
+    modeOpts.forEach(o => o.classList.remove('active'));
+    ({ online: modeOnline, offline: modeOffline, cloud: modeCloud })[mode].classList.add('active');
+    if (mode === 'offline') preloadOfflineModel();
+  }
+
+  function addNote(text){
+    const div = document.createElement('div');
+    div.className = 'msg-note';
+    div.textContent = text;
+    messagesBox.appendChild(div);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  // ============ MENU / SHEETS ============
+  document.querySelectorAll('[data-close-sheet]').forEach(btn => {
+    btn.addEventListener('click', () => document.getElementById(btn.dataset.closeSheet).classList.remove('show'));
+  });
+  document.querySelectorAll('.sheet-overlay').forEach(ov => {
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('show'); });
+  });
+
+  document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('menuSheet').classList.add('show'));
+  document.getElementById('menuMemoryRow').addEventListener('click', () => {
+    document.getElementById('menuSheet').classList.remove('show');
+    document.getElementById('memorySheet').classList.add('show');
+  });
+  document.getElementById('menuUpgradeRow').addEventListener('click', () => { window.location.href = 'subscribe.html'; });
+  document.getElementById('menuLogoutRow').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    window.location.href = 'landing.html';
+  });
+
+  document.getElementById('newChatBtn').addEventListener('click', startNewConversation);
+  document.getElementById('historyBtn').addEventListener('click', () => {
+    document.getElementById('historySheet').classList.add('show');
+    renderConversationList();
+  });
+  document.getElementById('newConvRow').addEventListener('click', async () => {
+    await startNewConversation();
+    document.getElementById('historySheet').classList.remove('show');
+  });
+
+  // ============ CONVERSATIONS ============
+  async function initConversation(){
+    try {
+      const { data, error } = await sb.from('conversations').select('id').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        currentConversationId = data[0].id;
+      } else {
+        const { data: nc, error: ie } = await sb.from('conversations').insert({ user_id: userId, title: 'New chat' }).select('id').single();
+        if (ie) throw ie;
+        currentConversationId = nc.id;
+      }
+    } catch (e) { console.error('Gagal init conversation:', e); }
+  }
+
+  async function startNewConversation(){
+    try {
+      const { data, error } = await sb.from('conversations').insert({ user_id: userId, title: 'New chat' }).select('id').single();
+      if (error) throw error;
+      currentConversationId = data.id;
+      history = [];
+      messagesBox.innerHTML = '';
+      chatInput.disabled = false;
+      sendBtn.disabled = false;
+      chatInput.focus();
+    } catch (e) { console.error('Gagal bikin obrolan baru:', e); }
+  }
+
+  async function loadHistory(){
+    if (!currentConversationId) return;
+    try {
+      const { data, error } = await sb.from('chat_messages').select('id, role, content, created_at')
+        .eq('conversation_id', currentConversationId).order('created_at', { ascending: true }).limit(100);
+      if (error || !data || data.length === 0) return;
+      messagesBox.innerHTML = '';
+      data.forEach(m => {
+        const entry = { role: m.role, content: m.content, id: m.id, time: m.created_at };
+        renderMessage(m.content, m.role, entry);
+        history.push(entry);
+      });
+      checkConversationLimit();
+    } catch (e) { console.error('Gagal memuat riwayat:', e); }
+  }
+
+  async function saveMessage(role, content){
+    try {
+      const { data, error } = await sb.from('chat_messages').insert({ user_id: userId, role, content, conversation_id: currentConversationId }).select('id').single();
+      if (error) throw error;
+      if (role === 'user' && history.length <= 1) {
+        sb.from('conversations').update({ title: content.slice(0, 40) }).eq('id', currentConversationId).then(() => {});
+      }
+      return data?.id ?? null;
+    } catch (e) { console.error('Gagal simpan pesan:', e); return null; }
+  }
+
+  async function renderConversationList(){
+    const historyList = document.getElementById('historyList');
+    historyList.innerHTML = '<div class="msg-note">Memuat...</div>';
+    try {
+      const { data, error } = await sb.from('conversations').select('id, title, updated_at')
+        .eq('user_id', userId).order('updated_at', { ascending: false }).limit(50);
+      if (error) throw error;
+      historyList.innerHTML = '';
+      (data || []).forEach(conv => {
+        const row = document.createElement('div');
+        row.className = 'conv-item' + (conv.id === currentConversationId ? ' active' : '');
+        const title = document.createElement('span');
+        title.className = 'conv-title';
+        title.textContent = conv.title || 'New chat';
+        const time = document.createElement('span');
+        time.className = 'conv-time';
+        time.textContent = new Date(conv.updated_at).toLocaleDateString([], { day: '2-digit', month: 'short' });
+        const del = document.createElement('button');
+        del.className = 'conv-del';
+        del.textContent = '×';
+        del.addEventListener('click', (e) => { e.stopPropagation(); deleteConversation(conv.id); });
+        row.appendChild(title); row.appendChild(time); row.appendChild(del);
+        row.addEventListener('click', () => switchConversation(conv.id));
+        historyList.appendChild(row);
+      });
+    } catch (e) { historyList.innerHTML = '<div class="msg-note">Gagal memuat.</div>'; }
+  }
+
+  async function switchConversation(convId){
+    document.getElementById('historySheet').classList.remove('show');
+    if (convId === currentConversationId) return;
+    currentConversationId = convId;
+    history = [];
+    messagesBox.innerHTML = '';
+    chatInput.disabled = false;
+    sendBtn.disabled = false;
+    await loadHistory();
+  }
+
+  async function deleteConversation(convId){
+    if (!window.confirm('Hapus obrolan ini? Semua pesan di dalamnya akan hilang permanen.')) return;
+    try {
+      await sb.from('conversations').delete().eq('id', convId);
+      if (convId === currentConversationId) {
+        currentConversationId = null;
+        history = [];
+        messagesBox.innerHTML = '';
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        await initConversation();
+        await loadHistory();
+      }
+      await renderConversationList();
+    } catch (e) { console.error('Gagal hapus obrolan:', e); }
+  }
+
+  function checkConversationLimit(){
+    if (currentMode === 'offline') return false; // mode offline nggak disimpen, nggak kena limit ini
+    if (history.length >= MAX_MESSAGES_PER_CONVERSATION) {
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+      addNote(`Obrolan ini udah mencapai batas ${MAX_MESSAGES_PER_CONVERSATION} pesan. Mulai obrolan baru lewat ikon ✎ di atas.`);
+      return true;
+    }
+    return false;
+  }
+
+  // ============ MEMORY ============
+  async function loadMemory(){
+    try {
+      const { data, error } = await sb.from('user_memory').select('id, content').eq('user_id', userId).order('created_at', { ascending: true });
+      if (error) throw error;
+      memoryItems = data || [];
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) { console.error('Gagal muat memori:', e); }
+  }
+
+  async function addMemoryItem(text){
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    try {
+      const { data, error } = await sb.from('user_memory').insert({ user_id: userId, content: trimmed }).select('id, content').single();
+      if (error) throw error;
+      memoryItems.push(data);
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) { console.error('Gagal simpan memori:', e); }
+  }
+
+  async function deleteMemoryItem(id){
+    try {
+      await sb.from('user_memory').delete().eq('id', id);
+      memoryItems = memoryItems.filter(m => m.id !== id);
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) { console.error('Gagal hapus memori:', e); }
+  }
+
+  function renderMemoryList(){
+    const memoryList = document.getElementById('memoryList');
+    memoryList.innerHTML = '';
+    if (memoryItems.length === 0) {
+      memoryList.innerHTML = '<div class="msg-note">Belum ada memori tersimpan.</div>';
+      return;
+    }
+    memoryItems.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'mem-item';
+      const span = document.createElement('span');
+      span.textContent = item.content;
+      const del = document.createElement('button');
+      del.className = 'mem-del';
+      del.textContent = '×';
+      del.addEventListener('click', () => deleteMemoryItem(item.id));
+      row.appendChild(span); row.appendChild(del);
+      memoryList.appendChild(row);
+    });
+  }
+
+  document.getElementById('memoryAddBtn').addEventListener('click', () => {
+    const inp = document.getElementById('memoryInput');
+    addMemoryItem(inp.value);
+    inp.value = '';
+  });
+
+  // ============ CHAT MESSAGES (UI) ============
+  const messagesBox = document.getElementById('messagesBox');
+  const chatInput = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const quotaLine = document.getElementById('quotaLine');
+
+  const modeLabels = { online: 'Gemini · Gratis Online', offline: 'Qwen3-0.6B · di HP', cloud: 'Claude · Premium' };
+
+  function renderMessage(text, role, entry){
+    const div = document.createElement('div');
+    div.className = role === 'user' ? 'msg-me' : 'msg-ai';
+    if (role !== 'user') {
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = modeLabels[currentMode] || 'ZO AI';
+      div.appendChild(label);
+    }
+    const textNode = document.createElement('span');
+    textNode.textContent = text;
+    div.appendChild(textNode);
+    if (entry && entry.time) {
+      const time = document.createElement('div');
+      time.className = 'msg-time';
+      time.textContent = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      div.appendChild(time);
+    }
+    messagesBox.appendChild(div);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    return div;
+  }
+
+  sendBtn.addEventListener('click', send);
+  chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+
+  async function send(){
+    const val = chatInput.value.trim();
+    if (!val) return;
+    const entry = { role: 'user', content: val, id: null, time: new Date().toISOString() };
+    history.push(entry);
+    renderMessage(val, 'user', entry);
+    chatInput.value = '';
+    sendBtn.disabled = true;
+
+    if (currentMode !== 'offline') saveMessage('user', val).then(id => { entry.id = id; });
+
+    const loadingDiv = renderMessage('Berpikir...', 'ai');
+
+    let result;
+    if (currentMode === 'offline') {
+      result = await sendToOfflineModel(val);
+    } else {
+      result = await sendToServer();
+    }
+
+    loadingDiv.remove();
+
+    if (!result.ok) {
+      addNote(result.message);
+    } else {
+      const replyEntry = { role: 'assistant', content: result.reply, id: null, time: new Date().toISOString() };
+      if (currentMode !== 'offline') {
+        history.push(replyEntry);
+        saveMessage('assistant', result.reply).then(id => { replyEntry.id = id; });
+      }
+      renderMessage(result.reply, 'ai', replyEntry);
+    }
+
+    sendBtn.disabled = false;
+    checkConversationLimit();
+  }
+
+  async function sendToServer(){
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken },
+        body: JSON.stringify({ messages: history.filter(h => h.role !== 'system').map(h => ({ role: h.role, content: h.content })), webSearchEnabled: true, userMemory: userMemoryText })
+      });
+      const data = await res.json();
+      if (data.error) return { ok: false, message: data.error };
+      quotaLine.textContent = typeof data.remaining === 'number' ? `${data.remaining} pertanyaan gratis tersisa hari ini` : '';
+      return { ok: true, reply: data.reply };
+    } catch (e) {
+      return { ok: false, message: 'Koneksi bermasalah, coba lagi.' };
+    }
+  }
+
+  // ============ OFFLINE MODE (Qwen3-0.6B, jalan 100% di browser) ============
+  let offlineGenerator = null;
+  let offlineLoading = false;
+  let offlineHistory = [{ role: 'system', content: 'Kamu adalah ZO AI mode offline, asisten ringan yang jalan langsung di perangkat tanpa internet. Jawab singkat dan jelas.' }];
+
+  async function preloadOfflineModel(){
+    if (offlineGenerator || offlineLoading) return;
+    offlineLoading = true;
+    const progDiv = document.createElement('div');
+    progDiv.className = 'offline-progress';
+    progDiv.innerHTML = 'Mengunduh model AI on-device (sekali aja, ~300-400MB)...<div class="offline-bar"><div class="offline-bar-fill" id="offlineBarFill"></div></div>';
+    messagesBox.appendChild(progDiv);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    const fill = document.getElementById('offlineBarFill');
+
+    try {
+      const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6');
+      let hasWebGPU = false;
+      try { hasWebGPU = !!(navigator.gpu && (await navigator.gpu.requestAdapter())); } catch (e) {}
+
+      offlineGenerator = await pipeline('text-generation', 'onnx-community/Qwen3-0.6B-ONNX', {
+        dtype: 'q4',
+        device: hasWebGPU ? 'webgpu' : 'wasm',
+        progress_callback: (p) => {
+          if (p.status === 'progress' && fill) fill.style.width = Math.round(p.progress || 0) + '%';
+        }
+      });
+      progDiv.remove();
+      addNote(hasWebGPU ? 'Model AI on-device siap (dipercepat WebGPU).' : 'Model AI on-device siap (mode CPU, mungkin lebih lambat).');
+    } catch (e) {
+      console.error('Gagal load model offline:', e);
+      progDiv.innerHTML = 'Gagal memuat model offline. Cek koneksi internet buat unduhan pertama, lalu coba lagi.';
+    }
+    offlineLoading = false;
+  }
+
+  async function sendToOfflineModel(userText){
+    if (!offlineGenerator) {
+      await preloadOfflineModel();
+      if (!offlineGenerator) return { ok: false, message: 'Model offline belum siap. Coba lagi.' };
+    }
+    offlineHistory.push({ role: 'user', content: userText });
+    try {
+      const output = await offlineGenerator(offlineHistory, { max_new_tokens: 256, do_sample: false });
+      const reply = output[0].generated_text.at(-1).content;
+      offlineHistory.push({ role: 'assistant', content: reply });
+      return { ok: true, reply };
+    } catch (e) {
+      console.error('Offline generation error:', e);
+      return { ok: false, message: 'Gagal generate jawaban offline: ' + e.message };
+    }
+  }
+
+  // ============ WALLET ============
+  const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'.length === 42 ? '0xdAC17F958D2ee523a2206206994597C13D831ec7' : '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+  const ETH_RPC_LIST = ['https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com', 'https://rpc.ankr.com/eth'];
+  const SOL_RPC_LIST = ['https://api.mainnet-beta.solana.com', 'https://solana-rpc.publicnode.com'];
+
+  let currentAddress = null, currentNetwork = null;
+
+  function hasEth(){ return typeof window.ethereum !== 'undefined'; }
+  function hasPhan(){ return typeof window.solana !== 'undefined' && window.solana.isPhantom; }
+
+  document.getElementById('btnMetaMask').addEventListener('click', () => connectEVM('MetaMask', 'https://metamask.app.link/dapp/' + window.location.host));
+  document.getElementById('btnTrust').addEventListener('click', () => connectEVM('Trust Wallet', 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodeURIComponent(window.location.href)));
+  document.getElementById('btnPhantom').addEventListener('click', () => connectPhantom());
+  document.getElementById('disconnectBtn').addEventListener('click', disconnectWallet);
+  ['btnSend', 'btnReceive', 'btnSwap'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => alert('Fitur ini belum tersedia di app baru — segera hadir.'));
+  });
+
+  async function connectEVM(name, deepLink){
+    if (!hasEth()) { window.location.href = deepLink; return; }
+    try {
+      document.getElementById('connectingLine').textContent = 'Menghubungkan...';
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      currentAddress = accounts[0]; currentNetwork = 'ethereum';
+      showConnected(name, currentAddress, 'Ethereum');
+      loadEthBalances(currentAddress);
+    } catch (err) {
+      document.getElementById('connectingLine').textContent = err && err.message ? err.message : 'Koneksi gagal.';
+    }
+  }
+
+  async function connectPhantom(){
+    if (!hasPhan()) {
+      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(window.location.href) + '?ref=' + encodeURIComponent(window.location.origin);
+      return;
+    }
+    try {
+      document.getElementById('connectingLine').textContent = 'Menghubungkan...';
+      const resp = await window.solana.connect();
+      currentAddress = resp.publicKey.toString(); currentNetwork = 'solana';
+      showConnected('Phantom', currentAddress, 'Solana');
+      loadSolBalance(currentAddress);
+    } catch (err) {
+      document.getElementById('connectingLine').textContent = err && err.message ? err.message : 'Koneksi gagal.';
+    }
+  }
+
+  function showConnected(providerName, address, network){
+    document.getElementById('connectBox').classList.add('hide');
+    document.getElementById('walletConnected').classList.add('show');
+    document.getElementById('connectedAddr').textContent = address.slice(0, 6) + '...' + address.slice(-4);
+    document.getElementById('connectedNet').textContent = network + ' · via ' + providerName;
+  }
+
+  function disconnectWallet(){
+    currentAddress = null; currentNetwork = null;
+    document.getElementById('connectBox').classList.remove('hide');
+    document.getElementById('walletConnected').classList.remove('show');
+  }
+
+  async function rpcCall(urlOrList, method, params){
+    const urls = Array.isArray(urlOrList) ? urlOrList : [urlOrList];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+        const data = await res.json();
+        if (data.error) continue;
+        return data.result;
+      } catch (e) { /* coba endpoint berikutnya */ }
+    }
+    return null;
+  }
+
+  async function getPrices(){
+    try {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana,tether&vs_currencies=usd');
+      return await res.json();
+    } catch (e) { return {}; }
+  }
+
+  function renderTokens(tokens){
+    const tokenList = document.getElementById('tokenList');
+    tokenList.innerHTML = '';
+    tokens.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'token-row';
+      row.innerHTML = `<div class="token-left"><div class="token-icon">${t.icon}</div><div><div class="token-name">${t.symbol}</div><div class="token-sub">${t.amount} ${t.symbol}</div></div></div><div><div class="token-val">$${t.usd}</div></div>`;
+      tokenList.appendChild(row);
+    });
+  }
+
+  async function loadEthBalances(address){
+    const prices = await getPrices();
+    const ethPrice = prices.ethereum?.usd || 0;
+    const usdtPrice = prices.tether?.usd || 1;
+    const weiHex = await rpcCall(ETH_RPC_LIST, 'eth_getBalance', [address, 'latest']);
+    const ethBal = weiHex ? Number(BigInt(weiHex)) / 1e18 : 0;
+    const data = '0x70a08231' + '000000000000000000000000' + address.slice(2).toLowerCase();
+    const usdtHex = await rpcCall(ETH_RPC_LIST, 'eth_call', [{ to: USDT_CONTRACT, data }, 'latest']);
+    const usdtBal = usdtHex ? Number(BigInt(usdtHex)) / 1e6 : 0;
+    const totalUsd = ethBal * ethPrice + usdtBal * usdtPrice;
+    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
+    document.getElementById('balanceSub').textContent = 'Live dari Ethereum';
+    renderTokens([
+      { symbol: 'ETH', icon: 'Ξ', amount: ethBal.toFixed(4), usd: (ethBal * ethPrice).toFixed(2) },
+      { symbol: 'USDT', icon: '₮', amount: usdtBal.toFixed(2), usd: (usdtBal * usdtPrice).toFixed(2) }
+    ]);
+  }
+
+  async function loadSolBalance(address){
+    const prices = await getPrices();
+    const solPrice = prices.solana?.usd || 0;
+    const lamports = await rpcCall(SOL_RPC_LIST, 'getBalance', [address]);
+    const solBal = lamports ? lamports.value / 1e9 : 0;
+    const totalUsd = solBal * solPrice;
+    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
+    document.getElementById('balanceSub').textContent = 'Live dari Solana';
+    renderTokens([{ symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }]);
+  }
+</script>
+</body>
+</html>
