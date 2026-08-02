@@ -14,6 +14,10 @@
   [data-theme="dark"]{ --ink:#f0f0f0; --muted:#9a9a9a; --line:#2a2a2a; --bg:#0f0f0f; --surface:#1c1c1c; --surface2:#262626; --field-bg:#262626; }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{font-family:'Inter',sans-serif; height:100vh; overflow:hidden; -webkit-tap-highlight-color:transparent;}
+  .msg-ai, .msg-me, .h-title, .h-sub, .mode-opt, .sheet-row, .nav-item, .balance-card, .addr-card, .token-row, .conv-item{
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  .msg-ai.copyable, .msg-me.copyable{ -webkit-user-select:text; user-select:text; }
   button{font-family:inherit;}
 
   /* ===== LOGIN SCREEN ===== */
@@ -803,6 +807,24 @@
   const confirmCancelBtn = document.getElementById('confirmCancelBtn');
   const confirmOkBtn = document.getElementById('confirmOkBtn');
 
+  function showInfo(title, msg){
+    confirmTitle.textContent = title;
+    confirmMsg.textContent = msg;
+    confirmCancelBtn.style.display = 'none';
+    confirmOkBtn.textContent = 'OK';
+    confirmOverlay.classList.add('show');
+    return new Promise((resolve) => {
+      function onOk(){
+        confirmOverlay.classList.remove('show');
+        confirmCancelBtn.style.display = '';
+        confirmOkBtn.textContent = 'Hapus';
+        confirmOkBtn.removeEventListener('click', onOk);
+        resolve(true);
+      }
+      confirmOkBtn.addEventListener('click', onOk);
+    });
+  }
+
   function showConfirm(title, msg){
     confirmTitle.textContent = title;
     confirmMsg.textContent = msg;
@@ -1019,9 +1041,34 @@
       time.textContent = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       div.appendChild(time);
     }
+
+    // Tekan agak lama buat nyalin teks -- ganti cara select-teks bawaan
+    // Chrome (yang nampilin toolbar "Salin/Bagikan/Cari di Google" itu).
+    let pressTimer = null;
+    const startPress = () => { pressTimer = setTimeout(() => copyToClipboard(text, div), 450); };
+    const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); };
+    div.addEventListener('touchstart', startPress);
+    div.addEventListener('touchend', cancelPress);
+    div.addEventListener('touchmove', cancelPress);
+    div.addEventListener('mousedown', startPress);
+    div.addEventListener('mouseup', cancelPress);
+    div.addEventListener('mouseleave', cancelPress);
+
     messagesBox.appendChild(div);
     messagesBox.scrollTop = messagesBox.scrollHeight;
     return div;
+  }
+
+  function copyToClipboard(text, div){
+    navigator.clipboard?.writeText(text).catch(() => {});
+    const toast = document.createElement('div');
+    toast.textContent = 'Disalin';
+    toast.style.cssText = 'position:absolute; background:var(--dark-card); color:#fff; font-size:11px; padding:6px 12px; border-radius:100px; z-index:60; pointer-events:none;';
+    const rect = div.getBoundingClientRect();
+    toast.style.top = (rect.top - 30 + window.scrollY) + 'px';
+    toast.style.left = rect.left + 'px';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 1200);
   }
 
   sendBtn.addEventListener('click', send);
@@ -1148,7 +1195,7 @@
   document.getElementById('btnPhantom').addEventListener('click', () => connectPhantom());
   document.getElementById('disconnectBtn').addEventListener('click', disconnectWallet);
   ['btnSend', 'btnReceive', 'btnSwap'].forEach(id => {
-    document.getElementById(id).addEventListener('click', () => alert('Fitur ini belum tersedia di app baru — segera hadir.'));
+    document.getElementById(id).addEventListener('click', () => showInfo('Segera Hadir', 'Fitur ini belum tersedia di app baru — segera hadir.'));
   });
 
   async function connectEVM(name, deepLink){
