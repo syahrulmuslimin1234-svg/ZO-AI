@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <style>
@@ -155,6 +157,15 @@
   .live-status{font-family:monospace; font-size:12.5px; color:#8a8a8a; letter-spacing:0.05em;}
   .live-transcript{max-width:80%; text-align:center; font-size:15px; color:#fff; min-height:24px;}
   .live-close{position:absolute; top:24px; right:24px; background:#222; border:1px solid #333; color:#fff; border-radius:50%; width:40px; height:40px; font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .qr-box{display:flex; justify-content:center; background:#fff; padding:16px; border-radius:16px; margin:16px 0;}
+  .addr-full{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-family:monospace; font-size:12px; word-break:break-all; color:var(--ink); margin-bottom:14px;}
+  .wd-label{font-size:11.5px; color:var(--muted); font-weight:700; text-transform:uppercase; margin:14px 0 6px;}
+  .wd-input, .wd-select{width:100%; background:var(--field-bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--ink);}
+  .wd-status{font-size:12.5px; margin-top:10px; text-align:center; min-height:16px;}
+  .wd-status.error{color:var(--red);}
+  .wd-status.success{color:#1a9e4b;}
+  .wd-submit{width:100%; background:var(--red); color:#fff; border:none; border-radius:100px; padding:14px; font-weight:700; margin-top:16px; cursor:pointer;}
+  .wd-submit:disabled{opacity:0.5;}
   .sheet-overlay.show{display:flex;}
   .sheet{width:100%; max-width:480px; background:var(--surface); color:var(--ink); border-radius:20px 20px 0 0; padding:22px 20px 26px; max-height:80vh; overflow-y:auto;}
   .sheet-title{font-weight:800; font-size:16px; margin-bottom:14px;}
@@ -370,6 +381,33 @@
   <div class="live-orb" id="liveOrb"></div>
   <div class="live-status" id="liveStatus">Mendengarkan...</div>
   <div class="live-transcript" id="liveTranscript"></div>
+</div>
+
+<!-- ============ DEPOSIT MODAL ============ -->
+<div class="sheet-overlay" id="depositOverlay">
+  <div class="sheet">
+    <div class="sheet-title">Deposit</div>
+    <div class="qr-box"><div id="qrcodeBox"></div></div>
+    <div class="addr-full" id="depositAddrFull">-</div>
+    <button class="sheet-close" id="copyDepositAddrBtn" style="background:var(--red); color:#fff;">Copy address</button>
+    <button class="sheet-close" data-close-sheet="depositOverlay">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ WITHDRAW MODAL ============ -->
+<div class="sheet-overlay" id="withdrawOverlay">
+  <div class="sheet">
+    <div class="sheet-title">Withdraw</div>
+    <div class="wd-label">Aset</div>
+    <select class="wd-select" id="withdrawAsset"></select>
+    <div class="wd-label">Alamat tujuan</div>
+    <input class="wd-input" id="withdrawTo" placeholder="0x... atau alamat Solana">
+    <div class="wd-label">Jumlah</div>
+    <input class="wd-input" id="withdrawAmount" type="number" placeholder="0.0">
+    <div class="wd-status" id="withdrawStatus"></div>
+    <button class="wd-submit" id="withdrawSubmitBtn">Kirim</button>
+    <button class="sheet-close" data-close-sheet="withdrawOverlay">Batal</button>
+  </div>
 </div>
 
 <script>
@@ -1194,9 +1232,9 @@
   document.getElementById('btnTrust').addEventListener('click', () => connectEVM('Trust Wallet', 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodeURIComponent(window.location.href)));
   document.getElementById('btnPhantom').addEventListener('click', () => connectPhantom());
   document.getElementById('disconnectBtn').addEventListener('click', disconnectWallet);
-  ['btnSend', 'btnReceive', 'btnSwap'].forEach(id => {
-    document.getElementById(id).addEventListener('click', () => showInfo('Segera Hadir', 'Fitur ini belum tersedia di app baru — segera hadir.'));
-  });
+  document.getElementById('btnSend').addEventListener('click', openWithdraw);
+  document.getElementById('btnReceive').addEventListener('click', openDeposit);
+  document.getElementById('btnSwap').addEventListener('click', () => showInfo('Segera Hadir', 'Fitur tukar aset (swap) belum tersedia di app baru — segera hadir.'));
 
   async function connectEVM(name, deepLink){
     if (!hasEth()) { window.location.href = deepLink; return; }
@@ -1232,6 +1270,123 @@
     document.getElementById('walletConnected').classList.add('show');
     document.getElementById('connectedAddr').textContent = address.slice(0, 6) + '...' + address.slice(-4);
     document.getElementById('connectedNet').textContent = network + ' · via ' + providerName;
+  }
+
+  // ---- Deposit: tampilin QR code + alamat, tinggal di-scan/copy ----
+  let qrInstance = null;
+  function openDeposit(){
+    if (!currentAddress) return;
+    document.getElementById('depositAddrFull').textContent = currentAddress;
+    document.getElementById('qrcodeBox').innerHTML = '';
+    qrInstance = new QRCode(document.getElementById('qrcodeBox'), {
+      text: currentAddress, width: 190, height: 190, colorDark: '#000000', colorLight: '#ffffff'
+    });
+    document.getElementById('depositOverlay').classList.add('show');
+  }
+  document.getElementById('copyDepositAddrBtn').addEventListener('click', () => {
+    if (!currentAddress) return;
+    navigator.clipboard?.writeText(currentAddress).catch(() => {});
+    const btn = document.getElementById('copyDepositAddrBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Disalin!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+
+  // ---- Withdraw: kirim aset asli lewat wallet yang lagi connect ----
+  function openWithdraw(){
+    if (!currentAddress) return;
+    const select = document.getElementById('withdrawAsset');
+    select.innerHTML = '';
+    const assets = currentNetwork === 'solana' ? ['SOL'] : ['ETH', 'USDT'];
+    assets.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      select.appendChild(opt);
+    });
+    document.getElementById('withdrawTo').value = '';
+    document.getElementById('withdrawAmount').value = '';
+    setWithdrawStatus('', '');
+    document.getElementById('withdrawOverlay').classList.add('show');
+  }
+
+  function setWithdrawStatus(msg, type){
+    const el = document.getElementById('withdrawStatus');
+    el.textContent = msg;
+    el.className = 'wd-status' + (type ? ' ' + type : '');
+  }
+
+  document.getElementById('withdrawSubmitBtn').addEventListener('click', sendWithdraw);
+
+  async function sendWithdraw(){
+    const asset = document.getElementById('withdrawAsset').value;
+    const to = document.getElementById('withdrawTo').value.trim();
+    const amountStr = document.getElementById('withdrawAmount').value.trim();
+    const btn = document.getElementById('withdrawSubmitBtn');
+
+    if (!to || !amountStr || Number(amountStr) <= 0) {
+      setWithdrawStatus('Alamat atau jumlah nggak valid.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    setWithdrawStatus('Konfirmasi transaksi di wallet kamu...', '');
+
+    try {
+      if (currentNetwork === 'solana') await sendSolWithdraw(to, Number(amountStr));
+      else if (asset === 'ETH') await sendEthWithdraw(to, Number(amountStr));
+      else if (asset === 'USDT') await sendUsdtWithdraw(to, Number(amountStr));
+
+      setWithdrawStatus('Transaksi terkirim!', 'success');
+      setTimeout(() => {
+        document.getElementById('withdrawOverlay').classList.remove('show');
+        if (currentNetwork === 'solana') loadSolBalance(currentAddress);
+        else loadEthBalances(currentAddress);
+      }, 1800);
+    } catch (err) {
+      setWithdrawStatus(err.message && err.message.length < 90 ? err.message : 'Transaksi gagal.', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function sendEthWithdraw(to, amount){
+    const valueHex = '0x' + BigInt(Math.round(amount * 1e18)).toString(16);
+    await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to, value: valueHex }]
+    });
+  }
+
+  async function sendUsdtWithdraw(to, amount){
+    const amountUnits = BigInt(Math.round(amount * 1e6));
+    const data = '0xa9059cbb'
+      + to.replace('0x', '').padStart(64, '0')
+      + amountUnits.toString(16).padStart(64, '0');
+    await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to: USDT_CONTRACT, data, value: '0x0' }]
+    });
+  }
+
+  async function sendSolWithdraw(to, amount){
+    if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom nggak tersedia.');
+    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = solanaWeb3;
+
+    let toPubkey;
+    try { toPubkey = new PublicKey(to); }
+    catch (e) { throw new Error('Alamat Solana nggak valid.'); }
+
+    const connection = new Connection(SOL_RPC_LIST[0], 'confirmed');
+    const fromPubkey = new PublicKey(currentAddress);
+    const lamports = Math.round(amount * LAMPORTS_PER_SOL);
+
+    const transaction = new Transaction().add(SystemProgram.transfer({ fromPubkey, toPubkey, lamports }));
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = fromPubkey;
+
+    const { signature } = await window.solana.signAndSendTransaction(transaction);
+    await connection.confirmTransaction(signature, 'confirmed');
   }
 
   function disconnectWallet(){
