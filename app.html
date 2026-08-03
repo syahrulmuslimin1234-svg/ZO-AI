@@ -9,6 +9,37 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+<script type="module">
+  import { createAppKit, WagmiAdapter } from 'https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js';
+
+  const projectId = '1c2c95e6fa47a2949a74825b50fe477d';
+  const mainnet = {
+    id: 1, name: 'Ethereum',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
+  };
+  const networks = [mainnet];
+  const wagmiAdapter = new WagmiAdapter({ networks, projectId });
+  const metadata = {
+    name: 'ZO AI',
+    description: 'ZO AI Wallet',
+    url: 'https://zo-ai.vercel.app',
+    icons: ['https://zo-ai.vercel.app/assets/logo2-96.png'],
+  };
+
+  window.zoAppKit = createAppKit({
+    adapters: [wagmiAdapter],
+    networks,
+    projectId,
+    metadata,
+    features: { analytics: false },
+  });
+
+  // Dengerin perubahan koneksi wallet, terusin ke fungsi showConnected() yang udah ada
+  window.zoAppKit.subscribeAccount((account) => {
+    window.dispatchEvent(new CustomEvent('zo-wallet-account', { detail: account }));
+  });
+</script>
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <style>
@@ -1228,8 +1259,20 @@
   function hasEth(){ return typeof window.ethereum !== 'undefined'; }
   function hasPhan(){ return typeof window.solana !== 'undefined' && window.solana.isPhantom; }
 
-  document.getElementById('btnMetaMask').addEventListener('click', () => connectEVM('MetaMask', 'https://metamask.app.link/dapp/' + window.location.host));
-  document.getElementById('btnTrust').addEventListener('click', () => connectEVM('Trust Wallet', 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodeURIComponent(window.location.href)));
+  document.getElementById('btnMetaMask').addEventListener('click', () => window.zoAppKit?.open());
+  document.getElementById('btnTrust').addEventListener('click', () => window.zoAppKit?.open());
+
+  // Nangkep event dari script AppKit (module) di head -- begitu wallet EVM
+  // ke-connect lewat WalletConnect, langsung update tampilan Wallet.
+  window.addEventListener('zo-wallet-account', (e) => {
+    const account = e.detail;
+    if (account && account.isConnected && account.address) {
+      currentAddress = account.address;
+      currentNetwork = 'ethereum';
+      showConnected('WalletConnect', currentAddress, 'Ethereum');
+      loadEthBalances(currentAddress);
+    }
+  });
   document.getElementById('btnPhantom').addEventListener('click', () => connectPhantom());
   document.getElementById('disconnectBtn').addEventListener('click', disconnectWallet);
   document.getElementById('btnSend').addEventListener('click', openWithdraw);
