@@ -519,9 +519,16 @@
 <script>
   // ============ GLOBAL ERROR SAFETY NET ============
   // Nangkep error yang gak ketangkep, biar tombol gak "mati total" secara diam-diam.
+  window.__suppressErrorBanner = false; // di-toggle sementara sama proses yang udah nangkep errornya sendiri (misal load model offline)
   window.addEventListener('error', (e) => {
     console.error('Uncaught error:', e.error || e.message);
+    if (window.__suppressErrorBanner) return;
     showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    console.error('Unhandled rejection:', e.reason);
+    if (window.__suppressErrorBanner) return;
+    showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.reason?.message || e.reason || 'unknown error') + '). Coba refresh halaman.');
   });
   function showFatalErrorBanner(text){
     if (document.getElementById('fatalErrBanner')) return;
@@ -1502,12 +1509,13 @@
     const fill = document.getElementById('offlineBarFill');
 
     // Library model offline ini kadang lempar error dari dalam Web Worker/WASM-nya sendiri,
-    // yang gak ketangkep sama try-catch biasa. Kita tangkep sementara di sini biar gak
-    // muncul sebagai banner error global yang bikin panik -- cukup tampil di bubble chat.
+    // yang gak ketangkep sama try-catch biasa. Kita redam banner global sementara di sini,
+    // errornya cukup tampil di bubble chat aja biar gak bikin panik.
     let workerErrCaught = null;
-    const catchWorkerErr = (e) => { workerErrCaught = (e.error || e.reason || e.message || 'Gagal memuat model.'); e.preventDefault?.(); };
-    window.addEventListener('error', catchWorkerErr, { capture: true });
-    window.addEventListener('unhandledrejection', catchWorkerErr, { capture: true });
+    const catchWorkerErr = (e) => { workerErrCaught = (e.error || e.reason || e.message || 'Gagal memuat model.'); };
+    window.__suppressErrorBanner = true;
+    window.addEventListener('error', catchWorkerErr);
+    window.addEventListener('unhandledrejection', catchWorkerErr);
 
     try {
       const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6');
@@ -1528,8 +1536,9 @@
       console.error('Gagal load model offline:', workerErrCaught || e);
       progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini (biasanya karena keterbatasan WebAssembly/Worker di browser kamu). Coba pakai Free Online atau Premium dulu ya.';
     } finally {
-      window.removeEventListener('error', catchWorkerErr, { capture: true });
-      window.removeEventListener('unhandledrejection', catchWorkerErr, { capture: true });
+      window.removeEventListener('error', catchWorkerErr);
+      window.removeEventListener('unhandledrejection', catchWorkerErr);
+      window.__suppressErrorBanner = false;
     }
     offlineLoading = false;
   }
@@ -1974,9 +1983,4 @@
     const solBal = lamports ? lamports.value / 1e9 : 0;
     const totalUsd = solBal * solPrice;
     document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
-    document.getElementById('balanceSub').textContent = 'Live dari Solana';
-    renderTokens([{ symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }]);
-  }
-</script>
-</body>
-</html>
+    document.getElementById('balanceSub').textContent = 
