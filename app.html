@@ -555,6 +555,162 @@
   let isPaidSubscriber = false;
   const MAX_MESSAGES_PER_CONVERSATION = 40;
 
+  // ---- Terjemahan UI. Baru id (Indonesia) & en (English) yang lengkap;
+  // bahasa lain nyusul -- fallback otomatis ke 'en' kalau key belum ada. ----
+  const TRANSLATIONS = {
+    id: {
+      loginHeadline: 'Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.',
+      continueWithGoogle: 'Lanjutkan dengan Google',
+      googleComingSoon: 'Login Google segera hadir — pakai email dulu ya',
+      or: 'ATAU',
+      emailPlaceholder: 'Alamat email kamu',
+      sendCode: 'Kirim kode',
+      loginTerms: 'Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.',
+      codePlaceholder: 'Kode 6 digit',
+      verifyCode: 'Masuk',
+      changeEmail: '← Ganti email',
+      modeOnline: 'Gratis Online',
+      modeOffline: 'Gratis Offline',
+      modeCloud: 'Premium',
+      chatPlaceholder: 'Ketik pesan…',
+      connectHeadline: 'Hubungkan wallet kamu',
+      connectDesc: 'ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.',
+      disconnect: 'Putuskan',
+      totalBalance: 'Total saldo',
+      send: 'Kirim',
+      receive: 'Terima',
+      swap: 'Tukar',
+      connectNote: 'Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.',
+      navChat: 'Chat',
+      navWallet: 'Wallet',
+      menu: 'Menu',
+      memorySettings: 'Pengaturan Memori',
+      language: 'Bahasa',
+      appearance: 'Tampilan',
+      upgradeToPremium: 'Upgrade ke Premium',
+      logout: 'Keluar',
+      close: 'Tutup',
+      chatHistory: 'Riwayat Obrolan',
+      newChat: '+ Obrolan Baru',
+      memoryDesc: 'Catatan tentang kamu yang selalu diingat AI di obrolan manapun.',
+      memoryInputPlaceholder: 'misal: saya suka analisis teknikal',
+      languageDesc: 'Dipakai untuk pesan suara & disinkron dengan halaman lain.',
+      newChat2: 'Obrolan baru',
+      walletTitle: 'Wallet',
+      nonCustodial: 'Non-custodial',
+      deposit: 'Deposit',
+      copyAddress: 'Copy address',
+      withdraw: 'Withdraw',
+      asset: 'Aset',
+      destAddress: 'Alamat tujuan',
+      destAddressPlaceholder: '0x... atau alamat Solana',
+      amount: 'Jumlah',
+      cancel: 'Batal',
+      swapAsset: 'Tukar Aset',
+      from: 'Dari',
+      toApprox: 'Ke (perkiraan)',
+      rate: 'Rate',
+      platformFee: 'Biaya platform',
+      gas: 'Gas',
+      enterAmount: 'Masukkan jumlah',
+      themeLight: 'Terang',
+      themeDark: 'Gelap',
+    },
+    en: {
+      loginHeadline: 'Your daily crypto & trading assistant, accessible with just your email.',
+      continueWithGoogle: 'Continue with Google',
+      googleComingSoon: 'Google login coming soon — use email for now',
+      or: 'OR',
+      emailPlaceholder: 'Your email address',
+      sendCode: 'Send code',
+      loginTerms: 'By continuing, you agree this device will stay signed in until you log out.',
+      codePlaceholder: '6-digit code',
+      verifyCode: 'Log in',
+      changeEmail: '← Change email',
+      modeOnline: 'Free Online',
+      modeOffline: 'Free Offline',
+      modeCloud: 'Premium',
+      chatPlaceholder: 'Type a message…',
+      connectHeadline: 'Connect your wallet',
+      connectDesc: "ZO AI only reads your address & balance. Your private keys never leave your own wallet.",
+      disconnect: 'Disconnect',
+      totalBalance: 'Total balance',
+      send: 'Send',
+      receive: 'Receive',
+      swap: 'Swap',
+      connectNote: 'Non-custodial — this balance is read directly from your wallet, ZO AI never holds your funds.',
+      navChat: 'Chat',
+      navWallet: 'Wallet',
+      menu: 'Menu',
+      memorySettings: 'Memory Settings',
+      language: 'Language',
+      appearance: 'Appearance',
+      upgradeToPremium: 'Upgrade to Premium',
+      logout: 'Log out',
+      close: 'Close',
+      chatHistory: 'Chat History',
+      newChat: '+ New Chat',
+      memoryDesc: 'Notes about you that the AI always remembers in any chat.',
+      memoryInputPlaceholder: 'e.g. I like technical analysis',
+      languageDesc: 'Used for voice messages & synced with other pages.',
+      newChat2: 'New chat',
+      walletTitle: 'Wallet',
+      nonCustodial: 'Non-custodial',
+      deposit: 'Deposit',
+      copyAddress: 'Copy address',
+      withdraw: 'Withdraw',
+      asset: 'Asset',
+      destAddress: 'Destination address',
+      destAddressPlaceholder: '0x... or Solana address',
+      amount: 'Amount',
+      cancel: 'Cancel',
+      swapAsset: 'Swap Asset',
+      from: 'From',
+      toApprox: 'To (estimated)',
+      rate: 'Rate',
+      platformFee: 'Platform fee',
+      gas: 'Gas',
+      enterAmount: 'Enter amount',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+    },
+  };
+  // Peta kode voice-lang ('id-ID', 'en-US', dst) ke kode dictionary ('id'/'en').
+  // Bahasa yang belum ada dictionary-nya otomatis fallback ke English.
+  const LANG_CODE_MAP = { 'id-ID': 'id', 'en-US': 'en' };
+
+  function currentDictLang(){
+    const voiceLang = localStorage.getItem('zo_voice_lang') || 'en-US';
+    return LANG_CODE_MAP[voiceLang] || 'en';
+  }
+  function t(key){
+    const dict = TRANSLATIONS[currentDictLang()] || TRANSLATIONS.en;
+    return dict[key] || TRANSLATIONS.en[key] || key;
+  }
+  function applyTranslations(){
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+      el.placeholder = t(el.dataset.i18nPh);
+    });
+    // Beberapa teks di-generate JS langsung (bukan lewat data-i18n), refresh manual:
+    const themeVal = document.getElementById('menuThemeValue');
+    if (themeVal) {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      themeVal.textContent = isDark ? t('themeDark') : t('themeLight');
+    }
+    const pageTitleEl = document.getElementById('pageTitle');
+    const pageSubEl = document.getElementById('pageSub');
+    if (pageTitleEl && document.querySelector('.nav-item[data-page="wallet"]').classList.contains('active')) {
+      pageTitleEl.textContent = t('walletTitle');
+      pageSubEl.textContent = t('nonCustodial');
+    } else if (pageTitleEl) {
+      pageTitleEl.textContent = t('newChat2');
+    }
+  }
+
+
   // ============ LOGIN FLOW ============
   const emailInput = document.getElementById('emailInput');
   const codeInput = document.getElementById('codeInput');
@@ -968,161 +1124,6 @@
   const chatInput = document.getElementById('chatInput');
   const sendBtn = document.getElementById('sendBtn');
   const micBtn = document.getElementById('micBtn');
-
-  // ---- Terjemahan UI. Baru id (Indonesia) & en (English) yang lengkap;
-  // bahasa lain nyusul -- fallback otomatis ke 'en' kalau key belum ada. ----
-  const TRANSLATIONS = {
-    id: {
-      loginHeadline: 'Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.',
-      continueWithGoogle: 'Lanjutkan dengan Google',
-      googleComingSoon: 'Login Google segera hadir — pakai email dulu ya',
-      or: 'ATAU',
-      emailPlaceholder: 'Alamat email kamu',
-      sendCode: 'Kirim kode',
-      loginTerms: 'Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.',
-      codePlaceholder: 'Kode 6 digit',
-      verifyCode: 'Masuk',
-      changeEmail: '← Ganti email',
-      modeOnline: 'Gratis Online',
-      modeOffline: 'Gratis Offline',
-      modeCloud: 'Premium',
-      chatPlaceholder: 'Ketik pesan…',
-      connectHeadline: 'Hubungkan wallet kamu',
-      connectDesc: 'ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.',
-      disconnect: 'Putuskan',
-      totalBalance: 'Total saldo',
-      send: 'Kirim',
-      receive: 'Terima',
-      swap: 'Tukar',
-      connectNote: 'Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.',
-      navChat: 'Chat',
-      navWallet: 'Wallet',
-      menu: 'Menu',
-      memorySettings: 'Pengaturan Memori',
-      language: 'Bahasa',
-      appearance: 'Tampilan',
-      upgradeToPremium: 'Upgrade ke Premium',
-      logout: 'Keluar',
-      close: 'Tutup',
-      chatHistory: 'Riwayat Obrolan',
-      newChat: '+ Obrolan Baru',
-      memoryDesc: 'Catatan tentang kamu yang selalu diingat AI di obrolan manapun.',
-      memoryInputPlaceholder: 'misal: saya suka analisis teknikal',
-      languageDesc: 'Dipakai untuk pesan suara & disinkron dengan halaman lain.',
-      newChat2: 'Obrolan baru',
-      walletTitle: 'Wallet',
-      nonCustodial: 'Non-custodial',
-      deposit: 'Deposit',
-      copyAddress: 'Copy address',
-      withdraw: 'Withdraw',
-      asset: 'Aset',
-      destAddress: 'Alamat tujuan',
-      destAddressPlaceholder: '0x... atau alamat Solana',
-      amount: 'Jumlah',
-      cancel: 'Batal',
-      swapAsset: 'Tukar Aset',
-      from: 'Dari',
-      toApprox: 'Ke (perkiraan)',
-      rate: 'Rate',
-      platformFee: 'Biaya platform',
-      gas: 'Gas',
-      enterAmount: 'Masukkan jumlah',
-      themeLight: 'Terang',
-      themeDark: 'Gelap',
-    },
-    en: {
-      loginHeadline: 'Your daily crypto & trading assistant, accessible with just your email.',
-      continueWithGoogle: 'Continue with Google',
-      googleComingSoon: 'Google login coming soon — use email for now',
-      or: 'OR',
-      emailPlaceholder: 'Your email address',
-      sendCode: 'Send code',
-      loginTerms: 'By continuing, you agree this device will stay signed in until you log out.',
-      codePlaceholder: '6-digit code',
-      verifyCode: 'Log in',
-      changeEmail: '← Change email',
-      modeOnline: 'Free Online',
-      modeOffline: 'Free Offline',
-      modeCloud: 'Premium',
-      chatPlaceholder: 'Type a message…',
-      connectHeadline: 'Connect your wallet',
-      connectDesc: "ZO AI only reads your address & balance. Your private keys never leave your own wallet.",
-      disconnect: 'Disconnect',
-      totalBalance: 'Total balance',
-      send: 'Send',
-      receive: 'Receive',
-      swap: 'Swap',
-      connectNote: 'Non-custodial — this balance is read directly from your wallet, ZO AI never holds your funds.',
-      navChat: 'Chat',
-      navWallet: 'Wallet',
-      menu: 'Menu',
-      memorySettings: 'Memory Settings',
-      language: 'Language',
-      appearance: 'Appearance',
-      upgradeToPremium: 'Upgrade to Premium',
-      logout: 'Log out',
-      close: 'Close',
-      chatHistory: 'Chat History',
-      newChat: '+ New Chat',
-      memoryDesc: 'Notes about you that the AI always remembers in any chat.',
-      memoryInputPlaceholder: 'e.g. I like technical analysis',
-      languageDesc: 'Used for voice messages & synced with other pages.',
-      newChat2: 'New chat',
-      walletTitle: 'Wallet',
-      nonCustodial: 'Non-custodial',
-      deposit: 'Deposit',
-      copyAddress: 'Copy address',
-      withdraw: 'Withdraw',
-      asset: 'Asset',
-      destAddress: 'Destination address',
-      destAddressPlaceholder: '0x... or Solana address',
-      amount: 'Amount',
-      cancel: 'Cancel',
-      swapAsset: 'Swap Asset',
-      from: 'From',
-      toApprox: 'To (estimated)',
-      rate: 'Rate',
-      platformFee: 'Platform fee',
-      gas: 'Gas',
-      enterAmount: 'Enter amount',
-      themeLight: 'Light',
-      themeDark: 'Dark',
-    },
-  };
-  // Peta kode voice-lang ('id-ID', 'en-US', dst) ke kode dictionary ('id'/'en').
-  // Bahasa yang belum ada dictionary-nya otomatis fallback ke English.
-  const LANG_CODE_MAP = { 'id-ID': 'id', 'en-US': 'en' };
-
-  function currentDictLang(){
-    const voiceLang = localStorage.getItem('zo_voice_lang') || 'en-US';
-    return LANG_CODE_MAP[voiceLang] || 'en';
-  }
-  function t(key){
-    const dict = TRANSLATIONS[currentDictLang()] || TRANSLATIONS.en;
-    return dict[key] || TRANSLATIONS.en[key] || key;
-  }
-  function applyTranslations(){
-    document.querySelectorAll('[data-i18n]').forEach((el) => {
-      el.textContent = t(el.dataset.i18n);
-    });
-    document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
-      el.placeholder = t(el.dataset.i18nPh);
-    });
-    // Beberapa teks di-generate JS langsung (bukan lewat data-i18n), refresh manual:
-    const themeVal = document.getElementById('menuThemeValue');
-    if (themeVal) {
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      themeVal.textContent = isDark ? t('themeDark') : t('themeLight');
-    }
-    const pageTitleEl = document.getElementById('pageTitle');
-    const pageSubEl = document.getElementById('pageSub');
-    if (pageTitleEl && document.querySelector('.nav-item[data-page="wallet"]').classList.contains('active')) {
-      pageTitleEl.textContent = t('walletTitle');
-      pageSubEl.textContent = t('nonCustodial');
-    } else if (pageTitleEl) {
-      pageTitleEl.textContent = t('newChat2');
-    }
-  }
 
   // ---- Picker generic: ganti <select> bawaan Android biar seragam sama tema app ----
   function setPickerValue(elId, labelId, value){
