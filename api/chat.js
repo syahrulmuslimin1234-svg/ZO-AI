@@ -242,7 +242,7 @@ async function callGeminiWithTools(messages, systemPrompt) {
         contents,
         systemInstruction: { parts: [{ text: systemPrompt }] },
         tools: [{ functionDeclarations: [GEMINI_MARKET_TOOL] }],
-        generationConfig: { temperature: 0.7 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
       }),
     });
     const data = await response.json();
@@ -303,7 +303,7 @@ async function callClaudeWithTools(messages, webSearchEnabled, systemPrompt) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1024,
+        max_tokens: 4096,
         system: systemPrompt || SYSTEM_PROMPT,
         tools: tools,
         messages: workingMessages,
