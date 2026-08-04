@@ -10,51 +10,57 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
 <script type="module">
-  import { createAppKit, WagmiAdapter } from 'https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js';
+  try {
+    const { createAppKit, WagmiAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
 
-  const projectId = '1c2c95e6fa47a2949a74825b50fe477d';
-  const mainnet = {
-    id: 1, name: 'Ethereum',
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
-  };
-  const networks = [mainnet];
-  const wagmiAdapter = new WagmiAdapter({ networks, projectId });
-  const metadata = {
-    name: 'ZO AI',
-    description: 'ZO AI Wallet',
-    url: 'https://zo-ai.vercel.app',
-    icons: ['https://zo-ai.vercel.app/assets/logo2-96.png'],
-  };
+    const projectId = '1c2c95e6fa47a2949a74825b50fe477d';
+    const mainnet = {
+      id: 1, name: 'Ethereum',
+      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
+    };
+    const networks = [mainnet];
+    const wagmiAdapter = new WagmiAdapter({ networks, projectId });
+    const metadata = {
+      name: 'ZO AI',
+      description: 'ZO AI Wallet',
+      url: 'https://zo-ai.vercel.app',
+      icons: ['https://zo-ai.vercel.app/assets/logo2-96.png'],
+    };
 
-  window.zoAppKit = createAppKit({
-    adapters: [wagmiAdapter],
-    networks,
-    projectId,
-    metadata,
-    features: { analytics: false },
-  });
-
-  // Dengerin perubahan koneksi wallet, terusin ke fungsi showConnected() yang udah ada
-  window.zoAppKit.subscribeAccount((account) => {
-    window.dispatchEvent(new CustomEvent('zo-wallet-account', { detail: account }));
-  });
-
-  // Provider EIP-1193 buat kirim transaksi (approve/send) -- WalletConnect nggak
-  // nyuntikin window.ethereum, jadi kita ambil provider-nya langsung dari AppKit.
-  window.zoAppKit.subscribeProviders((state) => {
-    window.zoEvmProvider = state['eip155'] || null;
-  });
-
-  // Jembatan buat kirim transaksi lewat sesi WalletConnect yang lagi connect
-  // (dipake sama script utama non-module buat fitur Kirim/Withdraw & Swap)
-  window.zoSendTx = async (txParams) => {
-    return await WagmiCore.sendTransaction(wagmiAdapter.wagmiConfig, {
-      to: txParams.to,
-      data: txParams.data || '0x',
-      value: BigInt(txParams.value || '0x0'),
+    window.zoAppKit = createAppKit({
+      adapters: [wagmiAdapter],
+      networks,
+      projectId,
+      metadata,
+      features: { analytics: false },
     });
-  };
+
+    // Dengerin perubahan koneksi wallet, terusin ke fungsi showConnected() yang udah ada
+    window.zoAppKit.subscribeAccount((account) => {
+      window.dispatchEvent(new CustomEvent('zo-wallet-account', { detail: account }));
+    });
+
+    // Provider EIP-1193 buat kirim transaksi (approve/send) -- WalletConnect nggak
+    // nyuntikin window.ethereum, jadi kita ambil provider-nya langsung dari AppKit.
+    window.zoAppKit.subscribeProviders((state) => {
+      window.zoEvmProvider = state['eip155'] || null;
+    });
+
+    // Jembatan buat kirim transaksi lewat sesi WalletConnect yang lagi connect
+    // (dipake sama script utama non-module buat fitur Kirim/Withdraw & Swap)
+    window.zoSendTx = async (txParams) => {
+      return await WagmiCore.sendTransaction(wagmiAdapter.wagmiConfig, {
+        to: txParams.to,
+        data: txParams.data || '0x',
+        value: BigInt(txParams.value || '0x0'),
+      });
+    };
+  } catch (err) {
+    console.error('Gagal inisialisasi wallet connect (AppKit):', err);
+    // window.zoAppKit sengaja dibiarin undefined -- tombol wallet udah pakai `?.`
+    // jadi gak bakal crash, cuma fitur connect walletnya belum bisa dipakai.
+  }
 </script>
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -504,10 +510,40 @@
 </div>
 
 <script>
+  // ============ GLOBAL ERROR SAFETY NET ============
+  // Nangkep error yang gak ketangkep, biar tombol gak "mati total" secara diam-diam.
+  window.addEventListener('error', (e) => {
+    console.error('Uncaught error:', e.error || e.message);
+    showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
+  });
+  function showFatalErrorBanner(text){
+    if (document.getElementById('fatalErrBanner')) return;
+    const render = () => {
+      const banner = document.createElement('div');
+      banner.id = 'fatalErrBanner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#e3242b;color:#fff;padding:10px 14px;font-size:12.5px;text-align:center;font-family:sans-serif;';
+      banner.textContent = text;
+      document.body.prepend(banner);
+    };
+    if (document.body) render(); else document.addEventListener('DOMContentLoaded', render);
+  }
+
   // ============ SUPABASE INIT ============
   const SUPABASE_URL = 'https://pjrkzujhrngllagxawxv.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp';
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let sb;
+  try {
+    if (typeof supabase === 'undefined') {
+      throw new Error('Library Supabase gagal dimuat dari CDN. Cek koneksi internet kamu.');
+    }
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (err) {
+    console.error('Gagal inisialisasi Supabase:', err);
+    showFatalErrorBanner('Gagal memuat komponen login (Supabase). Coba refresh halaman atau cek koneksi internet.');
+    // Bikin objek dummy biar pemanggilan sb.auth.dll gak nge-crash script lain,
+    // cukup gagal dengan pesan yang jelas.
+    sb = { auth: new Proxy({}, { get: () => async () => ({ data: null, error: new Error('Supabase belum siap.') }) }) };
+  }
 
   let userId = '', userEmail = '', accessToken = '';
   let currentConversationId = null;
