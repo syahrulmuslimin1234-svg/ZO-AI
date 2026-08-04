@@ -218,8 +218,15 @@
   .wd-input, .wd-select{width:100%; background:var(--field-bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--ink);}
   .wd-select{display:flex; align-items:center; justify-content:space-between; cursor:pointer;}
   .wd-select svg{color:var(--muted); flex-shrink:0;}
-  .picker-row{display:flex; align-items:center; justify-content:space-between; padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer; font-size:14.5px; font-weight:600;}
-  .picker-row.active-pick{color:var(--red);}
+  .picker-row{display:flex; align-items:center; gap:12px; padding:12px 13px; margin-bottom:8px; border-radius:14px; cursor:pointer; font-size:14.5px; font-weight:600; background:var(--surface2); transition:background .15s ease, transform .1s ease;}
+  .picker-row:last-child{margin-bottom:0;}
+  .picker-row:active{transform:scale(0.98);}
+  .picker-row.active-pick{background:rgba(227,36,43,0.1); color:var(--red);}
+  .picker-row .pr-icon{width:34px; height:34px; border-radius:50%; background:var(--dark-card); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; flex-shrink:0;}
+  .picker-row.active-pick .pr-icon{background:var(--red);}
+  .picker-row .pr-label{flex:1;}
+  .picker-row .pr-check{font-size:16px; opacity:0; color:var(--red);}
+  .picker-row.active-pick .pr-check{opacity:1;}
   .wd-status{font-size:12.5px; margin-top:10px; text-align:center; min-height:16px;}
   .wd-status.error{color:var(--red);}
   .wd-status.success{color:#1a9e4b;}
@@ -1126,6 +1133,7 @@
   const micBtn = document.getElementById('micBtn');
 
   // ---- Picker generic: ganti <select> bawaan Android biar seragam sama tema app ----
+  const TOKEN_ICONS = { ETH: 'Ξ', USDT: '₮', SOL: '◎', BTC: '₿' };
   function setPickerValue(elId, labelId, value){
     document.getElementById(elId).dataset.value = value;
     document.getElementById(labelId).textContent = value;
@@ -1140,7 +1148,8 @@
     options.forEach((opt) => {
       const row = document.createElement('div');
       row.className = 'picker-row' + (opt === currentValue ? ' active-pick' : '');
-      row.textContent = opt;
+      const icon = TOKEN_ICONS[opt] || opt.charAt(0);
+      row.innerHTML = `<span class="pr-icon">${icon}</span><span class="pr-label">${opt}</span><span class="pr-check">✓</span>`;
       row.addEventListener('click', () => {
         onSelect(opt);
         document.getElementById('pickerOverlay').classList.remove('show');
@@ -1492,6 +1501,14 @@
     messagesBox.scrollTop = messagesBox.scrollHeight;
     const fill = document.getElementById('offlineBarFill');
 
+    // Library model offline ini kadang lempar error dari dalam Web Worker/WASM-nya sendiri,
+    // yang gak ketangkep sama try-catch biasa. Kita tangkep sementara di sini biar gak
+    // muncul sebagai banner error global yang bikin panik -- cukup tampil di bubble chat.
+    let workerErrCaught = null;
+    const catchWorkerErr = (e) => { workerErrCaught = (e.error || e.reason || e.message || 'Gagal memuat model.'); e.preventDefault?.(); };
+    window.addEventListener('error', catchWorkerErr, { capture: true });
+    window.addEventListener('unhandledrejection', catchWorkerErr, { capture: true });
+
     try {
       const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6');
       let hasWebGPU = false;
@@ -1504,11 +1521,15 @@
           if (p.status === 'progress' && fill) fill.style.width = Math.round(p.progress || 0) + '%';
         }
       });
+      if (workerErrCaught) throw new Error('worker-error');
       progDiv.remove();
       addNote(hasWebGPU ? 'Model AI on-device siap (dipercepat WebGPU).' : 'Model AI on-device siap (mode CPU, mungkin lebih lambat).');
     } catch (e) {
-      console.error('Gagal load model offline:', e);
-      progDiv.innerHTML = 'Gagal memuat model offline. Cek koneksi internet buat unduhan pertama, lalu coba lagi.';
+      console.error('Gagal load model offline:', workerErrCaught || e);
+      progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini (biasanya karena keterbatasan WebAssembly/Worker di browser kamu). Coba pakai Free Online atau Premium dulu ya.';
+    } finally {
+      window.removeEventListener('error', catchWorkerErr, { capture: true });
+      window.removeEventListener('unhandledrejection', catchWorkerErr, { capture: true });
     }
     offlineLoading = false;
   }
