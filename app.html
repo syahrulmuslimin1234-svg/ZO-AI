@@ -67,6 +67,8 @@
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
   }
   .msg-ai.copyable, .msg-me.copyable{ -webkit-user-select:text; user-select:text; }
+  .msg-ai, .msg-me{ min-width:0; }
+  .messages{ min-width:0; }
   button{font-family:inherit;}
 
   /* ===== LOGIN SCREEN ===== */
@@ -99,7 +101,7 @@
   #codeStep{display:none;}
 
   /* ===== APP SHELL ===== */
-  #appScreen{display:none; height:100vh; flex-direction:column; background:var(--surface); color:var(--ink);}
+  #appScreen{display:none; height:100vh; flex-direction:column; background:var(--surface); color:var(--ink); overflow-x:hidden; min-width:0;}
   #appScreen.show{display:flex;}
 
   header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); flex-shrink:0;}
@@ -116,13 +118,13 @@
   .mode-opt .tag{display:block; font-size:9.5px; font-weight:500; margin-top:1px;}
   .mode-opt.active .tag{color:#bbb;}
 
-  .page{flex:1; overflow-y:auto; display:none;}
+  .page{flex:1; overflow-y:auto; overflow-x:hidden; min-width:0; display:none;}
   .page.active{display:flex; flex-direction:column;}
 
-  .messages{flex:1; padding:18px; display:flex; flex-direction:column; gap:16px;}
-  .msg-ai{font-size:14.5px; line-height:1.55; max-width:92%; white-space:pre-wrap;}
+  .messages{flex:1; padding:18px; display:flex; flex-direction:column; gap:16px; overflow-x:hidden; max-width:100vw;}
+  .msg-ai{font-size:14.5px; line-height:1.55; max-width:92%; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;}
   .msg-ai .label{font-size:10.5px; color:var(--red); font-weight:700; margin-bottom:4px; font-family:monospace; text-transform:uppercase;}
-  .msg-me{align-self:flex-end; background:var(--surface2); padding:11px 15px; border-radius:16px; border-bottom-right-radius:4px; font-size:14.5px; max-width:78%; white-space:pre-wrap;}
+  .msg-me{align-self:flex-end; background:var(--surface2); padding:11px 15px; border-radius:16px; border-bottom-right-radius:4px; font-size:14.5px; max-width:78%; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;}
   .msg-time{font-family:monospace; font-size:10px; color:var(--muted); margin-top:4px;}
   .msg-note{font-size:12.5px; color:var(--muted); text-align:center; padding:8px 0;}
 
@@ -208,6 +210,10 @@
   .addr-full{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-family:monospace; font-size:12px; word-break:break-all; color:var(--ink); margin-bottom:14px;}
   .wd-label{font-size:11.5px; color:var(--muted); font-weight:700; text-transform:uppercase; margin:14px 0 6px;}
   .wd-input, .wd-select{width:100%; background:var(--field-bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--ink);}
+  .wd-select{display:flex; align-items:center; justify-content:space-between; cursor:pointer;}
+  .wd-select svg{color:var(--muted); flex-shrink:0;}
+  .picker-row{display:flex; align-items:center; justify-content:space-between; padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer; font-size:14.5px; font-weight:600;}
+  .picker-row.active-pick{color:var(--red);}
   .wd-status{font-size:12.5px; margin-top:10px; text-align:center; min-height:16px;}
   .wd-status.error{color:var(--red);}
   .wd-status.success{color:#1a9e4b;}
@@ -246,26 +252,26 @@
 <div id="loginScreen">
   <div class="login-brand"><img src="assets/logo2-96.png" class="brand-mark" alt="ZO AI"><span class="name"><span style="color:var(--red);">Z</span>O AI</span></div>
   <div class="login-illustration"><img src="assets/logo2-transparent-192.png" class="logo-big-img" alt="ZO AI"></div>
-  <div class="login-headline" id="loginHeadline">Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.</div>
+  <div class="login-headline" id="loginHeadline" data-i18n="loginHeadline">Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.</div>
 
   <div id="emailStep">
     <button class="g-btn" id="googleLoginBtn">
       <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Lanjutkan dengan Google
+      <span id="googleLoginBtnText" data-i18n="continueWithGoogle">Lanjutkan dengan Google</span>
     </button>
-    <div class="g-btn-note">Login Google segera hadir — pakai email dulu ya</div>
-    <div class="divider">ATAU</div>
-    <input type="email" class="email-input" id="emailInput" placeholder="Alamat email kamu">
-    <button class="login-btn" id="sendCodeBtn">Kirim kode</button>
+    <div class="g-btn-note" id="gBtnNote" data-i18n="googleComingSoon">Login Google segera hadir — pakai email dulu ya</div>
+    <div class="divider" id="dividerOr" data-i18n="or">ATAU</div>
+    <input type="email" class="email-input" id="emailInput" data-i18n-ph="emailPlaceholder" placeholder="Alamat email kamu">
+    <button class="login-btn" id="sendCodeBtn" data-i18n="sendCode">Kirim kode</button>
     <div class="login-status" id="loginStatus"></div>
-    <div class="login-terms">Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.</div>
+    <div class="login-terms" id="loginTerms" data-i18n="loginTerms">Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.</div>
   </div>
 
   <div id="codeStep">
-    <input type="text" inputmode="numeric" class="email-input" id="codeInput" placeholder="Kode 6 digit" maxlength="6" style="text-align:center; letter-spacing:0.3em; color:#fff;">
-    <button class="login-btn" id="verifyCodeBtn">Masuk</button>
+    <input type="text" inputmode="numeric" class="email-input" id="codeInput" data-i18n-ph="codePlaceholder" placeholder="Kode 6 digit" maxlength="6" style="text-align:center; letter-spacing:0.3em; color:#fff;">
+    <button class="login-btn" id="verifyCodeBtn" data-i18n="verifyCode">Masuk</button>
     <div class="login-status" id="codeStatus"></div>
-    <div class="login-back" id="backToEmailBtn">← Ganti email</div>
+    <div class="login-back" id="backToEmailBtn" data-i18n="changeEmail">← Ganti email</div>
   </div>
 </div>
 
@@ -286,9 +292,9 @@
   </header>
 
   <div class="mode-bar" id="modeBar">
-    <div class="mode-opt active" data-mode="online" id="modeOnline">Gratis Online</div>
-    <div class="mode-opt" data-mode="offline" id="modeOffline">Gratis Offline</div>
-    <div class="mode-opt" data-mode="cloud" id="modeCloud">Premium</div>
+    <div class="mode-opt active" data-mode="online" id="modeOnline" data-i18n="modeOnline">Gratis Online</div>
+    <div class="mode-opt" data-mode="offline" id="modeOffline" data-i18n="modeOffline">Gratis Offline</div>
+    <div class="mode-opt" data-mode="cloud" id="modeCloud" data-i18n="modeCloud">Premium</div>
   </div>
 
   <!-- ===== CHAT PAGE ===== -->
@@ -297,7 +303,7 @@
     <div class="quota-line" id="quotaLine"></div>
     <div class="inputbar">
       <button class="plus" id="plusBtn" title="Buat gambar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
-      <input class="field" id="chatInput" placeholder="Ketik pesan…">
+      <input class="field" id="chatInput" data-i18n-ph="chatPlaceholder" placeholder="Ketik pesan…">
       <button class="plus" id="micBtn" title="Pesan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
       <button class="plus" id="liveBtn" title="Mode obrolan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="10" x2="4" y2="14"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="16" y1="6" x2="16" y2="18"/><line x1="20" y1="10" x2="20" y2="14"/></svg></button>
       <button class="send" id="sendBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
@@ -309,8 +315,8 @@
     <div class="wallet-wrap">
       <div class="connect-box" id="connectBox">
         <div class="w-icon">◈</div>
-        <h3>Hubungkan wallet kamu</h3>
-        <p>ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.</p>
+        <h3 id="connectHeadline" data-i18n="connectHeadline">Hubungkan wallet kamu</h3>
+        <p id="connectDesc" data-i18n="connectDesc">ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.</p>
         <div class="provider-list">
           <div class="provider-btn" id="btnMetaMask"><span class="pdot"></span>MetaMask</div>
           <div class="provider-btn" id="btnTrust"><span class="pdot"></span>Trust Wallet</div>
@@ -322,20 +328,20 @@
       <div class="wallet-connected" id="walletConnected">
         <div class="addr-card">
           <div class="addr-left"><div class="addr-dot"></div><div><div class="addr-text" id="connectedAddr">-</div><div class="addr-net" id="connectedNet">-</div></div></div>
-          <div class="disconnect-link" id="disconnectBtn">Putuskan</div>
+          <div class="disconnect-link" id="disconnectBtn" data-i18n="disconnect">Putuskan</div>
         </div>
         <div class="balance-card">
-          <div class="balance-label">Total saldo</div>
+          <div class="balance-label" id="balanceLabel" data-i18n="totalBalance">Total saldo</div>
           <div class="balance-amt" id="balanceAmount">$0.00</div>
           <div class="balance-usd" id="balanceSub"></div>
           <div class="wallet-actions">
-            <div class="w-btn" id="btnSend">↑ Kirim</div>
-            <div class="w-btn" id="btnReceive">↓ Terima</div>
-            <div class="w-btn" id="btnSwap">⇄ Tukar</div>
+            <div class="w-btn" id="btnSend">↑ <span data-i18n="send">Kirim</span></div>
+            <div class="w-btn" id="btnReceive">↓ <span data-i18n="receive">Terima</span></div>
+            <div class="w-btn" id="btnSwap">⇄ <span data-i18n="swap">Tukar</span></div>
           </div>
         </div>
         <div class="token-list" id="tokenList"></div>
-        <div class="connect-note">Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.</div>
+        <div class="connect-note" id="connectNote" data-i18n="connectNote">Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.</div>
       </div>
     </div>
   </div>
@@ -343,11 +349,11 @@
   <div class="bottomnav">
     <button class="nav-item active" data-page="chat" id="navChat">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <div class="n-label">Chat</div>
+      <div class="n-label" data-i18n="navChat">Chat</div>
     </button>
     <button class="nav-item" data-page="wallet" id="navWallet">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/></svg>
-      <div class="n-label">Wallet</div>
+      <div class="n-label" data-i18n="navWallet">Wallet</div>
     </button>
   </div>
 </div>
@@ -355,45 +361,45 @@
 <!-- ============ MENU SHEET ============ -->
 <div class="sheet-overlay" id="menuSheet">
   <div class="sheet">
-    <div class="sheet-title">Menu</div>
-    <div class="sheet-row" id="menuMemoryRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v1.17A5 5 0 0 0 4 12v3a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-3a5 5 0 0 0-4-4.83V6a4 4 0 0 0-4-4z"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/></svg> Pengaturan Memori</div>
-    <div class="sheet-row" id="menuLangRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Bahasa <span id="menuLangValue" style="color:var(--muted); font-weight:500; margin-left:auto;">English</span></div>
-    <div class="sheet-row" id="menuThemeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="menuThemeIcon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Tampilan <span id="menuThemeValue" style="color:var(--muted); font-weight:500; margin-left:auto;">Terang</span></div>
-    <div class="sheet-row" id="menuUpgradeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg> Upgrade ke Premium</div>
-    <div class="sheet-row" id="menuLogoutRow" style="color:var(--red);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Keluar</div>
-    <button class="sheet-close" data-close-sheet="menuSheet">Tutup</button>
+    <div class="sheet-title" data-i18n="menu">Menu</div>
+    <div class="sheet-row" id="menuMemoryRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v1.17A5 5 0 0 0 4 12v3a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-3a5 5 0 0 0-4-4.83V6a4 4 0 0 0-4-4z"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/></svg> <span data-i18n="memorySettings">Pengaturan Memori</span></div>
+    <div class="sheet-row" id="menuLangRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> <span data-i18n="language">Bahasa</span> <span id="menuLangValue" style="color:var(--muted); font-weight:500; margin-left:auto;">English</span></div>
+    <div class="sheet-row" id="menuThemeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="menuThemeIcon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> <span data-i18n="appearance">Tampilan</span> <span id="menuThemeValue" style="color:var(--muted); font-weight:500; margin-left:auto;">Terang</span></div>
+    <div class="sheet-row" id="menuUpgradeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg> <span data-i18n="upgradeToPremium">Upgrade ke Premium</span></div>
+    <div class="sheet-row" id="menuLogoutRow" style="color:var(--red);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> <span data-i18n="logout">Keluar</span></div>
+    <button class="sheet-close" data-close-sheet="menuSheet" data-i18n="close">Tutup</button>
   </div>
 </div>
 
 <!-- ============ HISTORY SHEET ============ -->
 <div class="sheet-overlay" id="historySheet">
   <div class="sheet">
-    <div class="sheet-title">Riwayat Obrolan</div>
-    <div class="sheet-row" id="newConvRow" style="color:var(--red);">+ Obrolan Baru</div>
+    <div class="sheet-title" data-i18n="chatHistory">Riwayat Obrolan</div>
+    <div class="sheet-row" id="newConvRow" style="color:var(--red);" data-i18n="newChat">+ Obrolan Baru</div>
     <div id="historyList"></div>
-    <button class="sheet-close" data-close-sheet="historySheet">Tutup</button>
+    <button class="sheet-close" data-close-sheet="historySheet" data-i18n="close">Tutup</button>
   </div>
 </div>
 
 <!-- ============ MEMORY SHEET ============ -->
 <div class="sheet-overlay" id="memorySheet">
   <div class="sheet">
-    <div class="sheet-title">Pengaturan Memori</div>
-    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">Catatan tentang kamu yang selalu diingat AI di obrolan manapun.</div>
+    <div class="sheet-title" data-i18n="memorySettings">Pengaturan Memori</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;" data-i18n="memoryDesc">Catatan tentang kamu yang selalu diingat AI di obrolan manapun.</div>
     <div id="memoryList"></div>
     <div class="mem-add-row">
-      <input class="mem-input" id="memoryInput" placeholder="misal: saya suka analisis teknikal">
+      <input class="mem-input" id="memoryInput" data-i18n-ph="memoryInputPlaceholder" placeholder="misal: saya suka analisis teknikal">
       <button class="mem-add-btn" id="memoryAddBtn">+</button>
     </div>
-    <button class="sheet-close" data-close-sheet="memorySheet">Tutup</button>
+    <button class="sheet-close" data-close-sheet="memorySheet" data-i18n="close">Tutup</button>
   </div>
 </div>
 
 <!-- ============ LANGUAGE SHEET ============ -->
 <div class="sheet-overlay" id="langSheet">
   <div class="sheet">
-    <div class="sheet-title">Bahasa</div>
-    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">Dipakai untuk pesan suara & disinkron dengan halaman lain.</div>
+    <div class="sheet-title" data-i18n="language">Bahasa</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;" data-i18n="languageDesc">Dipakai untuk pesan suara & disinkron dengan halaman lain.</div>
     <div id="langOptionList" style="max-height:50vh; overflow-y:auto;">
       <div class="sheet-row lang-option" data-value="en-US">English</div>
       <div class="sheet-row lang-option" data-value="id-ID">Bahasa Indonesia</div>
@@ -435,47 +441,65 @@
 <!-- ============ DEPOSIT MODAL ============ -->
 <div class="sheet-overlay" id="depositOverlay">
   <div class="sheet">
-    <div class="sheet-title">Deposit</div>
+    <div class="sheet-title" data-i18n="deposit">Deposit</div>
     <div class="qr-box"><div id="qrcodeBox"></div></div>
     <div class="addr-full" id="depositAddrFull">-</div>
-    <button class="sheet-close" id="copyDepositAddrBtn" style="background:var(--red); color:#fff;">Copy address</button>
-    <button class="sheet-close" data-close-sheet="depositOverlay">Tutup</button>
+    <button class="sheet-close" id="copyDepositAddrBtn" style="background:var(--red); color:#fff;" data-i18n="copyAddress">Copy address</button>
+    <button class="sheet-close" data-close-sheet="depositOverlay" data-i18n="close">Tutup</button>
   </div>
 </div>
 
 <!-- ============ WITHDRAW MODAL ============ -->
 <div class="sheet-overlay" id="withdrawOverlay">
   <div class="sheet">
-    <div class="sheet-title">Withdraw</div>
-    <div class="wd-label">Aset</div>
-    <select class="wd-select" id="withdrawAsset"></select>
-    <div class="wd-label">Alamat tujuan</div>
-    <input class="wd-input" id="withdrawTo" placeholder="0x... atau alamat Solana">
-    <div class="wd-label">Jumlah</div>
+    <div class="sheet-title" data-i18n="withdraw">Withdraw</div>
+    <div class="wd-label" data-i18n="asset">Aset</div>
+    <div class="wd-select" id="withdrawAsset" data-value="">
+      <span id="withdrawAssetLabel">-</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="wd-label" data-i18n="destAddress">Alamat tujuan</div>
+    <input class="wd-input" id="withdrawTo" data-i18n-ph="destAddressPlaceholder" placeholder="0x... atau alamat Solana">
+    <div class="wd-label" data-i18n="amount">Jumlah</div>
     <input class="wd-input" id="withdrawAmount" type="number" placeholder="0.0">
     <div class="wd-status" id="withdrawStatus"></div>
-    <button class="wd-submit" id="withdrawSubmitBtn">Kirim</button>
-    <button class="sheet-close" data-close-sheet="withdrawOverlay">Batal</button>
+    <button class="wd-submit" id="withdrawSubmitBtn" data-i18n="send">Kirim</button>
+    <button class="sheet-close" data-close-sheet="withdrawOverlay" data-i18n="cancel">Batal</button>
   </div>
 </div>
 
 <!-- ============ SWAP MODAL ============ -->
 <div class="sheet-overlay" id="swapOverlay">
   <div class="sheet">
-    <div class="sheet-title">Tukar Aset</div>
-    <div class="wd-label">Dari</div>
-    <select class="wd-select" id="swapSellToken"></select>
+    <div class="sheet-title" data-i18n="swapAsset">Tukar Aset</div>
+    <div class="wd-label" data-i18n="from">Dari</div>
+    <div class="wd-select" id="swapSellToken" data-value="">
+      <span id="swapSellTokenLabel">-</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
     <input class="wd-input" id="swapSellAmount" type="number" placeholder="0.0" style="margin-top:8px;">
     <button class="swap-flip" id="swapFlipBtn">⇅</button>
-    <div class="wd-label">Ke (perkiraan)</div>
-    <select class="wd-select" id="swapBuyToken"></select>
+    <div class="wd-label" data-i18n="toApprox">Ke (perkiraan)</div>
+    <div class="wd-select" id="swapBuyToken" data-value="">
+      <span id="swapBuyTokenLabel">-</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
     <input class="wd-input" id="swapBuyAmount" type="number" placeholder="0.0" style="margin-top:8px;" disabled>
-    <div class="swap-info"><span>Rate</span><span id="swapRate">—</span></div>
-    <div class="swap-info"><span>Biaya platform</span><span id="swapFee">—</span></div>
-    <div class="swap-info"><span>Gas</span><span id="swapGas">—</span></div>
+    <div class="swap-info"><span data-i18n="rate">Rate</span><span id="swapRate">—</span></div>
+    <div class="swap-info"><span data-i18n="platformFee">Biaya platform</span><span id="swapFee">—</span></div>
+    <div class="swap-info"><span data-i18n="gas">Gas</span><span id="swapGas">—</span></div>
     <div class="wd-status" id="swapStatus"></div>
-    <button class="wd-submit" id="swapSubmitBtn" disabled>Masukkan jumlah</button>
+    <button class="wd-submit" id="swapSubmitBtn" disabled data-i18n="enterAmount">Masukkan jumlah</button>
     <button class="sheet-close" data-close-sheet="swapOverlay">Batal</button>
+  </div>
+</div>
+
+<!-- ============ GENERIC PICKER (ganti <select> bawaan Android) ============ -->
+<div class="sheet-overlay" id="pickerOverlay">
+  <div class="sheet">
+    <div class="sheet-title" id="pickerTitle">Pilih</div>
+    <div id="pickerList"></div>
+    <button class="sheet-close" data-close-sheet="pickerOverlay">Batal</button>
   </div>
 </div>
 
@@ -490,6 +514,7 @@
   let history = [];
   let memoryItems = [];
   let userMemoryText = '';
+
   let currentMode = 'online'; // online | offline | cloud
   let isPaidSubscriber = false;
   const MAX_MESSAGES_PER_CONVERSATION = 40;
@@ -608,12 +633,12 @@
       pages[target].classList.add('active');
       if (target === 'chat'){
         modeBar.style.display = 'flex';
-        pageTitle.textContent = 'Obrolan baru';
+        pageTitle.textContent = t('newChat2');
         pageSub.textContent = 'ZO AI';
       } else {
         modeBar.style.display = 'none';
-        pageTitle.textContent = 'Wallet';
-        pageSub.textContent = 'Non-custodial';
+        pageTitle.textContent = t('walletTitle');
+        pageSub.textContent = t('nonCustodial');
       }
     });
   });
@@ -676,6 +701,7 @@
     const match = document.querySelector('.lang-option[data-value="' + value + '"]');
     langOptionEls.forEach(el => el.classList.toggle('active', el.dataset.value === value));
     if (match) menuLangValue.textContent = match.textContent;
+    applyTranslations();
   }
   setActiveLang(localStorage.getItem('zo_voice_lang') || 'en-US');
 
@@ -698,7 +724,7 @@
 
   function applyTheme(theme){
     document.documentElement.setAttribute('data-theme', theme);
-    menuThemeValue.textContent = theme === 'dark' ? 'Gelap' : 'Terang';
+    menuThemeValue.textContent = theme === 'dark' ? t('themeDark') : t('themeLight');
     document.getElementById('menuThemeIcon').innerHTML = theme === 'dark' ? moonIconPath : sunIconPath;
     localStorage.setItem('zo_theme', theme);
   }
@@ -906,6 +932,186 @@
   const chatInput = document.getElementById('chatInput');
   const sendBtn = document.getElementById('sendBtn');
   const micBtn = document.getElementById('micBtn');
+
+  // ---- Terjemahan UI. Baru id (Indonesia) & en (English) yang lengkap;
+  // bahasa lain nyusul -- fallback otomatis ke 'en' kalau key belum ada. ----
+  const TRANSLATIONS = {
+    id: {
+      loginHeadline: 'Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.',
+      continueWithGoogle: 'Lanjutkan dengan Google',
+      googleComingSoon: 'Login Google segera hadir — pakai email dulu ya',
+      or: 'ATAU',
+      emailPlaceholder: 'Alamat email kamu',
+      sendCode: 'Kirim kode',
+      loginTerms: 'Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.',
+      codePlaceholder: 'Kode 6 digit',
+      verifyCode: 'Masuk',
+      changeEmail: '← Ganti email',
+      modeOnline: 'Gratis Online',
+      modeOffline: 'Gratis Offline',
+      modeCloud: 'Premium',
+      chatPlaceholder: 'Ketik pesan…',
+      connectHeadline: 'Hubungkan wallet kamu',
+      connectDesc: 'ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.',
+      disconnect: 'Putuskan',
+      totalBalance: 'Total saldo',
+      send: 'Kirim',
+      receive: 'Terima',
+      swap: 'Tukar',
+      connectNote: 'Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.',
+      navChat: 'Chat',
+      navWallet: 'Wallet',
+      menu: 'Menu',
+      memorySettings: 'Pengaturan Memori',
+      language: 'Bahasa',
+      appearance: 'Tampilan',
+      upgradeToPremium: 'Upgrade ke Premium',
+      logout: 'Keluar',
+      close: 'Tutup',
+      chatHistory: 'Riwayat Obrolan',
+      newChat: '+ Obrolan Baru',
+      memoryDesc: 'Catatan tentang kamu yang selalu diingat AI di obrolan manapun.',
+      memoryInputPlaceholder: 'misal: saya suka analisis teknikal',
+      languageDesc: 'Dipakai untuk pesan suara & disinkron dengan halaman lain.',
+      newChat2: 'Obrolan baru',
+      walletTitle: 'Wallet',
+      nonCustodial: 'Non-custodial',
+      deposit: 'Deposit',
+      copyAddress: 'Copy address',
+      withdraw: 'Withdraw',
+      asset: 'Aset',
+      destAddress: 'Alamat tujuan',
+      destAddressPlaceholder: '0x... atau alamat Solana',
+      amount: 'Jumlah',
+      cancel: 'Batal',
+      swapAsset: 'Tukar Aset',
+      from: 'Dari',
+      toApprox: 'Ke (perkiraan)',
+      rate: 'Rate',
+      platformFee: 'Biaya platform',
+      gas: 'Gas',
+      enterAmount: 'Masukkan jumlah',
+      themeLight: 'Terang',
+      themeDark: 'Gelap',
+    },
+    en: {
+      loginHeadline: 'Your daily crypto & trading assistant, accessible with just your email.',
+      continueWithGoogle: 'Continue with Google',
+      googleComingSoon: 'Google login coming soon — use email for now',
+      or: 'OR',
+      emailPlaceholder: 'Your email address',
+      sendCode: 'Send code',
+      loginTerms: 'By continuing, you agree this device will stay signed in until you log out.',
+      codePlaceholder: '6-digit code',
+      verifyCode: 'Log in',
+      changeEmail: '← Change email',
+      modeOnline: 'Free Online',
+      modeOffline: 'Free Offline',
+      modeCloud: 'Premium',
+      chatPlaceholder: 'Type a message…',
+      connectHeadline: 'Connect your wallet',
+      connectDesc: "ZO AI only reads your address & balance. Your private keys never leave your own wallet.",
+      disconnect: 'Disconnect',
+      totalBalance: 'Total balance',
+      send: 'Send',
+      receive: 'Receive',
+      swap: 'Swap',
+      connectNote: 'Non-custodial — this balance is read directly from your wallet, ZO AI never holds your funds.',
+      navChat: 'Chat',
+      navWallet: 'Wallet',
+      menu: 'Menu',
+      memorySettings: 'Memory Settings',
+      language: 'Language',
+      appearance: 'Appearance',
+      upgradeToPremium: 'Upgrade to Premium',
+      logout: 'Log out',
+      close: 'Close',
+      chatHistory: 'Chat History',
+      newChat: '+ New Chat',
+      memoryDesc: 'Notes about you that the AI always remembers in any chat.',
+      memoryInputPlaceholder: 'e.g. I like technical analysis',
+      languageDesc: 'Used for voice messages & synced with other pages.',
+      newChat2: 'New chat',
+      walletTitle: 'Wallet',
+      nonCustodial: 'Non-custodial',
+      deposit: 'Deposit',
+      copyAddress: 'Copy address',
+      withdraw: 'Withdraw',
+      asset: 'Asset',
+      destAddress: 'Destination address',
+      destAddressPlaceholder: '0x... or Solana address',
+      amount: 'Amount',
+      cancel: 'Cancel',
+      swapAsset: 'Swap Asset',
+      from: 'From',
+      toApprox: 'To (estimated)',
+      rate: 'Rate',
+      platformFee: 'Platform fee',
+      gas: 'Gas',
+      enterAmount: 'Enter amount',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+    },
+  };
+  // Peta kode voice-lang ('id-ID', 'en-US', dst) ke kode dictionary ('id'/'en').
+  // Bahasa yang belum ada dictionary-nya otomatis fallback ke English.
+  const LANG_CODE_MAP = { 'id-ID': 'id', 'en-US': 'en' };
+
+  function currentDictLang(){
+    const voiceLang = localStorage.getItem('zo_voice_lang') || 'en-US';
+    return LANG_CODE_MAP[voiceLang] || 'en';
+  }
+  function t(key){
+    const dict = TRANSLATIONS[currentDictLang()] || TRANSLATIONS.en;
+    return dict[key] || TRANSLATIONS.en[key] || key;
+  }
+  function applyTranslations(){
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+      el.placeholder = t(el.dataset.i18nPh);
+    });
+    // Beberapa teks di-generate JS langsung (bukan lewat data-i18n), refresh manual:
+    const themeVal = document.getElementById('menuThemeValue');
+    if (themeVal) {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      themeVal.textContent = isDark ? t('themeDark') : t('themeLight');
+    }
+    const pageTitleEl = document.getElementById('pageTitle');
+    const pageSubEl = document.getElementById('pageSub');
+    if (pageTitleEl && document.querySelector('.nav-item[data-page="wallet"]').classList.contains('active')) {
+      pageTitleEl.textContent = t('walletTitle');
+      pageSubEl.textContent = t('nonCustodial');
+    } else if (pageTitleEl) {
+      pageTitleEl.textContent = t('newChat2');
+    }
+  }
+
+  // ---- Picker generic: ganti <select> bawaan Android biar seragam sama tema app ----
+  function setPickerValue(elId, labelId, value){
+    document.getElementById(elId).dataset.value = value;
+    document.getElementById(labelId).textContent = value;
+  }
+  function getPickerValue(elId){
+    return document.getElementById(elId).dataset.value;
+  }
+  function openPicker(title, options, currentValue, onSelect){
+    document.getElementById('pickerTitle').textContent = title;
+    const list = document.getElementById('pickerList');
+    list.innerHTML = '';
+    options.forEach((opt) => {
+      const row = document.createElement('div');
+      row.className = 'picker-row' + (opt === currentValue ? ' active-pick' : '');
+      row.textContent = opt;
+      row.addEventListener('click', () => {
+        onSelect(opt);
+        document.getElementById('pickerOverlay').classList.remove('show');
+      });
+      list.appendChild(row);
+    });
+    document.getElementById('pickerOverlay').classList.add('show');
+  }
 
   // ---- Modal konfirmasi custom (ganti window.confirm bawaan browser yang nampilin nama domain) ----
   const confirmOverlay = document.getElementById('confirmOverlay');
@@ -1379,14 +1585,13 @@
   // ---- Withdraw: kirim aset asli lewat wallet yang lagi connect ----
   function openWithdraw(){
     if (!currentAddress) return;
-    const select = document.getElementById('withdrawAsset');
-    select.innerHTML = '';
     const assets = currentNetwork === 'solana' ? ['SOL'] : ['ETH', 'USDT'];
-    assets.forEach(a => {
-      const opt = document.createElement('option');
-      opt.value = a; opt.textContent = a;
-      select.appendChild(opt);
-    });
+    setPickerValue('withdrawAsset', 'withdrawAssetLabel', assets[0]);
+    document.getElementById('withdrawAsset').onclick = () => {
+      openPicker('Pilih Aset', assets, getPickerValue('withdrawAsset'), (val) => {
+        setPickerValue('withdrawAsset', 'withdrawAssetLabel', val);
+      });
+    };
     document.getElementById('withdrawTo').value = '';
     document.getElementById('withdrawAmount').value = '';
     setWithdrawStatus('', '');
@@ -1402,7 +1607,7 @@
   document.getElementById('withdrawSubmitBtn').addEventListener('click', sendWithdraw);
 
   async function sendWithdraw(){
-    const asset = document.getElementById('withdrawAsset').value;
+    const asset = getPickerValue('withdrawAsset');
     const to = document.getElementById('withdrawTo').value.trim();
     const amountStr = document.getElementById('withdrawAmount').value.trim();
     const btn = document.getElementById('withdrawSubmitBtn');
@@ -1488,15 +1693,20 @@
       return;
     }
     const symbols = Object.keys(EVM_TOKENS);
-    const sellSel = document.getElementById('swapSellToken');
-    const buySel = document.getElementById('swapBuyToken');
-    sellSel.innerHTML = ''; buySel.innerHTML = '';
-    symbols.forEach(sym => {
-      sellSel.appendChild(new Option(sym, sym));
-      buySel.appendChild(new Option(sym, sym));
-    });
-    sellSel.value = symbols[0];
-    buySel.value = symbols[1];
+    setPickerValue('swapSellToken', 'swapSellTokenLabel', symbols[0]);
+    setPickerValue('swapBuyToken', 'swapBuyTokenLabel', symbols[1]);
+    document.getElementById('swapSellToken').onclick = () => {
+      openPicker('Dari', symbols, getPickerValue('swapSellToken'), (val) => {
+        setPickerValue('swapSellToken', 'swapSellTokenLabel', val);
+        onSwapAmountChange();
+      });
+    };
+    document.getElementById('swapBuyToken').onclick = () => {
+      openPicker('Ke', symbols, getPickerValue('swapBuyToken'), (val) => {
+        setPickerValue('swapBuyToken', 'swapBuyTokenLabel', val);
+        onSwapAmountChange();
+      });
+    };
     document.getElementById('swapSellAmount').value = '';
     document.getElementById('swapBuyAmount').value = '';
     document.getElementById('swapRate').textContent = '—';
@@ -1509,16 +1719,15 @@
   }
 
   document.getElementById('swapFlipBtn').addEventListener('click', () => {
-    const sellSel = document.getElementById('swapSellToken');
-    const buySel = document.getElementById('swapBuyToken');
-    const tmp = sellSel.value; sellSel.value = buySel.value; buySel.value = tmp;
+    const sellVal = getPickerValue('swapSellToken');
+    const buyVal = getPickerValue('swapBuyToken');
+    setPickerValue('swapSellToken', 'swapSellTokenLabel', buyVal);
+    setPickerValue('swapBuyToken', 'swapBuyTokenLabel', sellVal);
     document.getElementById('swapSellAmount').value = '';
     document.getElementById('swapBuyAmount').value = '';
     onSwapAmountChange();
   });
   document.getElementById('swapSellAmount').addEventListener('input', onSwapAmountChange);
-  document.getElementById('swapSellToken').addEventListener('change', onSwapAmountChange);
-  document.getElementById('swapBuyToken').addEventListener('change', onSwapAmountChange);
   document.getElementById('swapSubmitBtn').addEventListener('click', executeSwap);
 
   function setSwapStatus(msg, type){
@@ -1535,8 +1744,8 @@
   function onSwapAmountChange(){
     clearTimeout(swapQuoteTimer);
     const amountStr = document.getElementById('swapSellAmount').value;
-    const sellSym = document.getElementById('swapSellToken').value;
-    const buySym = document.getElementById('swapBuyToken').value;
+    const sellSym = getPickerValue('swapSellToken');
+    const buySym = getPickerValue('swapBuyToken');
 
     if (sellSym === buySym) { setSwapButtonState('Pilih 2 token beda', true); return; }
     if (!amountStr || Number(amountStr) <= 0) {
