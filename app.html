@@ -1983,4 +1983,9 @@
     const solBal = lamports ? lamports.value / 1e9 : 0;
     const totalUsd = solBal * solPrice;
     document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
-    document.getElementById('balanceSub').textContent = 
+    document.getElementById('balanceSub').textContent = 'Live dari Solana';
+    renderTokens([{ symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }]);
+  }
+</script>
+</body>
+</html>
