@@ -6,9 +6,9 @@
 <title>ZO AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.87.6/lib/index.iife.min.js" crossorigin="anonymous"></script>
 <script type="module">
   try {
     const { createAppKit, WagmiAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
@@ -527,7 +527,12 @@
     // jangan nakut-nakutin user pake banner merah gede kalau bukan dari kode kita sendiri.
     const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown'];
     const isThirdParty = e.filename && thirdPartyHosts.some((h) => e.filename.includes(h));
-    if (isThirdParty) return;
+    // Kalau browser gak kasih tau filename-nya sama sekali (biasanya muncul sebagai
+    // "Script error." doang) itu tandanya errornya dari script cross-origin (CDN),
+    // bukan dari kode kita sendiri -- kode kita selalu same-origin jadi selalu
+    // dapet filename yang jelas. Anggap ini pihak ketiga juga & jangan tampilin banner.
+    const isSanitizedCrossOrigin = !e.filename && (!e.message || e.message === 'Script error.' || e.message === 'Script error');
+    if (isThirdParty || isSanitizedCrossOrigin) return;
     showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
   });
   window.addEventListener('unhandledrejection', (e) => {
