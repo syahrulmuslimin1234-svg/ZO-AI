@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZO AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+<script type="module">
+  try {
+    const { createAppKit, WagmiAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
+
+    const projectId = '1c2c95e6fa47a2949a74825b50fe477d';
+    const mainnet = {
+      id: 1, name: 'Ethereum',
+      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
+    };
+    const networks = [mainnet];
+    const wagmiAdapter = new WagmiAdapter({ networks, projectId });
+    const metadata = {
+      name: 'ZO AI',
+      description: 'ZO AI Wallet',
+      url: 'https://zo-ai.vercel.app',
+      icons: ['https://zo-ai.vercel.app/assets/logo2-96.png'],
+    };
+
+    window.zoAppKit = createAppKit({
+      adapters: [wagmiAdapter],
+      networks,
+      projectId,
+      metadata,
+      features: { analytics: false },
+    });
+
+    // Dengerin perubahan koneksi wallet, terusin ke fungsi showConnected() yang udah ada
+    window.zoAppKit.subscribeAccount((account) => {
+      window.dispatchEvent(new CustomEvent('zo-wallet-account', { detail: account }));
+    });
+
+    // Provider EIP-1193 buat kirim transaksi (approve/send) -- WalletConnect nggak
+    // nyuntikin window.ethereum, jadi kita ambil provider-nya langsung dari AppKit.
+    window.zoAppKit.subscribeProviders((state) => {
+      window.zoEvmProvider = state['eip155'] || null;
+    });
+
+    // Jembatan buat kirim transaksi lewat sesi WalletConnect yang lagi connect
+    // (dipake sama script utama non-module buat fitur Kirim/Withdraw & Swap)
+    window.zoSendTx = async (txParams) => {
+      return await WagmiCore.sendTransaction(wagmiAdapter.wagmiConfig, {
+        to: txParams.to,
+        data: txParams.data || '0x',
+        value: BigInt(txParams.value || '0x0'),
+      });
+    };
+  } catch (err) {
+    console.error('Gagal inisialisasi wallet connect (AppKit):', err);
+    // window.zoAppKit sengaja dibiarin undefined -- tombol wallet udah pakai `?.`
+    // jadi gak bakal crash, cuma fitur connect walletnya belum bisa dipakai.
+  }
+</script>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+  :root{ --ink:#141414; --muted:#8a8a8a; --line:#ececec; --red:#e3242b; --bg-dark:#161616; --bg:#faf9f7; --surface:#ffffff; --surface2:#f2f2f2; --field-bg:#f5f5f5; --dark-card:#141414; }
+  [data-theme="dark"]{ --ink:#f0f0f0; --muted:#9a9a9a; --line:#2a2a2a; --bg:#0f0f0f; --surface:#1c1c1c; --surface2:#262626; --field-bg:#262626; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Inter',sans-serif; height:100vh; overflow:hidden; -webkit-tap-highlight-color:transparent;}
+  .msg-ai, .msg-me, .h-title, .h-sub, .mode-opt, .sheet-row, .nav-item, .balance-card, .addr-card, .token-row, .conv-item{
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  .msg-ai.copyable, .msg-me.copyable{ -webkit-user-select:text; user-select:text; }
+  .msg-ai, .msg-me{ min-width:0; }
+  .messages{ min-width:0; }
+  button{font-family:inherit;}
+
+  /* ===== LOGIN SCREEN ===== */
+  #loginScreen{background:var(--bg-dark); color:#fff; height:100vh; display:flex; flex-direction:column; padding:44px 26px 34px; overflow-y:auto;}
+  .login-brand{display:flex; align-items:center; gap:9px; justify-content:center; margin-bottom:50px;}
+  .login-brand .brand-mark{width:26px; height:26px; object-fit:contain;}
+  .login-brand .name{font-family:Georgia, serif; font-size:24px; font-weight:700; letter-spacing:-0.01em;}
+
+  .login-illustration{flex:1; display:flex; align-items:center; justify-content:center; position:relative; min-height:140px;}
+  .login-illustration::before{
+    content:''; position:absolute; width:210px; height:210px; border-radius:50%;
+    background:radial-gradient(circle, rgba(227,36,43,0.28) 0%, rgba(227,36,43,0.08) 45%, transparent 72%);
+    filter:blur(2px);
+  }
+  .login-illustration .logo-big-img{width:100px; height:100px; object-fit:contain; position:relative; z-index:1;}
+
+  .login-headline{font-family:Georgia, serif; font-size:26px; text-align:center; line-height:1.3; margin-bottom:32px; padding:0 6px;}
+
+  .g-btn{background:#fff; color:#1a1a1a; border:none; border-radius:100px; padding:16px; font-weight:700; font-size:14.5px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; width:100%; opacity:0.5;}
+  .g-btn-note{text-align:center; font-size:10.5px; color:#777; margin-top:6px;}
+  .divider{display:flex; align-items:center; gap:12px; margin:18px 0; color:#666; font-size:11px; letter-spacing:0.08em;}
+  .divider::before, .divider::after{content:''; flex:1; height:1px; background:#333;}
+  .email-input{background:transparent; border:1px solid #3a3a3a; border-radius:100px; padding:15px 18px; color:#fff; font-size:14px; width:100%; outline:none;}
+  .email-input::placeholder{color:#777;}
+  .login-btn{margin-top:12px; background:var(--red); color:#fff; border:none; border-radius:100px; padding:15px; font-weight:700; font-size:14px; width:100%; cursor:pointer;}
+  .login-btn:disabled{opacity:0.5;}
+  .login-terms{color:#777; font-size:11.5px; text-align:center; margin-top:18px; line-height:1.6;}
+  .login-back{color:#aaa; font-size:13px; text-align:center; margin-top:16px; cursor:pointer;}
+  .login-status{color:var(--red); font-size:12.5px; text-align:center; margin-top:12px; min-height:16px;}
+  #codeStep{display:none;}
+
+  /* ===== APP SHELL ===== */
+  #appScreen{display:none; height:100vh; flex-direction:column; background:var(--surface); color:var(--ink); overflow-x:hidden; min-width:0;}
+  #appScreen.show{display:flex;}
+
+  header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); flex-shrink:0;}
+  .h-left{display:flex; align-items:center; gap:12px;}
+  .h-left button{background:none; border:none; color:var(--ink); display:flex;}
+  .h-title{font-weight:700; font-size:15.5px;}
+  .h-sub{font-size:11.5px; color:var(--muted); margin-top:1px;}
+  .h-right{display:flex; align-items:center; gap:16px;}
+  .h-right button{background:none; border:none; color:var(--ink); display:flex; cursor:pointer;}
+
+  .mode-bar{display:flex; gap:5px; padding:10px 14px; border-bottom:1px solid var(--line); flex-shrink:0;}
+  .mode-opt{flex:1; text-align:center; padding:8px 4px; border-radius:14px; font-size:10.5px; font-weight:700; cursor:pointer; border:1px solid var(--line); color:var(--muted); background:var(--surface);}
+  .mode-opt.active{background:var(--dark-card); color:#fff; border-color:var(--dark-card);}
+  .mode-opt .tag{display:block; font-size:9.5px; font-weight:500; margin-top:1px;}
+  .mode-opt.active .tag{color:#bbb;}
+
+  .page{flex:1; overflow-y:auto; overflow-x:hidden; min-width:0; display:none;}
+  .page.active{display:flex; flex-direction:column;}
+
+  .messages{flex:1; padding:18px; display:flex; flex-direction:column; gap:16px; overflow-x:hidden; max-width:100vw;}
+  .msg-ai{font-size:14.5px; line-height:1.55; max-width:92%; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;}
+  .msg-ai .label{font-size:10.5px; color:var(--red); font-weight:700; margin-bottom:4px; font-family:monospace; text-transform:uppercase;}
+  .msg-me{align-self:flex-end; background:var(--surface2); padding:11px 15px; border-radius:16px; border-bottom-right-radius:4px; font-size:14.5px; max-width:78%; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;}
+  .msg-time{font-family:monospace; font-size:10px; color:var(--muted); margin-top:4px;}
+  .msg-note{font-size:12.5px; color:var(--muted); text-align:center; padding:8px 0;}
+
+  .inputbar{border-top:1px solid var(--line); padding:12px 14px; display:flex; align-items:center; gap:9px; flex-shrink:0;}
+  .plus{width:32px; height:32px; border-radius:100px; background:var(--surface2); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  #micBtn.listening{background:var(--red);}
+  #micBtn.listening svg{stroke:#fff;}
+  .field{flex:1; background:var(--field-bg); border-radius:100px; padding:10px 15px; color:var(--ink); font-size:13.5px; border:none; outline:none;}
+  .field:disabled{color:var(--muted);}
+  .send{width:32px; height:32px; border-radius:100px; background:var(--red); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  .send:disabled{opacity:0.4;}
+  .send svg{color:#fff;}
+  .quota-line{font-size:11px; color:var(--muted); text-align:center; padding:6px 0 0;}
+
+  /* ---- Wallet ---- */
+  .wallet-wrap{padding:22px 20px;}
+  .balance-card{background:var(--dark-card); color:#fff; border-radius:20px; padding:24px 20px;}
+  .balance-label{font-size:11.5px; color:#aaa; font-family:monospace; text-transform:uppercase; letter-spacing:0.06em;}
+  .balance-amt{font-size:32px; font-weight:800; margin-top:8px;}
+  .balance-usd{color:#999; font-size:13px; margin-top:4px;}
+  .wallet-actions{display:flex; gap:10px; margin-top:18px;}
+  .w-btn{flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px; border-radius:100px; font-size:12.5px; font-weight:600; text-align:center; cursor:pointer;}
+
+  .token-list{margin-top:20px;}
+  .token-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
+  .token-left{display:flex; align-items:center; gap:12px;}
+  .token-icon{width:36px; height:36px; border-radius:100px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;}
+  .token-name{font-weight:600; font-size:14px;}
+  .token-sub{color:var(--muted); font-size:11.5px;}
+  .token-val{text-align:right; font-weight:600; font-size:14px;}
+  .token-change{font-size:11px; color:var(--muted); margin-top:2px;}
+  .token-change.up{color:#1a9e4b;}
+
+  .connect-note{margin-top:20px; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:14px; font-size:12px; color:var(--muted); text-align:center;}
+  .connect-box{background:var(--bg); border:1px solid var(--line); border-radius:22px; padding:30px 22px; text-align:center;}
+  .connect-box .w-icon{width:52px; height:52px; border-radius:16px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:22px;}
+  .connect-box h3{font-size:15.5px; font-weight:700;}
+  .connect-box p{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
+  .provider-list{display:flex; flex-direction:column; gap:9px; margin-top:20px;}
+  .provider-btn{border:1px solid var(--line); border-radius:100px; padding:13px 16px; font-size:13.5px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--surface); cursor:pointer; color:var(--ink);}
+  .provider-btn .pdot{width:7px; height:7px; border-radius:50%; background:#1a9e4b;}
+  .connecting-line{font-family:monospace; font-size:11px; color:var(--muted); margin-top:14px;}
+
+  .wallet-connected{display:none;}
+  .wallet-connected.show{display:block;}
+  .connect-box.hide{display:none;}
+  .addr-card{background:var(--dark-card); color:#fff; border-radius:14px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .addr-left{display:flex; align-items:center; gap:9px;}
+  .addr-dot{width:7px; height:7px; border-radius:50%; background:#3ecf6e;}
+  .addr-text{font-family:monospace; font-size:12.5px;}
+  .addr-net{font-family:monospace; font-size:10px; color:#999;}
+  .disconnect-link{font-size:11px; color:var(--red); font-family:monospace; cursor:pointer;}
+
+  .bottomnav{display:flex; border-top:1px solid var(--line); flex-shrink:0;}
+  .nav-item{flex:1; text-align:center; padding:12px 0 10px; cursor:pointer; color:var(--muted); background:none; border:none;}
+  .nav-item.active{color:var(--ink);}
+  .nav-item svg{display:block; margin:0 auto 3px;}
+  .nav-item .n-label{font-size:10.5px; font-weight:600;}
+
+  /* ---- Bottom sheet (menu, riwayat, memori) ---- */
+  .sheet-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:flex-end; justify-content:center; z-index:50;}
+  .confirm-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:80; padding:24px;}
+  .confirm-overlay.show{display:flex;}
+  .confirm-box{background:var(--surface); color:var(--ink); border-radius:20px; padding:24px 22px; max-width:320px; width:100%; text-align:center;}
+  .confirm-icon{width:44px; height:44px; border-radius:50%; background:#fdeceb; color:var(--red); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;}
+  .confirm-title{font-weight:700; font-size:16px; margin-bottom:8px;}
+  .confirm-msg{font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:20px;}
+  .confirm-actions{display:flex; gap:10px;}
+  .confirm-actions button{flex:1; padding:12px; border-radius:100px; border:none; font-size:13.5px; font-weight:700; cursor:pointer;}
+  .confirm-cancel{background:var(--surface2); color:var(--ink);}
+  .confirm-ok{background:var(--red); color:#fff;}
+  .live-overlay{position:fixed; inset:0; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:90;}
+  .live-overlay.show{display:flex;}
+  .live-orb{width:130px; height:130px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff6a6f, var(--red) 70%); box-shadow:0 0 60px rgba(227,36,43,0.5);}
+  .live-orb.listening{animation:orbPulse 1.4s ease-in-out infinite;}
+  .live-orb.speaking{animation:orbSpeak 0.5s ease-in-out infinite;}
+  @keyframes orbPulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.08);}}
+  @keyframes orbSpeak{0%,100%{transform:scale(1);} 50%{transform:scale(1.04);}}
+  .live-status{font-family:monospace; font-size:12.5px; color:#8a8a8a; letter-spacing:0.05em;}
+  .live-transcript{max-width:80%; text-align:center; font-size:15px; color:#fff; min-height:24px;}
+  .live-close{position:absolute; top:24px; right:24px; background:#222; border:1px solid #333; color:#fff; border-radius:50%; width:40px; height:40px; font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .qr-box{display:flex; justify-content:center; background:#fff; padding:16px; border-radius:16px; margin:16px 0;}
+  .addr-full{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-family:monospace; font-size:12px; word-break:break-all; color:var(--ink); margin-bottom:14px;}
+  .wd-label{font-size:11.5px; color:var(--muted); font-weight:700; text-transform:uppercase; margin:14px 0 6px;}
+  .wd-input, .wd-select{width:100%; background:var(--field-bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--ink);}
+  .wd-select{display:flex; align-items:center; justify-content:space-between; cursor:pointer;}
+  .wd-select svg{color:var(--muted); flex-shrink:0;}
+  .picker-row{display:flex; align-items:center; gap:12px; padding:12px 13px; margin-bottom:8px; border-radius:14px; cursor:pointer; font-size:14.5px; font-weight:600; background:var(--surface2); transition:background .15s ease, transform .1s ease;}
+  .picker-row:last-child{margin-bottom:0;}
+  .picker-row:active{transform:scale(0.98);}
+  .picker-row.active-pick{background:rgba(227,36,43,0.1); color:var(--red);}
+  .picker-row .pr-icon{width:34px; height:34px; border-radius:50%; background:var(--dark-card); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; flex-shrink:0;}
+  .picker-row.active-pick .pr-icon{background:var(--red);}
+  .picker-row .pr-label{flex:1;}
+  .picker-row .pr-check{font-size:16px; opacity:0; color:var(--red);}
+  .picker-row.active-pick .pr-check{opacity:1;}
+  .wd-status{font-size:12.5px; margin-top:10px; text-align:center; min-height:16px;}
+  .wd-status.error{color:var(--red);}
+  .wd-status.success{color:#1a9e4b;}
+  .wd-submit{width:100%; background:var(--red); color:#fff; border:none; border-radius:100px; padding:14px; font-weight:700; margin-top:16px; cursor:pointer;}
+  .wd-submit:disabled{opacity:0.5;}
+  .swap-flip{width:32px; height:32px; border-radius:50%; background:var(--surface2); border:none; display:flex; align-items:center; justify-content:center; margin:6px auto; cursor:pointer;}
+  .swap-info{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:12px;}
+  .sheet-overlay.show{display:flex;}
+  .sheet{width:100%; max-width:480px; background:var(--surface); color:var(--ink); border-radius:20px 20px 0 0; padding:22px 20px 26px; max-height:80vh; overflow-y:auto;}
+  .sheet-title{font-weight:800; font-size:16px; margin-bottom:14px;}
+  .sheet-row{display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer; font-size:14px; font-weight:600;}
+  .lang-option.active{color:var(--red);}
+  .sheet-row:last-child{border-bottom:none;}
+  .sheet-close{width:100%; background:var(--surface2); color:var(--ink); border:none; border-radius:100px; padding:14px; font-weight:700; font-size:13.5px; margin-top:14px; cursor:pointer;}
+
+  .conv-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .conv-item.active{color:var(--red);}
+  .conv-title{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:600;}
+  .conv-time{font-family:monospace; font-size:10.5px; color:var(--muted); flex-shrink:0;}
+  .conv-del{background:none; border:none; color:var(--muted); font-size:18px; padding:0 4px;}
+
+  .mem-item{display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:13px; margin-bottom:8px;}
+  .mem-del{background:none; border:none; color:var(--muted); font-size:17px; padding:0 2px;}
+  .mem-add-row{display:flex; gap:8px; margin-top:6px;}
+  .mem-input{flex:1; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:13.5px; outline:none;}
+  .mem-add-btn{background:var(--dark-card); color:#fff; border:none; border-radius:10px; padding:0 16px; font-weight:700; cursor:pointer;}
+
+  .offline-progress{padding:16px; text-align:center; font-size:12.5px; color:var(--muted);}
+  .offline-bar{height:6px; background:var(--line); border-radius:100px; margin-top:10px; overflow:hidden;}
+  .offline-bar-fill{height:100%; background:var(--red); width:0%; transition:width 0.2s;}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen">
+  <div class="login-brand"><img src="assets/logo2-96.png" class="brand-mark" alt="ZO AI"><span class="name"><span style="color:var(--red);">Z</span>O AI</span></div>
+  <div class="login-illustration"><img src="assets/logo2-transparent-192.png" class="logo-big-img" alt="ZO AI"></div>
+  <div class="login-headline" id="loginHeadline" data-i18n="loginHeadline">Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.</div>
+
+  <div id="emailStep">
+    <button class="g-btn" id="googleLoginBtn">
+      <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      <span id="googleLoginBtnText" data-i18n="continueWithGoogle">Lanjutkan dengan Google</span>
+    </button>
+    <div class="g-btn-note" id="gBtnNote" data-i18n="googleComingSoon">Login Google segera hadir — pakai email dulu ya</div>
+    <div class="divider" id="dividerOr" data-i18n="or">ATAU</div>
+    <input type="email" class="email-input" id="emailInput" data-i18n-ph="emailPlaceholder" placeholder="Alamat email kamu">
+    <button class="login-btn" id="sendCodeBtn" data-i18n="sendCode">Kirim kode</button>
+    <div class="login-status" id="loginStatus"></div>
+    <div class="login-terms" id="loginTerms" data-i18n="loginTerms">Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.</div>
+  </div>
+
+  <div id="codeStep">
+    <input type="text" inputmode="numeric" class="email-input" id="codeInput" data-i18n-ph="codePlaceholder" placeholder="Kode 6 digit" maxlength="6" style="text-align:center; letter-spacing:0.3em; color:#fff;">
+    <button class="login-btn" id="verifyCodeBtn" data-i18n="verifyCode">Masuk</button>
+    <div class="login-status" id="codeStatus"></div>
+    <div class="login-back" id="backToEmailBtn" data-i18n="changeEmail">← Ganti email</div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="appScreen">
+  <header>
+    <div class="h-left">
+      <button id="menuBtn" title="Menu"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div>
+        <div class="h-title" id="pageTitle">Obrolan baru</div>
+        <div class="h-sub" id="pageSub">ZO AI</div>
+      </div>
+    </div>
+    <div class="h-right">
+      <button id="newChatBtn" title="Obrolan Baru"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+      <button id="historyBtn" title="Riwayat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+    </div>
+  </header>
+
+  <div class="mode-bar" id="modeBar">
+    <div class="mode-opt active" data-mode="online" id="modeOnline" data-i18n="modeOnline">Gratis Online</div>
+    <div class="mode-opt" data-mode="offline" id="modeOffline" data-i18n="modeOffline">Gratis Offline</div>
+    <div class="mode-opt" data-mode="cloud" id="modeCloud" data-i18n="modeCloud">Premium</div>
+  </div>
+
+  <!-- ===== CHAT PAGE ===== -->
+  <div class="page active" id="pageChat">
+    <div class="messages" id="messagesBox"></div>
+    <div class="quota-line" id="quotaLine"></div>
+    <div class="inputbar">
+      <button class="plus" id="plusBtn" title="Buat gambar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+      <input class="field" id="chatInput" data-i18n-ph="chatPlaceholder" placeholder="Ketik pesan…">
+      <button class="plus" id="micBtn" title="Tap: rekam suara. Tahan: mode obrolan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      <button class="send" id="sendBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+
+  <!-- ===== WALLET PAGE ===== -->
+  <div class="page" id="pageWallet">
+    <div class="wallet-wrap">
+      <div class="connect-box" id="connectBox">
+        <div class="w-icon">◈</div>
+        <h3 id="connectHeadline" data-i18n="connectHeadline">Hubungkan wallet kamu</h3>
+        <p id="connectDesc" data-i18n="connectDesc">ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.</p>
+        <div class="provider-list">
+          <div class="provider-btn" id="btnMetaMask"><span class="pdot"></span>MetaMask</div>
+          <div class="provider-btn" id="btnTrust"><span class="pdot"></span>Trust Wallet</div>
+          <div class="provider-btn" id="btnPhantom"><span class="pdot"></span>Phantom (Solana)</div>
+        </div>
+        <div class="connecting-line" id="connectingLine"></div>
+      </div>
+
+      <div class="wallet-connected" id="walletConnected">
+        <div class="addr-card">
+          <div class="addr-left"><div class="addr-dot"></div><div><div class="addr-text" id="connectedAddr">-</div><div class="addr-net" id="connectedNet">-</div></div></div>
+          <div class="disconnect-link" id="disconnectBtn" data-i18n="disconnect">Putuskan</div>
+        </div>
+        <div class="balance-card">
+          <div class="balance-label" id="balanceLabel" data-i18n="totalBalance">Total saldo</div>
+          <div class="balance-amt" id="balanceAmount">$0.00</div>
+          <div class="balance-usd" id="balanceSub"></div>
+          <div class="wallet-actions">
+            <div class="w-btn" id="btnSend">↑ <span data-i18n="send">Kirim</span></div>
+            <div class="w-btn" id="btnReceive">↓ <span data-i18n="receive">Terima</span></div>
+            <div class="w-btn" id="btnSwap">⇄ <span data-i18n="swap">Tukar</span></div>
+          </div>
+        </div>
+        <div class="token-list" id="tokenList"></div>
+        <div class="connect-note" id="connectNote" data-i18n="connectNote">Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottomnav">
+    <button class="nav-item active" data-page="chat" id="navChat">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <div class="n-label" data-i18n="navChat">Chat</div>
+    </button>
+    <button class="nav-item" data-page="wallet" id="navWallet">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/></svg>
+      <div class="n-label" data-i18n="navWallet">Wallet</div>
+    </button>
+  </div>
+</div>
+
+<!-- ============ MENU SHEET ============ -->
+<div class="sheet-overlay" id="menuSheet">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="menu">Menu</div>
+    <div class="sheet-row" id="menuMemoryRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v1.17A5 5 0 0 0 4 12v3a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-3a5 5 0 0 0-4-4.83V6a4 4 0 0 0-4-4z"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/></svg> <span data-i18n="memorySettings">Pengaturan Memori</span></div>
+    <div class="sheet-row" id="menuLangRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> <span data-i18n="language">Bahasa</span> <span id="menuLangValue" style="color:var(--muted); font-weight:500; margin-left:auto;">English</span></div>
+    <div class="sheet-row" id="menuThemeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="menuThemeIcon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> <span data-i18n="appearance">Tampilan</span> <span id="menuThemeValue" style="color:var(--muted); font-weight:500; margin-left:auto;">Terang</span></div>
+    <div class="sheet-row" id="menuUpgradeRow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg> <span data-i18n="upgradeToPremium">Upgrade ke Premium</span></div>
+    <div class="sheet-row" id="menuLogoutRow" style="color:var(--red);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> <span data-i18n="logout">Keluar</span></div>
+    <button class="sheet-close" data-close-sheet="menuSheet" data-i18n="close">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ HISTORY SHEET ============ -->
+<div class="sheet-overlay" id="historySheet">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="chatHistory">Riwayat Obrolan</div>
+    <div class="sheet-row" id="newConvRow" style="color:var(--red);" data-i18n="newChat">+ Obrolan Baru</div>
+    <div id="historyList"></div>
+    <button class="sheet-close" data-close-sheet="historySheet" data-i18n="close">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ MEMORY SHEET ============ -->
+<div class="sheet-overlay" id="memorySheet">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="memorySettings">Pengaturan Memori</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;" data-i18n="memoryDesc">Catatan tentang kamu yang selalu diingat AI di obrolan manapun.</div>
+    <div id="memoryList"></div>
+    <div class="mem-add-row">
+      <input class="mem-input" id="memoryInput" data-i18n-ph="memoryInputPlaceholder" placeholder="misal: saya suka analisis teknikal">
+      <button class="mem-add-btn" id="memoryAddBtn">+</button>
+    </div>
+    <button class="sheet-close" data-close-sheet="memorySheet" data-i18n="close">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ LANGUAGE SHEET ============ -->
+<div class="sheet-overlay" id="langSheet">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="language">Bahasa</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;" data-i18n="languageDesc">Dipakai untuk pesan suara & disinkron dengan halaman lain.</div>
+    <div id="langOptionList" style="max-height:50vh; overflow-y:auto;">
+      <div class="sheet-row lang-option" data-value="en-US">English</div>
+      <div class="sheet-row lang-option" data-value="id-ID">Bahasa Indonesia</div>
+      <div class="sheet-row lang-option" data-value="es-ES">Español</div>
+      <div class="sheet-row lang-option" data-value="pt-BR">Português</div>
+      <div class="sheet-row lang-option" data-value="fr-FR">Français</div>
+      <div class="sheet-row lang-option" data-value="de-DE">Deutsch</div>
+      <div class="sheet-row lang-option" data-value="ja-JP">日本語</div>
+      <div class="sheet-row lang-option" data-value="ko-KR">한국어</div>
+      <div class="sheet-row lang-option" data-value="zh-CN">中文</div>
+      <div class="sheet-row lang-option" data-value="ar-SA">العربية</div>
+      <div class="sheet-row lang-option" data-value="hi-IN">हिन्दी</div>
+    </div>
+    <button class="sheet-close" data-close-sheet="langSheet">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ CUSTOM CONFIRM MODAL (ganti window.confirm bawaan browser) ============ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+    <div class="confirm-title" id="confirmTitle">Hapus obrolan ini?</div>
+    <div class="confirm-msg" id="confirmMsg">Semua pesan di dalamnya akan hilang permanen.</div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="confirmCancelBtn">Batal</button>
+      <button class="confirm-ok" id="confirmOkBtn">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LIVE VOICE OVERLAY ============ -->
+<div class="live-overlay" id="liveOverlay">
+  <button class="live-close" id="liveCloseBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="live-orb" id="liveOrb"></div>
+  <div class="live-status" id="liveStatus">Mendengarkan...</div>
+  <div class="live-transcript" id="liveTranscript"></div>
+</div>
+
+<!-- ============ DEPOSIT MODAL ============ -->
+<div class="sheet-overlay" id="depositOverlay">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="deposit">Deposit</div>
+    <div class="qr-box"><div id="qrcodeBox"></div></div>
+    <div class="addr-full" id="depositAddrFull">-</div>
+    <button class="sheet-close" id="copyDepositAddrBtn" style="background:var(--red); color:#fff;" data-i18n="copyAddress">Copy address</button>
+    <button class="sheet-close" data-close-sheet="depositOverlay" data-i18n="close">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ WITHDRAW MODAL ============ -->
+<div class="sheet-overlay" id="withdrawOverlay">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="withdraw">Withdraw</div>
+    <div class="wd-label" data-i18n="asset">Aset</div>
+    <div class="wd-select" id="withdrawAsset" data-value="">
+      <span id="withdrawAssetLabel">-</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="wd-label" data-i18n="destAddress">Alamat tujuan</div>
+    <input class="wd-input" id="withdrawTo" data-i18n-ph="destAddressPlaceholder" placeholder="0x... atau alamat Solana">
+    <div class="wd-label" data-i18n="amount">Jumlah</div>
+    <input class="wd-input" id="withdrawAmount" type="number" placeholder="0.0">
+    <div class="wd-status" id="withdrawStatus"></div>
+    <button class="wd-submit" id="withdrawSubmitBtn" data-i18n="send">Kirim</button>
+    <button class="sheet-close" data-close-sheet="withdrawOverlay" data-i18n="cancel">Batal</button>
+  </div>
+</div>
+
+<!-- ============ SWAP MODAL ============ -->
+<div class="sheet-overlay" id="swapOverlay">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="swapAsset">Tukar Aset</div>
+    <div class="wd-label" data-i18n="from">Dari</div>
+    <div class="wd-select" id="swapSellToken" data-value="">
+      <span id="swapSellTokenLabel">-</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <input class="wd-input" id="swapSellAmount" type="number" placeholder="0.0" style="margin-top:8px;">
+    <button class="swap-flip" id="swapFlipBtn">⇅</button>
+    <div class="wd-label" data-i18n="toApprox">Ke (perkiraan)</div>
+    <div class="wd-select" id="swapBuyToken" data-value="">
+      <span id="swapBuyTokenLabel">-</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <input class="wd-input" id="swapBuyAmount" type="number" placeholder="0.0" style="margin-top:8px;" disabled>
+    <div class="swap-info"><span data-i18n="rate">Rate</span><span id="swapRate">—</span></div>
+    <div class="swap-info"><span data-i18n="platformFee">Biaya platform</span><span id="swapFee">—</span></div>
+    <div class="swap-info"><span data-i18n="gas">Gas</span><span id="swapGas">—</span></div>
+    <div class="wd-status" id="swapStatus"></div>
+    <button class="wd-submit" id="swapSubmitBtn" disabled data-i18n="enterAmount">Masukkan jumlah</button>
+    <button class="sheet-close" data-close-sheet="swapOverlay">Batal</button>
+  </div>
+</div>
+
+<!-- ============ GENERIC PICKER (ganti <select> bawaan Android) ============ -->
+<div class="sheet-overlay" id="pickerOverlay">
+  <div class="sheet">
+    <div class="sheet-title" id="pickerTitle">Pilih</div>
+    <div id="pickerList"></div>
+    <button class="sheet-close" data-close-sheet="pickerOverlay">Batal</button>
+  </div>
+</div>
+
+<script>
+  // ============ GLOBAL ERROR SAFETY NET ============
+  // Nangkep error yang gak ketangkep, biar tombol gak "mati total" secara diam-diam.
+  window.__suppressErrorBanner = false; // di-toggle sementara sama proses yang udah nangkep errornya sendiri (misal load model offline)
+  window.addEventListener('error', (e) => {
+    console.error('Uncaught error:', e.error || e.message, 'from:', e.filename);
+    if (window.__suppressErrorBanner) return;
+    // Error dari library CDN pihak ketiga (Solana web3.js, AppKit, QRCode, dll)
+    // biasanya nggak bikin fitur inti (chat) ikut mati -- cukup dicatat di console,
+    // jangan nakut-nakutin user pake banner merah gede kalau bukan dari kode kita sendiri.
+    const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown'];
+    const isThirdParty = e.filename && thirdPartyHosts.some((h) => e.filename.includes(h));
+    if (isThirdParty) return;
+    showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    console.error('Unhandled rejection:', e.reason);
+    if (window.__suppressErrorBanner) return;
+    showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.reason?.message || e.reason || 'unknown error') + '). Coba refresh halaman.');
+  });
+  function showFatalErrorBanner(text){
+    if (document.getElementById('fatalErrBanner')) return;
+    const render = () => {
+      const banner = document.createElement('div');
+      banner.id = 'fatalErrBanner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#e3242b;color:#fff;padding:10px 14px;font-size:12.5px;text-align:center;font-family:sans-serif;';
+      banner.textContent = text;
+      document.body.prepend(banner);
+    };
+    if (document.body) render(); else document.addEventListener('DOMContentLoaded', render);
+  }
+
+  // ============ SUPABASE INIT ============
+  const SUPABASE_URL = 'https://pjrkzujhrngllagxawxv.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_qTeyK93yFVIfzGiycOKP4w_EOKcJAyp';
+  let sb;
+  try {
+    if (typeof supabase === 'undefined') {
+      throw new Error('Library Supabase gagal dimuat dari CDN. Cek koneksi internet kamu.');
+    }
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (err) {
+    console.error('Gagal inisialisasi Supabase:', err);
+    showFatalErrorBanner('Gagal memuat komponen login (Supabase). Coba refresh halaman atau cek koneksi internet.');
+    // Bikin objek dummy biar pemanggilan sb.auth.dll gak nge-crash script lain,
+    // cukup gagal dengan pesan yang jelas.
+    sb = { auth: new Proxy({}, { get: () => async () => ({ data: null, error: new Error('Supabase belum siap.') }) }) };
+  }
+
+  let userId = '', userEmail = '', accessToken = '';
+  let currentConversationId = null;
+  let history = [];
+  let memoryItems = [];
+  let userMemoryText = '';
+
+  let currentMode = 'online'; // online | offline | cloud
+  let isPaidSubscriber = false;
+  const MAX_MESSAGES_PER_CONVERSATION = 40;
+
+  // ---- Terjemahan UI. Baru id (Indonesia) & en (English) yang lengkap;
+  // bahasa lain nyusul -- fallback otomatis ke 'en' kalau key belum ada. ----
+  const TRANSLATIONS = {
+    id: {
+      loginHeadline: 'Asisten kripto & trading harian kamu, dapat diakses hanya dengan email Anda.',
+      continueWithGoogle: 'Lanjutkan dengan Google',
+      googleComingSoon: 'Login Google segera hadir — pakai email dulu ya',
+      or: 'ATAU',
+      emailPlaceholder: 'Alamat email kamu',
+      sendCode: 'Kirim kode',
+      loginTerms: 'Dengan melanjutkan, kamu setuju perangkat ini akan tetap masuk hingga kamu keluar.',
+      codePlaceholder: 'Kode 6 digit',
+      verifyCode: 'Masuk',
+      changeEmail: '← Ganti email',
+      modeOnline: 'Gratis Online',
+      modeOffline: 'Gratis Offline',
+      modeCloud: 'Premium',
+      chatPlaceholder: 'Ketik pesan…',
+      connectHeadline: 'Hubungkan wallet kamu',
+      connectDesc: 'ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.',
+      disconnect: 'Putuskan',
+      totalBalance: 'Total saldo',
+      send: 'Kirim',
+      receive: 'Terima',
+      swap: 'Tukar',
+      connectNote: 'Non-custodial — saldo ini dibaca langsung dari wallet kamu, ZO AI nggak pernah pegang dananya.',
+      navChat: 'Chat',
+      navWallet: 'Wallet',
+      menu: 'Menu',
+      memorySettings: 'Pengaturan Memori',
+      language: 'Bahasa',
+      appearance: 'Tampilan',
+      upgradeToPremium: 'Upgrade ke Premium',
+      logout: 'Keluar',
+      close: 'Tutup',
+      chatHistory: 'Riwayat Obrolan',
+      newChat: '+ Obrolan Baru',
+      memoryDesc: 'Catatan tentang kamu yang selalu diingat AI di obrolan manapun.',
+      memoryInputPlaceholder: 'misal: saya suka analisis teknikal',
+      languageDesc: 'Dipakai untuk pesan suara & disinkron dengan halaman lain.',
+      newChat2: 'Obrolan baru',
+      walletTitle: 'Wallet',
+      nonCustodial: 'Non-custodial',
+      deposit: 'Deposit',
+      copyAddress: 'Copy address',
+      withdraw: 'Withdraw',
+      asset: 'Aset',
+      destAddress: 'Alamat tujuan',
+      destAddressPlaceholder: '0x... atau alamat Solana',
+      amount: 'Jumlah',
+      cancel: 'Batal',
+      swapAsset: 'Tukar Aset',
+      from: 'Dari',
+      toApprox: 'Ke (perkiraan)',
+      rate: 'Rate',
+      platformFee: 'Biaya platform',
+      gas: 'Gas',
+      enterAmount: 'Masukkan jumlah',
+      themeLight: 'Terang',
+      themeDark: 'Gelap',
+    },
+    en: {
+      loginHeadline: 'Your daily crypto & trading assistant, accessible with just your email.',
+      continueWithGoogle: 'Continue with Google',
+      googleComingSoon: 'Google login coming soon — use email for now',
+      or: 'OR',
+      emailPlaceholder: 'Your email address',
+      sendCode: 'Send code',
+      loginTerms: 'By continuing, you agree this device will stay signed in until you log out.',
+      codePlaceholder: '6-digit code',
+      verifyCode: 'Log in',
+      changeEmail: '← Change email',
+      modeOnline: 'Free Online',
+      modeOffline: 'Free Offline',
+      modeCloud: 'Premium',
+      chatPlaceholder: 'Type a message…',
+      connectHeadline: 'Connect your wallet',
+      connectDesc: "ZO AI only reads your address & balance. Your private keys never leave your own wallet.",
+      disconnect: 'Disconnect',
+      totalBalance: 'Total balance',
+      send: 'Send',
+      receive: 'Receive',
+      swap: 'Swap',
+      connectNote: 'Non-custodial — this balance is read directly from your wallet, ZO AI never holds your funds.',
+      navChat: 'Chat',
+      navWallet: 'Wallet',
+      menu: 'Menu',
+      memorySettings: 'Memory Settings',
+      language: 'Language',
+      appearance: 'Appearance',
+      upgradeToPremium: 'Upgrade to Premium',
+      logout: 'Log out',
+      close: 'Close',
+      chatHistory: 'Chat History',
+      newChat: '+ New Chat',
+      memoryDesc: 'Notes about you that the AI always remembers in any chat.',
+      memoryInputPlaceholder: 'e.g. I like technical analysis',
+      languageDesc: 'Used for voice messages & synced with other pages.',
+      newChat2: 'New chat',
+      walletTitle: 'Wallet',
+      nonCustodial: 'Non-custodial',
+      deposit: 'Deposit',
+      copyAddress: 'Copy address',
+      withdraw: 'Withdraw',
+      asset: 'Asset',
+      destAddress: 'Destination address',
+      destAddressPlaceholder: '0x... or Solana address',
+      amount: 'Amount',
+      cancel: 'Cancel',
+      swapAsset: 'Swap Asset',
+      from: 'From',
+      toApprox: 'To (estimated)',
+      rate: 'Rate',
+      platformFee: 'Platform fee',
+      gas: 'Gas',
+      enterAmount: 'Enter amount',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+    },
+  };
+  // Peta kode voice-lang ('id-ID', 'en-US', dst) ke kode dictionary ('id'/'en').
+  // Bahasa yang belum ada dictionary-nya otomatis fallback ke English.
+  const LANG_CODE_MAP = { 'id-ID': 'id', 'en-US': 'en' };
+
+  function currentDictLang(){
+    const voiceLang = localStorage.getItem('zo_voice_lang') || 'en-US';
+    return LANG_CODE_MAP[voiceLang] || 'en';
+  }
+  function t(key){
+    const dict = TRANSLATIONS[currentDictLang()] || TRANSLATIONS.en;
+    return dict[key] || TRANSLATIONS.en[key] || key;
+  }
+  function applyTranslations(){
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+      el.placeholder = t(el.dataset.i18nPh);
+    });
+    // Beberapa teks di-generate JS langsung (bukan lewat data-i18n), refresh manual:
+    const themeVal = document.getElementById('menuThemeValue');
+    if (themeVal) {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      themeVal.textContent = isDark ? t('themeDark') : t('themeLight');
+    }
+    const pageTitleEl = document.getElementById('pageTitle');
+    const pageSubEl = document.getElementById('pageSub');
+    if (pageTitleEl && document.querySelector('.nav-item[data-page="wallet"]').classList.contains('active')) {
+      pageTitleEl.textContent = t('walletTitle');
+      pageSubEl.textContent = t('nonCustodial');
+    } else if (pageTitleEl) {
+      pageTitleEl.textContent = t('newChat2');
+    }
+  }
+
+
+  // ============ LOGIN FLOW ============
+  const emailInput = document.getElementById('emailInput');
+  const codeInput = document.getElementById('codeInput');
+  const sendCodeBtn = document.getElementById('sendCodeBtn');
+  const verifyCodeBtn = document.getElementById('verifyCodeBtn');
+  const backToEmailBtn = document.getElementById('backToEmailBtn');
+  const emailStep = document.getElementById('emailStep');
+  const codeStep = document.getElementById('codeStep');
+  const loginStatus = document.getElementById('loginStatus');
+  const codeStatus = document.getElementById('codeStatus');
+
+  document.getElementById('googleLoginBtn').addEventListener('click', () => {
+    loginStatus.textContent = 'Login Google belum aktif, pakai email dulu ya.';
+  });
+
+  let pendingEmail = '';
+  sendCodeBtn.addEventListener('click', async () => {
+    const val = emailInput.value.trim();
+    if (!val || !/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(val)) {
+      loginStatus.textContent = 'Masukkan email yang valid ya.';
+      return;
+    }
+    sendCodeBtn.disabled = true;
+    sendCodeBtn.textContent = 'Mengirim...';
+    try {
+      const { error } = await sb.auth.signInWithOtp({ email: val });
+      if (error) throw error;
+      pendingEmail = val;
+      emailStep.style.display = 'none';
+      codeStep.style.display = 'block';
+    } catch (e) {
+      loginStatus.textContent = 'Gagal kirim kode: ' + e.message;
+    }
+    sendCodeBtn.disabled = false;
+    sendCodeBtn.textContent = 'Kirim kode';
+  });
+
+  verifyCodeBtn.addEventListener('click', async () => {
+    const code = codeInput.value.trim();
+    if (!code) return;
+    verifyCodeBtn.disabled = true;
+    verifyCodeBtn.textContent = 'Memverifikasi...';
+    try {
+      const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token: code, type: 'email' });
+      if (error) throw error;
+      await initApp();
+    } catch (e) {
+      codeStatus.textContent = 'Kode salah/kadaluarsa: ' + e.message;
+    }
+    verifyCodeBtn.disabled = false;
+    verifyCodeBtn.textContent = 'Masuk';
+  });
+
+  backToEmailBtn.addEventListener('click', () => {
+    codeStep.style.display = 'none';
+    emailStep.style.display = 'block';
+    codeStatus.textContent = '';
+  });
+
+  // ============ APP INIT ============
+  async function initApp(){
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    userEmail = session.user.email;
+    userId = session.user.id;
+    accessToken = session.access_token;
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').classList.add('show');
+
+    await checkSubscriberStatus();
+    await initConversation();
+    await loadHistory();
+    await loadMemory();
+  }
+
+  (async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await initApp();
+  })();
+
+  async function checkSubscriberStatus(){
+    try {
+      const { data, error } = await sb
+        .from('subscribers')
+        .select('expires_at')
+        .eq('email', userEmail)
+        .order('expires_at', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      const row = data && data[0];
+      isPaidSubscriber = !!(row && row.expires_at && new Date(row.expires_at) > new Date());
+    } catch (e) {
+      console.error('Gagal cek status subscriber:', e);
+      isPaidSubscriber = false;
+    }
+  }
+
+  // ============ BOTTOM NAV (Chat / Wallet) ============
+  const navItems = document.querySelectorAll('.nav-item');
+  const pages = { chat: document.getElementById('pageChat'), wallet: document.getElementById('pageWallet') };
+  const modeBar = document.getElementById('modeBar');
+  const pageTitle = document.getElementById('pageTitle');
+  const pageSub = document.getElementById('pageSub');
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      Object.values(pages).forEach(p => p.classList.remove('active'));
+      const target = item.dataset.page;
+      pages[target].classList.add('active');
+      if (target === 'chat'){
+        modeBar.style.display = 'flex';
+        pageTitle.textContent = t('newChat2');
+        pageSub.textContent = 'ZO AI';
+      } else {
+        modeBar.style.display = 'none';
+        pageTitle.textContent = t('walletTitle');
+        pageSub.textContent = t('nonCustodial');
+      }
+    });
+  });
+
+  // ============ MODE SWITCH (Online / Offline / Cloud) ============
+  const modeOnline = document.getElementById('modeOnline');
+  const modeOffline = document.getElementById('modeOffline');
+  const modeCloud = document.getElementById('modeCloud');
+  const modeOpts = [modeOnline, modeOffline, modeCloud];
+
+  modeOnline.addEventListener('click', () => setMode('online'));
+  modeOffline.addEventListener('click', () => setMode('offline'));
+  modeCloud.addEventListener('click', () => {
+    if (!isPaidSubscriber) {
+      addNote('Mode Premium butuh langganan aktif. Buka halaman Subscribe buat upgrade.');
+      return;
+    }
+    setMode('cloud');
+  });
+
+  function setMode(mode){
+    currentMode = mode;
+    modeOpts.forEach(o => o.classList.remove('active'));
+    ({ online: modeOnline, offline: modeOffline, cloud: modeCloud })[mode].classList.add('active');
+    if (mode === 'offline') preloadOfflineModel();
+  }
+
+  function addNote(text){
+    const div = document.createElement('div');
+    div.className = 'msg-note';
+    div.textContent = text;
+    messagesBox.appendChild(div);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  // ============ MENU / SHEETS ============
+  document.querySelectorAll('[data-close-sheet]').forEach(btn => {
+    btn.addEventListener('click', () => document.getElementById(btn.dataset.closeSheet).classList.remove('show'));
+  });
+  document.querySelectorAll('.sheet-overlay').forEach(ov => {
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('show'); });
+  });
+
+  document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('menuSheet').classList.add('show'));
+  document.getElementById('menuMemoryRow').addEventListener('click', () => {
+    document.getElementById('menuSheet').classList.remove('show');
+    document.getElementById('memorySheet').classList.add('show');
+  });
+  document.getElementById('menuUpgradeRow').addEventListener('click', () => { window.location.href = 'subscribe.html'; });
+  document.getElementById('menuLogoutRow').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    window.location.href = 'landing.html';
+  });
+
+  // ---- Bahasa: disimpen di key yang SAMA ('zo_voice_lang') dipake juga di chat.html & landing.html ----
+  const menuLangValue = document.getElementById('menuLangValue');
+  const langOptionEls = document.querySelectorAll('.lang-option');
+
+  function setActiveLang(value){
+    const match = document.querySelector('.lang-option[data-value="' + value + '"]');
+    langOptionEls.forEach(el => el.classList.toggle('active', el.dataset.value === value));
+    if (match) menuLangValue.textContent = match.textContent;
+    applyTranslations();
+  }
+  setActiveLang(localStorage.getItem('zo_voice_lang') || 'en-US');
+
+  document.getElementById('menuLangRow').addEventListener('click', () => {
+    document.getElementById('menuSheet').classList.remove('show');
+    document.getElementById('langSheet').classList.add('show');
+  });
+  langOptionEls.forEach(el => {
+    el.addEventListener('click', () => {
+      localStorage.setItem('zo_voice_lang', el.dataset.value);
+      setActiveLang(el.dataset.value);
+      document.getElementById('langSheet').classList.remove('show');
+    });
+  });
+
+  // ---- Tema gelap/terang: disimpen di localStorage, langsung berubah tanpa reload ----
+  const menuThemeValue = document.getElementById('menuThemeValue');
+  const sunIconPath = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  const moonIconPath = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+
+  function applyTheme(theme){
+    document.documentElement.setAttribute('data-theme', theme);
+    menuThemeValue.textContent = theme === 'dark' ? t('themeDark') : t('themeLight');
+    document.getElementById('menuThemeIcon').innerHTML = theme === 'dark' ? moonIconPath : sunIconPath;
+    localStorage.setItem('zo_theme', theme);
+  }
+  applyTheme(localStorage.getItem('zo_theme') || 'light');
+
+  document.getElementById('menuThemeRow').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  document.getElementById('newChatBtn').addEventListener('click', startNewConversation);
+  document.getElementById('historyBtn').addEventListener('click', () => {
+    document.getElementById('historySheet').classList.add('show');
+    renderConversationList();
+  });
+  document.getElementById('newConvRow').addEventListener('click', async () => {
+    await startNewConversation();
+    document.getElementById('historySheet').classList.remove('show');
+  });
+
+  // ============ CONVERSATIONS ============
+  async function initConversation(){
+    try {
+      const { data, error } = await sb.from('conversations').select('id').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        currentConversationId = data[0].id;
+      } else {
+        const { data: nc, error: ie } = await sb.from('conversations').insert({ user_id: userId, title: 'New chat' }).select('id').single();
+        if (ie) throw ie;
+        currentConversationId = nc.id;
+      }
+    } catch (e) { console.error('Gagal init conversation:', e); }
+  }
+
+  async function startNewConversation(){
+    try {
+      const { data, error } = await sb.from('conversations').insert({ user_id: userId, title: 'New chat' }).select('id').single();
+      if (error) throw error;
+      currentConversationId = data.id;
+      history = [];
+      messagesBox.innerHTML = '';
+      chatInput.disabled = false;
+      sendBtn.disabled = false;
+      chatInput.focus();
+    } catch (e) { console.error('Gagal bikin obrolan baru:', e); }
+  }
+
+  async function loadHistory(){
+    if (!currentConversationId) return;
+    try {
+      const { data, error } = await sb.from('chat_messages').select('id, role, content, created_at')
+        .eq('conversation_id', currentConversationId).order('created_at', { ascending: true }).limit(100);
+      if (error || !data || data.length === 0) return;
+      messagesBox.innerHTML = '';
+      data.forEach(m => {
+        const entry = { role: m.role, content: m.content, id: m.id, time: m.created_at };
+        renderMessage(m.content, m.role, entry);
+        history.push(entry);
+      });
+      checkConversationLimit();
+    } catch (e) { console.error('Gagal memuat riwayat:', e); }
+  }
+
+  async function saveMessage(role, content){
+    try {
+      const { data, error } = await sb.from('chat_messages').insert({ user_id: userId, role, content, conversation_id: currentConversationId }).select('id').single();
+      if (error) throw error;
+      if (role === 'user' && history.length <= 1) {
+        sb.from('conversations').update({ title: content.slice(0, 40) }).eq('id', currentConversationId).then(() => {});
+      }
+      return data?.id ?? null;
+    } catch (e) { console.error('Gagal simpan pesan:', e); return null; }
+  }
+
+  async function renderConversationList(){
+    const historyList = document.getElementById('historyList');
+    historyList.innerHTML = '<div class="msg-note">Memuat...</div>';
+    try {
+      const { data, error } = await sb.from('conversations').select('id, title, updated_at')
+        .eq('user_id', userId).order('updated_at', { ascending: false }).limit(50);
+      if (error) throw error;
+      historyList.innerHTML = '';
+      (data || []).forEach(conv => {
+        const row = document.createElement('div');
+        row.className = 'conv-item' + (conv.id === currentConversationId ? ' active' : '');
+        const title = document.createElement('span');
+        title.className = 'conv-title';
+        title.textContent = conv.title || 'New chat';
+        const time = document.createElement('span');
+        time.className = 'conv-time';
+        time.textContent = new Date(conv.updated_at).toLocaleDateString([], { day: '2-digit', month: 'short' });
+        const del = document.createElement('button');
+        del.className = 'conv-del';
+        del.textContent = '×';
+        del.addEventListener('click', (e) => { e.stopPropagation(); deleteConversation(conv.id); });
+        row.appendChild(title); row.appendChild(time); row.appendChild(del);
+        row.addEventListener('click', () => switchConversation(conv.id));
+        historyList.appendChild(row);
+      });
+    } catch (e) { historyList.innerHTML = '<div class="msg-note">Gagal memuat.</div>'; }
+  }
+
+  async function switchConversation(convId){
+    document.getElementById('historySheet').classList.remove('show');
+    if (convId === currentConversationId) return;
+    currentConversationId = convId;
+    history = [];
+    messagesBox.innerHTML = '';
+    chatInput.disabled = false;
+    sendBtn.disabled = false;
+    await loadHistory();
+  }
+
+  async function deleteConversation(convId){
+    const confirmed = await showConfirm('Hapus obrolan ini?', 'Semua pesan di dalamnya akan hilang permanen.');
+    if (!confirmed) return;
+    try {
+      await sb.from('conversations').delete().eq('id', convId);
+      if (convId === currentConversationId) {
+        currentConversationId = null;
+        history = [];
+        messagesBox.innerHTML = '';
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        await initConversation();
+        await loadHistory();
+      }
+      await renderConversationList();
+    } catch (e) { console.error('Gagal hapus obrolan:', e); }
+  }
+
+  function checkConversationLimit(){
+    if (currentMode === 'offline') return false; // mode offline nggak disimpen, nggak kena limit ini
+    if (history.length >= MAX_MESSAGES_PER_CONVERSATION) {
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+      addNote(`Obrolan ini udah mencapai batas ${MAX_MESSAGES_PER_CONVERSATION} pesan. Mulai obrolan baru lewat ikon ✎ di atas.`);
+      return true;
+    }
+    return false;
+  }
+
+  // ============ MEMORY ============
+  async function loadMemory(){
+    try {
+      const { data, error } = await sb.from('user_memory').select('id, content').eq('user_id', userId).order('created_at', { ascending: true });
+      if (error) throw error;
+      memoryItems = data || [];
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) { console.error('Gagal muat memori:', e); }
+  }
+
+  async function addMemoryItem(text){
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    try {
+      const { data, error } = await sb.from('user_memory').insert({ user_id: userId, content: trimmed }).select('id, content').single();
+      if (error) throw error;
+      memoryItems.push(data);
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) { console.error('Gagal simpan memori:', e); }
+  }
+
+  async function deleteMemoryItem(id){
+    try {
+      await sb.from('user_memory').delete().eq('id', id);
+      memoryItems = memoryItems.filter(m => m.id !== id);
+      userMemoryText = memoryItems.map(m => '- ' + m.content).join('\n');
+      renderMemoryList();
+    } catch (e) { console.error('Gagal hapus memori:', e); }
+  }
+
+  function renderMemoryList(){
+    const memoryList = document.getElementById('memoryList');
+    memoryList.innerHTML = '';
+    if (memoryItems.length === 0) {
+      memoryList.innerHTML = '<div class="msg-note">Belum ada memori tersimpan.</div>';
+      return;
+    }
+    memoryItems.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'mem-item';
+      const span = document.createElement('span');
+      span.textContent = item.content;
+      const del = document.createElement('button');
+      del.className = 'mem-del';
+      del.textContent = '×';
+      del.addEventListener('click', () => deleteMemoryItem(item.id));
+      row.appendChild(span); row.appendChild(del);
+      memoryList.appendChild(row);
+    });
+  }
+
+  document.getElementById('memoryAddBtn').addEventListener('click', () => {
+    const inp = document.getElementById('memoryInput');
+    addMemoryItem(inp.value);
+    inp.value = '';
+  });
+
+  // ============ CHAT MESSAGES (UI) ============
+  const messagesBox = document.getElementById('messagesBox');
+  const chatInput = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const micBtn = document.getElementById('micBtn');
+
+  // ---- Picker generic: ganti <select> bawaan Android biar seragam sama tema app ----
+  const TOKEN_ICONS = { ETH: 'Ξ', USDT: '₮', SOL: '◎', BTC: '₿' };
+  function setPickerValue(elId, labelId, value){
+    document.getElementById(elId).dataset.value = value;
+    document.getElementById(labelId).textContent = value;
+  }
+  function getPickerValue(elId){
+    return document.getElementById(elId).dataset.value;
+  }
+  function openPicker(title, options, currentValue, onSelect){
+    document.getElementById('pickerTitle').textContent = title;
+    const list = document.getElementById('pickerList');
+    list.innerHTML = '';
+    options.forEach((opt) => {
+      const row = document.createElement('div');
+      row.className = 'picker-row' + (opt === currentValue ? ' active-pick' : '');
+      const icon = TOKEN_ICONS[opt] || opt.charAt(0);
+      row.innerHTML = `<span class="pr-icon">${icon}</span><span class="pr-label">${opt}</span><span class="pr-check">✓</span>`;
+      row.addEventListener('click', () => {
+        onSelect(opt);
+        document.getElementById('pickerOverlay').classList.remove('show');
+      });
+      list.appendChild(row);
+    });
+    document.getElementById('pickerOverlay').classList.add('show');
+  }
+
+  // ---- Modal konfirmasi custom (ganti window.confirm bawaan browser yang nampilin nama domain) ----
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  const confirmTitle = document.getElementById('confirmTitle');
+  const confirmMsg = document.getElementById('confirmMsg');
+  const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+  const confirmOkBtn = document.getElementById('confirmOkBtn');
+
+  function showInfo(title, msg){
+    confirmTitle.textContent = title;
+    confirmMsg.textContent = msg;
+    confirmCancelBtn.style.display = 'none';
+    confirmOkBtn.textContent = 'OK';
+    confirmOverlay.classList.add('show');
+    return new Promise((resolve) => {
+      function onOk(){
+        confirmOverlay.classList.remove('show');
+        confirmCancelBtn.style.display = '';
+        confirmOkBtn.textContent = 'Hapus';
+        confirmOkBtn.removeEventListener('click', onOk);
+        resolve(true);
+      }
+      confirmOkBtn.addEventListener('click', onOk);
+    });
+  }
+
+  function showConfirm(title, msg){
+    confirmTitle.textContent = title;
+    confirmMsg.textContent = msg;
+    confirmOverlay.classList.add('show');
+    return new Promise((resolve) => {
+      function cleanup(result){
+        confirmOverlay.classList.remove('show');
+        confirmOkBtn.removeEventListener('click', onOk);
+        confirmCancelBtn.removeEventListener('click', onCancel);
+        resolve(result);
+      }
+      function onOk(){ cleanup(true); }
+      function onCancel(){ cleanup(false); }
+      confirmOkBtn.addEventListener('click', onOk);
+      confirmCancelBtn.addEventListener('click', onCancel);
+    });
+  }
+
+  // ---- Pesan suara: TAP = rekam sekali (speech-to-text), TAHAN = mode obrolan suara terus-terusan ----
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognitionAPI) {
+    const recognition = new SpeechRecognitionAPI();
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    let isListening = false;
+
+    recognition.addEventListener('result', (e) => {
+      const transcript = e.results?.[0]?.[0]?.transcript || '';
+      if (transcript) chatInput.value = (chatInput.value ? chatInput.value + ' ' : '') + transcript;
+    });
+    recognition.addEventListener('end', () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+    });
+    recognition.addEventListener('error', () => {
+      isListening = false;
+      micBtn.classList.remove('listening');
+    });
+
+    function startQuickRecognition(){
+      if (isListening) { recognition.stop(); return; }
+      recognition.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+      try {
+        recognition.start();
+        isListening = true;
+        micBtn.classList.add('listening');
+      } catch (e) {
+        console.error('Speech recognition gagal jalan:', e);
+      }
+    }
+
+    // -- Mode obrolan suara terus-terusan (dipicu tekan-tahan micBtn) --
+    let liveActive = false;
+    if ('speechSynthesis' in window) {
+      const liveOverlay = document.getElementById('liveOverlay');
+      const liveOrb = document.getElementById('liveOrb');
+      const liveStatus = document.getElementById('liveStatus');
+      const liveTranscript = document.getElementById('liveTranscript');
+      const liveCloseBtn = document.getElementById('liveCloseBtn');
+      const liveRecognition = new SpeechRecognitionAPI();
+      liveRecognition.continuous = false;
+      liveRecognition.interimResults = false;
+
+      function setLiveState(state, text){
+        liveOrb.classList.remove('listening', 'speaking');
+        if (state) liveOrb.classList.add(state);
+        liveStatus.textContent = text;
+      }
+
+      function speak(text){
+        return new Promise((resolve) => {
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+          utter.onend = resolve;
+          utter.onerror = resolve;
+          window.speechSynthesis.speak(utter);
+        });
+      }
+
+      function startLiveListening(){
+        if (!liveActive) return;
+        liveRecognition.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+        liveTranscript.textContent = '';
+        setLiveState('listening', 'Mendengarkan...');
+        try { liveRecognition.start(); } catch (e) { /* mungkin masih jalan, abaikan */ }
+      }
+
+      liveRecognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        liveTranscript.textContent = transcript;
+        setLiveState(null, 'Berpikir...');
+
+        const entry = { role: 'user', content: transcript, id: null, time: new Date().toISOString() };
+        history.push(entry);
+        renderMessage(transcript, 'user', entry);
+        if (currentMode !== 'offline') saveMessage('user', transcript).then(id => { entry.id = id; });
+
+        const result = currentMode === 'offline' ? await sendToOfflineModel(transcript) : await sendToServer();
+        if (!liveActive) return;
+
+        const replyText = result.ok ? result.reply : result.message;
+        if (result.ok) {
+          const replyEntry = { role: 'assistant', content: replyText, id: null, time: new Date().toISOString() };
+          if (currentMode !== 'offline') {
+            history.push(replyEntry);
+            saveMessage('assistant', replyText).then(id => { replyEntry.id = id; });
+          }
+          renderMessage(replyText, 'ai', replyEntry);
+        } else {
+          addNote(replyText);
+        }
+
+        setLiveState('speaking', 'Menjawab...');
+        liveTranscript.textContent = replyText;
+        await speak(replyText);
+        if (liveActive) startLiveListening();
+      };
+
+      liveRecognition.onerror = (event) => {
+        if (liveActive && event.error !== 'aborted') setTimeout(startLiveListening, 800);
+      };
+
+      window.__zoStartLiveMode = () => {
+        liveActive = true;
+        liveOverlay.classList.add('show');
+        startLiveListening();
+      };
+
+      liveCloseBtn.addEventListener('click', () => {
+        liveActive = false;
+        window.speechSynthesis.cancel();
+        try { liveRecognition.stop(); } catch (e) {}
+        liveOverlay.classList.remove('show');
+      });
+    }
+
+    // -- Gabungin tap vs tekan-tahan di 1 tombol mic --
+    let micPressTimer = null;
+    let micLongPressFired = false;
+    function micPressStart(e){
+      e.preventDefault();
+      micLongPressFired = false;
+      micPressTimer = setTimeout(() => {
+        micLongPressFired = true;
+        if (window.__zoStartLiveMode) window.__zoStartLiveMode();
+      }, 480);
+    }
+    function micPressEnd(){
+      clearTimeout(micPressTimer);
+      if (!micLongPressFired) startQuickRecognition();
+    }
+    micBtn.addEventListener('touchstart', micPressStart, { passive: false });
+    micBtn.addEventListener('touchend', micPressEnd);
+    micBtn.addEventListener('touchcancel', () => clearTimeout(micPressTimer));
+    micBtn.addEventListener('mousedown', micPressStart);
+    micBtn.addEventListener('mouseup', micPressEnd);
+  } else {
+    // Browser nggak support Web Speech API -> sembunyiin tombolnya aja
+    micBtn.style.display = 'none';
+  }
+  const quotaLine = document.getElementById('quotaLine');
+
+  const modeLabels = { online: 'ZO AI · Gratis Online', offline: 'ZO AI · Gratis Offline', cloud: 'ZO AI · Premium' };
+
+  // ---- Generate gambar (tombol "+") ----
+  async function generateImage(){
+    const promptText = chatInput.value.trim();
+    if (!promptText) { addNote('Ketik dulu deskripsi gambarnya di kolom pesan, baru tap tombol ini.'); return; }
+
+    renderMessage(promptText, 'user', { role: 'user', content: promptText, time: new Date().toISOString() });
+    if (currentMode !== 'offline') saveMessage('user', promptText);
+    chatInput.value = '';
+    document.getElementById('plusBtn').disabled = true;
+
+    const loadingDiv = renderMessage('Membuat gambar...', 'ai');
+
+    try {
+      const res = await fetch('/api/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken },
+        body: JSON.stringify({ prompt: promptText }),
+      });
+      const data = await res.json();
+      loadingDiv.remove();
+
+      if (data.error) {
+        addNote(data.error);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'msg-ai';
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = modeLabels[currentMode] || 'ZO AI';
+        div.appendChild(label);
+        const img = document.createElement('img');
+        img.src = 'data:image/png;base64,' + data.image;
+        img.style.cssText = 'max-width:100%; border-radius:14px; margin-top:4px; display:block;';
+        div.appendChild(img);
+        messagesBox.appendChild(div);
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+        if (typeof data.remaining === 'number') quotaLine.textContent = data.remaining + ' gambar gratis tersisa hari ini';
+      }
+    } catch (e) {
+      loadingDiv.remove();
+      addNote('Gagal terhubung ke server. Coba lagi.');
+    }
+
+    document.getElementById('plusBtn').disabled = false;
+  }
+  document.getElementById('plusBtn').addEventListener('click', generateImage);
+
+  function renderMessage(text, role, entry){
+    const div = document.createElement('div');
+    div.className = role === 'user' ? 'msg-me' : 'msg-ai';
+    if (role !== 'user') {
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = modeLabels[currentMode] || 'ZO AI';
+      div.appendChild(label);
+    }
+    const textNode = document.createElement('span');
+    textNode.textContent = text;
+    div.appendChild(textNode);
+    if (entry && entry.time) {
+      const time = document.createElement('div');
+      time.className = 'msg-time';
+      time.textContent = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      div.appendChild(time);
+    }
+
+    // Tekan agak lama buat nyalin teks -- ganti cara select-teks bawaan
+    // Chrome (yang nampilin toolbar "Salin/Bagikan/Cari di Google" itu).
+    let pressTimer = null;
+    const startPress = () => { pressTimer = setTimeout(() => copyToClipboard(text, div), 450); };
+    const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); };
+    div.addEventListener('touchstart', startPress);
+    div.addEventListener('touchend', cancelPress);
+    div.addEventListener('touchmove', cancelPress);
+    div.addEventListener('mousedown', startPress);
+    div.addEventListener('mouseup', cancelPress);
+    div.addEventListener('mouseleave', cancelPress);
+
+    messagesBox.appendChild(div);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    return div;
+  }
+
+  function copyToClipboard(text, div){
+    navigator.clipboard?.writeText(text).catch(() => {});
+    const toast = document.createElement('div');
+    toast.textContent = 'Disalin';
+    toast.style.cssText = 'position:absolute; background:var(--dark-card); color:#fff; font-size:11px; padding:6px 12px; border-radius:100px; z-index:60; pointer-events:none;';
+    const rect = div.getBoundingClientRect();
+    toast.style.top = (rect.top - 30 + window.scrollY) + 'px';
+    toast.style.left = rect.left + 'px';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 1200);
+  }
+
+  sendBtn.addEventListener('click', send);
+  chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+
+  async function send(){
+    const val = chatInput.value.trim();
+    if (!val) return;
+    const entry = { role: 'user', content: val, id: null, time: new Date().toISOString() };
+    history.push(entry);
+    renderMessage(val, 'user', entry);
+    chatInput.value = '';
+    sendBtn.disabled = true;
+
+    if (currentMode !== 'offline') saveMessage('user', val).then(id => { entry.id = id; });
+
+    const loadingDiv = renderMessage('Berpikir...', 'ai');
+
+    let result;
+    if (currentMode === 'offline') {
+      result = await sendToOfflineModel(val);
+    } else {
+      result = await sendToServer();
+    }
+
+    loadingDiv.remove();
+
+    if (!result.ok) {
+      addNote(result.message);
+    } else {
+      const replyEntry = { role: 'assistant', content: result.reply, id: null, time: new Date().toISOString() };
+      if (currentMode !== 'offline') {
+        history.push(replyEntry);
+        saveMessage('assistant', result.reply).then(id => { replyEntry.id = id; });
+      }
+      renderMessage(result.reply, 'ai', replyEntry);
+    }
+
+    sendBtn.disabled = false;
+    checkConversationLimit();
+  }
+
+  async function sendToServer(){
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken },
+        body: JSON.stringify({ messages: history.filter(h => h.role !== 'system').map(h => ({ role: h.role, content: h.content })), webSearchEnabled: true, userMemory: userMemoryText })
+      });
+      const data = await res.json();
+      if (data.error) return { ok: false, message: data.error };
+      quotaLine.textContent = typeof data.remaining === 'number' ? `${data.remaining} pertanyaan gratis tersisa hari ini` : '';
+      return { ok: true, reply: data.reply };
+    } catch (e) {
+      return { ok: false, message: 'Koneksi bermasalah, coba lagi.' };
+    }
+  }
+
+  // ============ OFFLINE MODE (Qwen3-0.6B, jalan 100% di browser) ============
+  let offlineGenerator = null;
+  let offlineLoading = false;
+  let offlineHistory = [{ role: 'system', content: 'Kamu adalah ZO AI mode offline, asisten ringan yang jalan langsung di perangkat tanpa internet. Jawab singkat dan jelas.' }];
+
+  async function preloadOfflineModel(){
+    if (offlineGenerator || offlineLoading) return;
+    offlineLoading = true;
+    const progDiv = document.createElement('div');
+    progDiv.className = 'offline-progress';
+    progDiv.innerHTML = 'Mengunduh model AI on-device (sekali aja, ~300-400MB)...<div class="offline-bar"><div class="offline-bar-fill" id="offlineBarFill"></div></div>';
+    messagesBox.appendChild(progDiv);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    const fill = document.getElementById('offlineBarFill');
+
+    // Library model offline ini kadang lempar error dari dalam Web Worker/WASM-nya sendiri,
+    // yang gak ketangkep sama try-catch biasa. Kita redam banner global sementara di sini,
+    // errornya cukup tampil di bubble chat aja biar gak bikin panik.
+    let workerErrCaught = null;
+    const catchWorkerErr = (e) => { workerErrCaught = (e.error || e.reason || e.message || 'Gagal memuat model.'); };
+    window.__suppressErrorBanner = true;
+    window.addEventListener('error', catchWorkerErr);
+    window.addEventListener('unhandledrejection', catchWorkerErr);
+
+    try {
+      const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6');
+      let hasWebGPU = false;
+      try { hasWebGPU = !!(navigator.gpu && (await navigator.gpu.requestAdapter())); } catch (e) {}
+
+      offlineGenerator = await pipeline('text-generation', 'onnx-community/Qwen3-0.6B-ONNX', {
+        dtype: 'q4',
+        device: hasWebGPU ? 'webgpu' : 'wasm',
+        progress_callback: (p) => {
+          if (p.status === 'progress' && fill) fill.style.width = Math.round(p.progress || 0) + '%';
+        }
+      });
+      if (workerErrCaught) throw new Error('worker-error');
+      progDiv.remove();
+      addNote(hasWebGPU ? 'Model AI on-device siap (dipercepat WebGPU).' : 'Model AI on-device siap (mode CPU, mungkin lebih lambat).');
+    } catch (e) {
+      console.error('Gagal load model offline:', workerErrCaught || e);
+      progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini (biasanya karena keterbatasan WebAssembly/Worker di browser kamu). Coba pakai Free Online atau Premium dulu ya.';
+    } finally {
+      window.removeEventListener('error', catchWorkerErr);
+      window.removeEventListener('unhandledrejection', catchWorkerErr);
+      window.__suppressErrorBanner = false;
+    }
+    offlineLoading = false;
+  }
+
+  async function sendToOfflineModel(userText){
+    if (!offlineGenerator) {
+      await preloadOfflineModel();
+      if (!offlineGenerator) return { ok: false, message: 'Model offline belum siap. Coba lagi.' };
+    }
+    offlineHistory.push({ role: 'user', content: userText });
+    try {
+      const output = await offlineGenerator(offlineHistory, { max_new_tokens: 256, do_sample: false });
+      const reply = output[0].generated_text.at(-1).content;
+      offlineHistory.push({ role: 'assistant', content: reply });
+      return { ok: true, reply };
+    } catch (e) {
+      console.error('Offline generation error:', e);
+      return { ok: false, message: 'Gagal generate jawaban offline: ' + e.message };
+    }
+  }
+
+  // ============ WALLET ============
+  const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'.length === 42 ? '0xdAC17F958D2ee523a2206206994597C13D831ec7' : '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+  const ETH_RPC_LIST = ['https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com', 'https://rpc.ankr.com/eth'];
+  const SOL_RPC_LIST = ['https://api.mainnet-beta.solana.com', 'https://solana-rpc.publicnode.com'];
+
+  let currentAddress = null, currentNetwork = null;
+
+  function hasEth(){ return typeof window.ethereum !== 'undefined'; }
+  // Provider buat kirim transaksi: kalau connect lewat WalletConnect, pake itu;
+  // kalau kebetulan ada window.ethereum (browser ekstensi), pake itu sebagai fallback.
+  function getEvmProvider(){ return window.zoEvmProvider || window.ethereum; }
+  function hasPhan(){ return typeof window.solana !== 'undefined' && window.solana.isPhantom; }
+
+  document.getElementById('btnMetaMask').addEventListener('click', () => window.zoAppKit?.open());
+  document.getElementById('btnTrust').addEventListener('click', () => window.zoAppKit?.open());
+
+  // Nangkep event dari script AppKit (module) di head -- begitu wallet EVM
+  // ke-connect lewat WalletConnect, langsung update tampilan Wallet.
+  window.addEventListener('zo-wallet-account', (e) => {
+    const account = e.detail;
+    if (account && account.isConnected && account.address) {
+      currentAddress = account.address;
+      currentNetwork = 'ethereum';
+      showConnected('WalletConnect', currentAddress, 'Ethereum');
+      loadEthBalances(currentAddress);
+    }
+  });
+  document.getElementById('btnPhantom').addEventListener('click', () => connectPhantom());
+  document.getElementById('disconnectBtn').addEventListener('click', disconnectWallet);
+  document.getElementById('btnSend').addEventListener('click', openWithdraw);
+  document.getElementById('btnReceive').addEventListener('click', openDeposit);
+  document.getElementById('btnSwap').addEventListener('click', openSwap);
+
+  async function connectEVM(name, deepLink){
+    if (!hasEth()) { window.location.href = deepLink; return; }
+    try {
+      document.getElementById('connectingLine').textContent = 'Menghubungkan...';
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      currentAddress = accounts[0]; currentNetwork = 'ethereum';
+      showConnected(name, currentAddress, 'Ethereum');
+      loadEthBalances(currentAddress);
+    } catch (err) {
+      document.getElementById('connectingLine').textContent = err && err.message ? err.message : 'Koneksi gagal.';
+    }
+  }
+
+  async function connectPhantom(){
+    if (!hasPhan()) {
+      window.location.href = 'https://phantom.app/ul/browse/' + encodeURIComponent(window.location.href) + '?ref=' + encodeURIComponent(window.location.origin);
+      return;
+    }
+    try {
+      document.getElementById('connectingLine').textContent = 'Menghubungkan...';
+      const resp = await window.solana.connect();
+      currentAddress = resp.publicKey.toString(); currentNetwork = 'solana';
+      showConnected('Phantom', currentAddress, 'Solana');
+      loadSolBalance(currentAddress);
+    } catch (err) {
+      document.getElementById('connectingLine').textContent = err && err.message ? err.message : 'Koneksi gagal.';
+    }
+  }
+
+  function showConnected(providerName, address, network){
+    document.getElementById('connectBox').classList.add('hide');
+    document.getElementById('walletConnected').classList.add('show');
+    document.getElementById('connectedAddr').textContent = address.slice(0, 6) + '...' + address.slice(-4);
+    document.getElementById('connectedNet').textContent = network + ' · via ' + providerName;
+  }
+
+  // ---- Deposit: tampilin QR code + alamat, tinggal di-scan/copy ----
+  let qrInstance = null;
+  function openDeposit(){
+    if (!currentAddress) return;
+    document.getElementById('depositAddrFull').textContent = currentAddress;
+    document.getElementById('qrcodeBox').innerHTML = '';
+    qrInstance = new QRCode(document.getElementById('qrcodeBox'), {
+      text: currentAddress, width: 190, height: 190, colorDark: '#000000', colorLight: '#ffffff'
+    });
+    document.getElementById('depositOverlay').classList.add('show');
+  }
+  document.getElementById('copyDepositAddrBtn').addEventListener('click', () => {
+    if (!currentAddress) return;
+    navigator.clipboard?.writeText(currentAddress).catch(() => {});
+    const btn = document.getElementById('copyDepositAddrBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Disalin!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+
+  // ---- Withdraw: kirim aset asli lewat wallet yang lagi connect ----
+  function openWithdraw(){
+    if (!currentAddress) return;
+    const assets = currentNetwork === 'solana' ? ['SOL'] : ['ETH', 'USDT'];
+    setPickerValue('withdrawAsset', 'withdrawAssetLabel', assets[0]);
+    document.getElementById('withdrawAsset').onclick = () => {
+      openPicker('Pilih Aset', assets, getPickerValue('withdrawAsset'), (val) => {
+        setPickerValue('withdrawAsset', 'withdrawAssetLabel', val);
+      });
+    };
+    document.getElementById('withdrawTo').value = '';
+    document.getElementById('withdrawAmount').value = '';
+    setWithdrawStatus('', '');
+    document.getElementById('withdrawOverlay').classList.add('show');
+  }
+
+  function setWithdrawStatus(msg, type){
+    const el = document.getElementById('withdrawStatus');
+    el.textContent = msg;
+    el.className = 'wd-status' + (type ? ' ' + type : '');
+  }
+
+  document.getElementById('withdrawSubmitBtn').addEventListener('click', sendWithdraw);
+
+  async function sendWithdraw(){
+    const asset = getPickerValue('withdrawAsset');
+    const to = document.getElementById('withdrawTo').value.trim();
+    const amountStr = document.getElementById('withdrawAmount').value.trim();
+    const btn = document.getElementById('withdrawSubmitBtn');
+
+    if (!to || !amountStr || Number(amountStr) <= 0) {
+      setWithdrawStatus('Alamat atau jumlah nggak valid.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    setWithdrawStatus('Konfirmasi transaksi di wallet kamu...', '');
+
+    try {
+      if (currentNetwork === 'solana') await sendSolWithdraw(to, Number(amountStr));
+      else if (asset === 'ETH') await sendEthWithdraw(to, Number(amountStr));
+      else if (asset === 'USDT') await sendUsdtWithdraw(to, Number(amountStr));
+
+      setWithdrawStatus('Transaksi terkirim!', 'success');
+      setTimeout(() => {
+        document.getElementById('withdrawOverlay').classList.remove('show');
+        if (currentNetwork === 'solana') loadSolBalance(currentAddress);
+        else loadEthBalances(currentAddress);
+      }, 1800);
+    } catch (err) {
+      setWithdrawStatus(err.message && err.message.length < 90 ? err.message : 'Transaksi gagal.', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function sendEthWithdraw(to, amount){
+    const valueHex = '0x' + BigInt(Math.round(amount * 1e18)).toString(16);
+    await getEvmProvider().request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to, value: valueHex }]
+    });
+  }
+
+  async function sendUsdtWithdraw(to, amount){
+    const amountUnits = BigInt(Math.round(amount * 1e6));
+    const data = '0xa9059cbb'
+      + to.replace('0x', '').padStart(64, '0')
+      + amountUnits.toString(16).padStart(64, '0');
+    await getEvmProvider().request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to: USDT_CONTRACT, data, value: '0x0' }]
+    });
+  }
+
+  async function sendSolWithdraw(to, amount){
+    if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom nggak tersedia.');
+    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = solanaWeb3;
+
+    let toPubkey;
+    try { toPubkey = new PublicKey(to); }
+    catch (e) { throw new Error('Alamat Solana nggak valid.'); }
+
+    const connection = new Connection(SOL_RPC_LIST[0], 'confirmed');
+    const fromPubkey = new PublicKey(currentAddress);
+    const lamports = Math.round(amount * LAMPORTS_PER_SOL);
+
+    const transaction = new Transaction().add(SystemProgram.transfer({ fromPubkey, toPubkey, lamports }));
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = fromPubkey;
+
+    const { signature } = await window.solana.signAndSendTransaction(transaction);
+    await connection.confirmTransaction(signature, 'confirmed');
+  }
+
+  // ---- Swap (EVM aja dulu; Solana masih via Phantom lama, belum WalletConnect) ----
+  const NATIVE_EVM = '0x0000000000000000000000000000000000000000';
+  const EVM_TOKENS = {
+    ETH: { address: NATIVE_EVM, decimals: 18 },
+    USDT: { address: USDT_CONTRACT, decimals: 6 },
+  };
+  let swapQuoteTimer = null;
+  let latestQuote = null;
+
+  function openSwap(){
+    if (!currentAddress || currentNetwork !== 'ethereum') {
+      showInfo('Swap Ethereum aja', 'Buat sekarang, fitur Tukar cuma tersedia buat wallet Ethereum (MetaMask/Trust). Dukungan Solana nyusul.');
+      return;
+    }
+    const symbols = Object.keys(EVM_TOKENS);
+    setPickerValue('swapSellToken', 'swapSellTokenLabel', symbols[0]);
+    setPickerValue('swapBuyToken', 'swapBuyTokenLabel', symbols[1]);
+    document.getElementById('swapSellToken').onclick = () => {
+      openPicker('Dari', symbols, getPickerValue('swapSellToken'), (val) => {
+        setPickerValue('swapSellToken', 'swapSellTokenLabel', val);
+        onSwapAmountChange();
+      });
+    };
+    document.getElementById('swapBuyToken').onclick = () => {
+      openPicker('Ke', symbols, getPickerValue('swapBuyToken'), (val) => {
+        setPickerValue('swapBuyToken', 'swapBuyTokenLabel', val);
+        onSwapAmountChange();
+      });
+    };
+    document.getElementById('swapSellAmount').value = '';
+    document.getElementById('swapBuyAmount').value = '';
+    document.getElementById('swapRate').textContent = '—';
+    document.getElementById('swapFee').textContent = '—';
+    document.getElementById('swapGas').textContent = '—';
+    setSwapStatus('', '');
+    setSwapButtonState('Masukkan jumlah', true);
+    latestQuote = null;
+    document.getElementById('swapOverlay').classList.add('show');
+  }
+
+  document.getElementById('swapFlipBtn').addEventListener('click', () => {
+    const sellVal = getPickerValue('swapSellToken');
+    const buyVal = getPickerValue('swapBuyToken');
+    setPickerValue('swapSellToken', 'swapSellTokenLabel', buyVal);
+    setPickerValue('swapBuyToken', 'swapBuyTokenLabel', sellVal);
+    document.getElementById('swapSellAmount').value = '';
+    document.getElementById('swapBuyAmount').value = '';
+    onSwapAmountChange();
+  });
+  document.getElementById('swapSellAmount').addEventListener('input', onSwapAmountChange);
+  document.getElementById('swapSubmitBtn').addEventListener('click', executeSwap);
+
+  function setSwapStatus(msg, type){
+    const el = document.getElementById('swapStatus');
+    el.textContent = msg;
+    el.className = 'wd-status' + (type ? ' ' + type : '');
+  }
+  function setSwapButtonState(label, disabled){
+    const btn = document.getElementById('swapSubmitBtn');
+    btn.textContent = label;
+    btn.disabled = disabled;
+  }
+
+  function onSwapAmountChange(){
+    clearTimeout(swapQuoteTimer);
+    const amountStr = document.getElementById('swapSellAmount').value;
+    const sellSym = getPickerValue('swapSellToken');
+    const buySym = getPickerValue('swapBuyToken');
+
+    if (sellSym === buySym) { setSwapButtonState('Pilih 2 token beda', true); return; }
+    if (!amountStr || Number(amountStr) <= 0) {
+      document.getElementById('swapBuyAmount').value = '';
+      setSwapButtonState('Masukkan jumlah', true);
+      return;
+    }
+    setSwapButtonState('Ambil rate...', true);
+    setSwapStatus('', '');
+    swapQuoteTimer = setTimeout(() => fetchSwapQuote(sellSym, buySym, Number(amountStr)), 450);
+  }
+
+  async function fetchSwapQuote(sellSym, buySym, amount){
+    try {
+      const sellTok = EVM_TOKENS[sellSym];
+      const buyTok = EVM_TOKENS[buySym];
+      const sellAmountBase = BigInt(Math.round(amount * Math.pow(10, sellTok.decimals))).toString();
+
+      const params = new URLSearchParams({
+        chain: 'ethereum', sellToken: sellTok.address, buyToken: buyTok.address,
+        sellAmount: sellAmountBase, takerAddress: currentAddress,
+      });
+      const res = await fetch('/api/swap-quote?' + params.toString());
+      const data = await res.json();
+      if (!res.ok) throw new Error((data?.error?.reason || data?.error?.message) || 'Nggak ada rute buat pasangan ini.');
+
+      latestQuote = data.quote;
+      latestQuote._meta = { sellSym, buySym, sellTok, buyTok, amount };
+
+      const buyAmountBase = BigInt(data.quote.buyAmount || '0');
+      const buyAmountDisplay = Number(buyAmountBase) / Math.pow(10, buyTok.decimals);
+      document.getElementById('swapBuyAmount').value = buyAmountDisplay.toFixed(6);
+
+      const rate = buyAmountDisplay / amount;
+      document.getElementById('swapRate').textContent = '1 ' + sellSym + ' ≈ ' + rate.toFixed(6) + ' ' + buySym;
+      document.getElementById('swapFee').textContent = ((data.estimatedFeeBps || 30) / 100).toFixed(2) + '%';
+      document.getElementById('swapGas').textContent = data.quote.transaction?.gas ? data.quote.transaction.gas + ' gas units (est.)' : 'Ditampilin sebelum konfirmasi';
+
+      setSwapButtonState('Tukar ' + sellSym + ' → ' + buySym, false);
+    } catch (err) {
+      console.error('Quote error:', err);
+      document.getElementById('swapBuyAmount').value = '';
+      setSwapStatus(err.message && err.message.length < 100 ? err.message : 'Gagal ambil rate.', 'error');
+      setSwapButtonState('Coba lagi', true);
+    }
+  }
+
+  async function executeSwap(){
+    if (!latestQuote) return;
+    const btn = document.getElementById('swapSubmitBtn');
+    btn.disabled = true;
+    try {
+      await executeEvmSwap(latestQuote);
+      setSwapStatus('Swap terkirim!', 'success');
+      setTimeout(() => {
+        document.getElementById('swapOverlay').classList.remove('show');
+        loadEthBalances(currentAddress);
+      }, 1800);
+    } catch (err) {
+      console.error('Swap execution error:', err);
+      setSwapStatus(err.message && err.message.length < 100 ? err.message : 'Swap gagal.', 'error');
+      btn.disabled = false;
+    }
+  }
+
+  async function executeEvmSwap(quote){
+    const { sellTok } = quote._meta;
+    const spender = quote.issues?.allowance?.spender;
+
+    if (sellTok.address.toLowerCase() !== NATIVE_EVM.toLowerCase() && spender) {
+      setSwapStatus('Cek approval...', '');
+      const needsApproval = await checkNeedsApproval(sellTok.address, currentAddress, spender, quote.sellAmount);
+      if (needsApproval) {
+        setSwapStatus('Approve dulu di wallet kamu...', '');
+        await sendErc20Approve(sellTok.address, spender, quote.sellAmount);
+      }
+    }
+
+    setSwapStatus('Konfirmasi swap di wallet kamu...', '');
+    const tx = quote.transaction;
+    await getEvmProvider().request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to: tx.to, data: tx.data, value: tx.value || '0x0' }],
+    });
+  }
+
+  async function checkNeedsApproval(tokenAddress, owner, spender, requiredAmount){
+    const data = '0xdd62ed3e'
+      + owner.replace('0x', '').toLowerCase().padStart(64, '0')
+      + spender.replace('0x', '').toLowerCase().padStart(64, '0');
+    const result = await rpcCall(ETH_RPC_LIST, 'eth_call', [{ to: tokenAddress, data }, 'latest']);
+    const currentAllowance = result ? BigInt(result) : 0n;
+    return currentAllowance < BigInt(requiredAmount);
+  }
+
+  async function sendErc20Approve(tokenAddress, spender, amount){
+    const amountHex = BigInt(amount).toString(16).padStart(64, '0');
+    const data = '0x095ea7b3'
+      + spender.replace('0x', '').toLowerCase().padStart(64, '0')
+      + amountHex;
+    const txHash = await getEvmProvider().request({
+      method: 'eth_sendTransaction',
+      params: [{ from: currentAddress, to: tokenAddress, data, value: '0x0' }],
+    });
+    await new Promise(r => setTimeout(r, 4000));
+    return txHash;
+  }
+
+  function disconnectWallet(){
+    currentAddress = null; currentNetwork = null;
+    document.getElementById('connectBox').classList.remove('hide');
+    document.getElementById('walletConnected').classList.remove('show');
+  }
+
+  async function rpcCall(urlOrList, method, params){
+    const urls = Array.isArray(urlOrList) ? urlOrList : [urlOrList];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+        const data = await res.json();
+        if (data.error) continue;
+        return data.result;
+      } catch (e) { /* coba endpoint berikutnya */ }
+    }
+    return null;
+  }
+
+  async function getPrices(){
+    try {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana,tether&vs_currencies=usd');
+      return await res.json();
+    } catch (e) { return {}; }
+  }
+
+  function renderTokens(tokens){
+    const tokenList = document.getElementById('tokenList');
+    tokenList.innerHTML = '';
+    tokens.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'token-row';
+      row.innerHTML = `<div class="token-left"><div class="token-icon">${t.icon}</div><div><div class="token-name">${t.symbol}</div><div class="token-sub">${t.amount} ${t.symbol}</div></div></div><div><div class="token-val">$${t.usd}</div></div>`;
+      tokenList.appendChild(row);
+    });
+  }
+
+  async function loadEthBalances(address){
+    const prices = await getPrices();
+    const ethPrice = prices.ethereum?.usd || 0;
+    const usdtPrice = prices.tether?.usd || 1;
+    const weiHex = await rpcCall(ETH_RPC_LIST, 'eth_getBalance', [address, 'latest']);
+    const ethBal = weiHex ? Number(BigInt(weiHex)) / 1e18 : 0;
+    const data = '0x70a08231' + '000000000000000000000000' + address.slice(2).toLowerCase();
+    const usdtHex = await rpcCall(ETH_RPC_LIST, 'eth_call', [{ to: USDT_CONTRACT, data }, 'latest']);
+    const usdtBal = usdtHex ? Number(BigInt(usdtHex)) / 1e6 : 0;
+    const totalUsd = ethBal * ethPrice + usdtBal * usdtPrice;
+    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
+    document.getElementById('balanceSub').textContent = 'Live dari Ethereum';
+    renderTokens([
+      { symbol: 'ETH', icon: 'Ξ', amount: ethBal.toFixed(4), usd: (ethBal * ethPrice).toFixed(2) },
+      { symbol: 'USDT', icon: '₮', amount: usdtBal.toFixed(2), usd: (usdtBal * usdtPrice).toFixed(2) }
+    ]);
+  }
+
+  async function loadSolBalance(address){
+    const prices = await getPrices();
+    const solPrice = prices.solana?.usd || 0;
+    const lamports = await rpcCall(SOL_RPC_LIST, 'getBalance', [address]);
+    const solBal = lamports ? lamports.value / 1e9 : 0;
+    const totalUsd = solBal * solPrice;
+    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
+    document.getElementById('balanceSub').textContent = 'Live dari Solana';
+    renderTokens([{ symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }]);
+  }
+</script>
+</body>
+</html>
