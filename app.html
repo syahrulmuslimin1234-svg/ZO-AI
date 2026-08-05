@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
 <script type="module">
   try {
     const { createAppKit, WagmiAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
@@ -317,8 +317,7 @@
     <div class="inputbar">
       <button class="plus" id="plusBtn" title="Buat gambar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
       <input class="field" id="chatInput" data-i18n-ph="chatPlaceholder" placeholder="Ketik pesan…">
-      <button class="plus" id="micBtn" title="Pesan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
-      <button class="plus" id="liveBtn" title="Mode obrolan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="10" x2="4" y2="14"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="16" y1="6" x2="16" y2="18"/><line x1="20" y1="10" x2="20" y2="14"/></svg></button>
+      <button class="plus" id="micBtn" title="Tap: rekam suara. Tahan: mode obrolan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
       <button class="send" id="sendBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
     </div>
   </div>
@@ -521,8 +520,14 @@
   // Nangkep error yang gak ketangkep, biar tombol gak "mati total" secara diam-diam.
   window.__suppressErrorBanner = false; // di-toggle sementara sama proses yang udah nangkep errornya sendiri (misal load model offline)
   window.addEventListener('error', (e) => {
-    console.error('Uncaught error:', e.error || e.message);
+    console.error('Uncaught error:', e.error || e.message, 'from:', e.filename);
     if (window.__suppressErrorBanner) return;
+    // Error dari library CDN pihak ketiga (Solana web3.js, AppKit, QRCode, dll)
+    // biasanya nggak bikin fitur inti (chat) ikut mati -- cukup dicatat di console,
+    // jangan nakut-nakutin user pake banner merah gede kalau bukan dari kode kita sendiri.
+    const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown'];
+    const isThirdParty = e.filename && thirdPartyHosts.some((h) => e.filename.includes(h));
+    if (isThirdParty) return;
     showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
   });
   window.addEventListener('unhandledrejection', (e) => {
@@ -1209,7 +1214,7 @@
     });
   }
 
-  // ---- Pesan suara: speech-to-text pake bahasa yang dipilih di menu ----
+  // ---- Pesan suara: TAP = rekam sekali (speech-to-text), TAHAN = mode obrolan suara terus-terusan ----
   const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRecognitionAPI) {
     const recognition = new SpeechRecognitionAPI();
@@ -1230,11 +1235,8 @@
       micBtn.classList.remove('listening');
     });
 
-    micBtn.addEventListener('click', () => {
-      if (isListening) {
-        recognition.stop();
-        return;
-      }
+    function startQuickRecognition(){
+      if (isListening) { recognition.stop(); return; }
       recognition.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
       try {
         recognition.start();
@@ -1243,11 +1245,116 @@
       } catch (e) {
         console.error('Speech recognition gagal jalan:', e);
       }
-    });
+    }
+
+    // -- Mode obrolan suara terus-terusan (dipicu tekan-tahan micBtn) --
+    let liveActive = false;
+    if ('speechSynthesis' in window) {
+      const liveOverlay = document.getElementById('liveOverlay');
+      const liveOrb = document.getElementById('liveOrb');
+      const liveStatus = document.getElementById('liveStatus');
+      const liveTranscript = document.getElementById('liveTranscript');
+      const liveCloseBtn = document.getElementById('liveCloseBtn');
+      const liveRecognition = new SpeechRecognitionAPI();
+      liveRecognition.continuous = false;
+      liveRecognition.interimResults = false;
+
+      function setLiveState(state, text){
+        liveOrb.classList.remove('listening', 'speaking');
+        if (state) liveOrb.classList.add(state);
+        liveStatus.textContent = text;
+      }
+
+      function speak(text){
+        return new Promise((resolve) => {
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+          utter.onend = resolve;
+          utter.onerror = resolve;
+          window.speechSynthesis.speak(utter);
+        });
+      }
+
+      function startLiveListening(){
+        if (!liveActive) return;
+        liveRecognition.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
+        liveTranscript.textContent = '';
+        setLiveState('listening', 'Mendengarkan...');
+        try { liveRecognition.start(); } catch (e) { /* mungkin masih jalan, abaikan */ }
+      }
+
+      liveRecognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        liveTranscript.textContent = transcript;
+        setLiveState(null, 'Berpikir...');
+
+        const entry = { role: 'user', content: transcript, id: null, time: new Date().toISOString() };
+        history.push(entry);
+        renderMessage(transcript, 'user', entry);
+        if (currentMode !== 'offline') saveMessage('user', transcript).then(id => { entry.id = id; });
+
+        const result = currentMode === 'offline' ? await sendToOfflineModel(transcript) : await sendToServer();
+        if (!liveActive) return;
+
+        const replyText = result.ok ? result.reply : result.message;
+        if (result.ok) {
+          const replyEntry = { role: 'assistant', content: replyText, id: null, time: new Date().toISOString() };
+          if (currentMode !== 'offline') {
+            history.push(replyEntry);
+            saveMessage('assistant', replyText).then(id => { replyEntry.id = id; });
+          }
+          renderMessage(replyText, 'ai', replyEntry);
+        } else {
+          addNote(replyText);
+        }
+
+        setLiveState('speaking', 'Menjawab...');
+        liveTranscript.textContent = replyText;
+        await speak(replyText);
+        if (liveActive) startLiveListening();
+      };
+
+      liveRecognition.onerror = (event) => {
+        if (liveActive && event.error !== 'aborted') setTimeout(startLiveListening, 800);
+      };
+
+      window.__zoStartLiveMode = () => {
+        liveActive = true;
+        liveOverlay.classList.add('show');
+        startLiveListening();
+      };
+
+      liveCloseBtn.addEventListener('click', () => {
+        liveActive = false;
+        window.speechSynthesis.cancel();
+        try { liveRecognition.stop(); } catch (e) {}
+        liveOverlay.classList.remove('show');
+      });
+    }
+
+    // -- Gabungin tap vs tekan-tahan di 1 tombol mic --
+    let micPressTimer = null;
+    let micLongPressFired = false;
+    function micPressStart(e){
+      e.preventDefault();
+      micLongPressFired = false;
+      micPressTimer = setTimeout(() => {
+        micLongPressFired = true;
+        if (window.__zoStartLiveMode) window.__zoStartLiveMode();
+      }, 480);
+    }
+    function micPressEnd(){
+      clearTimeout(micPressTimer);
+      if (!micLongPressFired) startQuickRecognition();
+    }
+    micBtn.addEventListener('touchstart', micPressStart, { passive: false });
+    micBtn.addEventListener('touchend', micPressEnd);
+    micBtn.addEventListener('touchcancel', () => clearTimeout(micPressTimer));
+    micBtn.addEventListener('mousedown', micPressStart);
+    micBtn.addEventListener('mouseup', micPressEnd);
   } else {
     // Browser nggak support Web Speech API -> sembunyiin tombolnya aja
     micBtn.style.display = 'none';
-    document.getElementById('liveBtn').style.display = 'none';
   }
   const quotaLine = document.getElementById('quotaLine');
 
@@ -1299,95 +1406,6 @@
     document.getElementById('plusBtn').disabled = false;
   }
   document.getElementById('plusBtn').addEventListener('click', generateImage);
-
-  // ---- Live voice mode: dengerin terus, auto-kirim, jawaban dibacain ----
-  const liveBtn = document.getElementById('liveBtn');
-  if (SpeechRecognitionAPI && 'speechSynthesis' in window) {
-    const liveOverlay = document.getElementById('liveOverlay');
-    const liveOrb = document.getElementById('liveOrb');
-    const liveStatus = document.getElementById('liveStatus');
-    const liveTranscript = document.getElementById('liveTranscript');
-    const liveCloseBtn = document.getElementById('liveCloseBtn');
-    const liveRecognition = new SpeechRecognitionAPI();
-    liveRecognition.continuous = false;
-    liveRecognition.interimResults = false;
-    let liveActive = false;
-
-    function setLiveState(state, text){
-      liveOrb.classList.remove('listening', 'speaking');
-      if (state) liveOrb.classList.add(state);
-      liveStatus.textContent = text;
-    }
-
-    function speak(text){
-      return new Promise((resolve) => {
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
-        utter.onend = resolve;
-        utter.onerror = resolve;
-        window.speechSynthesis.speak(utter);
-      });
-    }
-
-    function startListening(){
-      if (!liveActive) return;
-      liveRecognition.lang = localStorage.getItem('zo_voice_lang') || 'en-US';
-      liveTranscript.textContent = '';
-      setLiveState('listening', 'Mendengarkan...');
-      try { liveRecognition.start(); } catch (e) { /* mungkin masih jalan, abaikan */ }
-    }
-
-    liveRecognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript;
-      liveTranscript.textContent = transcript;
-      setLiveState(null, 'Berpikir...');
-
-      const entry = { role: 'user', content: transcript, id: null, time: new Date().toISOString() };
-      history.push(entry);
-      renderMessage(transcript, 'user', entry);
-      if (currentMode !== 'offline') saveMessage('user', transcript).then(id => { entry.id = id; });
-
-      const result = currentMode === 'offline' ? await sendToOfflineModel(transcript) : await sendToServer();
-      if (!liveActive) return;
-
-      const replyText = result.ok ? result.reply : result.message;
-      if (result.ok) {
-        const replyEntry = { role: 'assistant', content: replyText, id: null, time: new Date().toISOString() };
-        if (currentMode !== 'offline') {
-          history.push(replyEntry);
-          saveMessage('assistant', replyText).then(id => { replyEntry.id = id; });
-        }
-        renderMessage(replyText, 'ai', replyEntry);
-      } else {
-        addNote(replyText);
-      }
-
-      setLiveState('speaking', 'Menjawab...');
-      liveTranscript.textContent = replyText;
-      await speak(replyText);
-      if (liveActive) startListening();
-    };
-
-    liveRecognition.onerror = (event) => {
-      if (liveActive && event.error !== 'aborted') setTimeout(startListening, 800);
-    };
-
-    liveBtn.addEventListener('click', () => {
-      liveActive = true;
-      liveOverlay.classList.add('show');
-      startListening();
-    });
-
-    function stopLiveMode(){
-      liveActive = false;
-      window.speechSynthesis.cancel();
-      try { liveRecognition.stop(); } catch (e) {}
-      liveOverlay.classList.remove('show');
-    }
-    liveCloseBtn.addEventListener('click', stopLiveMode);
-  } else {
-    liveBtn.style.display = 'none';
-  }
 
   function renderMessage(text, role, entry){
     const div = document.createElement('div');
@@ -1966,26 +1984,4 @@
     const ethBal = weiHex ? Number(BigInt(weiHex)) / 1e18 : 0;
     const data = '0x70a08231' + '000000000000000000000000' + address.slice(2).toLowerCase();
     const usdtHex = await rpcCall(ETH_RPC_LIST, 'eth_call', [{ to: USDT_CONTRACT, data }, 'latest']);
-    const usdtBal = usdtHex ? Number(BigInt(usdtHex)) / 1e6 : 0;
-    const totalUsd = ethBal * ethPrice + usdtBal * usdtPrice;
-    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
-    document.getElementById('balanceSub').textContent = 'Live dari Ethereum';
-    renderTokens([
-      { symbol: 'ETH', icon: 'Ξ', amount: ethBal.toFixed(4), usd: (ethBal * ethPrice).toFixed(2) },
-      { symbol: 'USDT', icon: '₮', amount: usdtBal.toFixed(2), usd: (usdtBal * usdtPrice).toFixed(2) }
-    ]);
-  }
-
-  async function loadSolBalance(address){
-    const prices = await getPrices();
-    const solPrice = prices.solana?.usd || 0;
-    const lamports = await rpcCall(SOL_RPC_LIST, 'getBalance', [address]);
-    const solBal = lamports ? lamports.value / 1e9 : 0;
-    const totalUsd = solBal * solPrice;
-    document.getElementById('balanceAmount').textContent = '$' + totalUsd.toFixed(2);
-    document.getElementById('balanceSub').textContent = 'Live dari Solana';
-    renderTokens([{ symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }]);
-  }
-</script>
-</body>
-</html>
+    const usdtBal = usdtHex ? Number(B
