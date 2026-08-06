@@ -12,9 +12,6 @@
 <script type="module">
   try {
     const { createAppKit, WagmiAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
-    // Perlu diimport eksplisit -- sebelumnya WagmiCore dipakai di zoSendTx() tanpa
-    // pernah diimport, jadi bakal ReferenceError kalau fungsi itu kepanggil.
-    const WagmiCore = await import('https://cdn.jsdelivr.net/npm/@wagmi/core@2/+esm');
 
     const projectId = '1c2c95e6fa47a2949a74825b50fe477d';
     const mainnet = {
@@ -1603,7 +1600,7 @@
   }
 
   // ============ WALLET ============
-  const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+  const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'.length === 42 ? '0xdAC17F958D2ee523a2206206994597C13D831ec7' : '0xdAC17F958D2ee523a2206206994597C13D831ec7';
   const ETH_RPC_LIST = ['https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com', 'https://rpc.ankr.com/eth'];
   const SOL_RPC_LIST = ['https://api.mainnet-beta.solana.com', 'https://solana-rpc.publicnode.com'];
 
@@ -1612,11 +1609,7 @@
   function hasEth(){ return typeof window.ethereum !== 'undefined'; }
   // Provider buat kirim transaksi: kalau connect lewat WalletConnect, pake itu;
   // kalau kebetulan ada window.ethereum (browser ekstensi), pake itu sebagai fallback.
-  function getEvmProvider(){
-    const p = window.zoEvmProvider || window.ethereum;
-    if (!p) throw new Error('Wallet provider tidak tersedia. Silakan connect wallet dulu.');
-    return p;
-  }
+  function getEvmProvider(){ return window.zoEvmProvider || window.ethereum; }
   function hasPhan(){ return typeof window.solana !== 'undefined' && window.solana.isPhantom; }
 
   document.getElementById('btnMetaMask').addEventListener('click', () => window.zoAppKit?.open());
@@ -1735,8 +1728,8 @@
 
     try {
       if (currentNetwork === 'solana') await sendSolWithdraw(to, Number(amountStr));
-      else if (asset === 'ETH') await sendEthWithdraw(to, amountStr);
-      else if (asset === 'USDT') await sendUsdtWithdraw(to, amountStr);
+      else if (asset === 'ETH') await sendEthWithdraw(to, Number(amountStr));
+      else if (asset === 'USDT') await sendUsdtWithdraw(to, Number(amountStr));
 
       setWithdrawStatus('Transaksi terkirim!', 'success');
       setTimeout(() => {
@@ -1751,22 +1744,8 @@
     }
   }
 
-  // Konversi jumlah desimal (string) ke unit terkecil (wei/satuan token) tanpa
-  // perkalian float sama sekali -- Math.round(amount * 1e18) bisa kehilangan
-  // presisi untuk angka yang punya banyak desimal.
-  function parseUnits(amountStr, decimals){
-    let s = String(amountStr).trim();
-    const neg = s.startsWith('-');
-    if (neg) s = s.slice(1);
-    let [whole, frac = ''] = s.split('.');
-    whole = whole.replace(/\D/g, '') || '0';
-    frac = frac.replace(/\D/g, '').slice(0, decimals).padEnd(decimals, '0');
-    const units = BigInt(whole + frac);
-    return neg ? -units : units;
-  }
-
   async function sendEthWithdraw(to, amount){
-    const valueHex = '0x' + parseUnits(amount, 18).toString(16);
+    const valueHex = '0x' + BigInt(Math.round(amount * 1e18)).toString(16);
     await getEvmProvider().request({
       method: 'eth_sendTransaction',
       params: [{ from: currentAddress, to, value: valueHex }]
@@ -1774,7 +1753,7 @@
   }
 
   async function sendUsdtWithdraw(to, amount){
-    const amountUnits = parseUnits(amount, 6);
+    const amountUnits = BigInt(Math.round(amount * 1e6));
     const data = '0xa9059cbb'
       + to.replace('0x', '').padStart(64, '0')
       + amountUnits.toString(16).padStart(64, '0');
