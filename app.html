@@ -547,25 +547,18 @@
   // ============ GLOBAL ERROR SAFETY NET ============
   // Nangkep error yang gak ketangkep, biar tombol gak "mati total" secara diam-diam.
   window.__suppressErrorBanner = false; // di-toggle sementara sama proses yang udah nangkep errornya sendiri (misal load model offline)
-  function isThirdPartyErrorSource(filename, stack){
-    const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown', 'appkit'];
-    const text = [filename, stack].filter(Boolean).join(' ');
-    return text && thirdPartyHosts.some((h) => text.includes(h));
-  }
   window.addEventListener('error', (e) => {
     console.error('Uncaught error:', e.error || e.message, 'from:', e.filename);
-    if (window.__suppressErrorBanner) return;
-    // Error dari library CDN pihak ketiga (Solana web3.js, AppKit, QRCode, dll)
-    // biasanya nggak bikin fitur inti (chat) ikut mati -- cukup dicatat di console,
-    // jangan nakut-nakutin user pake banner merah gede kalau bukan dari kode kita sendiri.
-    if (isThirdPartyErrorSource(e.filename, e.error?.stack)) return;
-    showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
+    // Banner merah generik ini sengaja dimatikan buat error window global -- sering
+    // ke-trigger sama library pihak ketiga (AppKit/WalletConnect/Solana web3.js/dll)
+    // yang nggak mempengaruhi fitur inti (chat) sama sekali. Cukup dicatat di console
+    // buat debugging, jangan nakut-nakutin user dengan banner merah kalau chat-nya
+    // sendiri baik-baik aja. Error kritis milik kode kita sendiri (misal Supabase
+    // gagal dimuat) tetap dapet banner lewat pemanggilan showFatalErrorBanner() langsung.
   });
   window.addEventListener('unhandledrejection', (e) => {
     console.error('Unhandled rejection:', e.reason);
-    if (window.__suppressErrorBanner) return;
-    if (isThirdPartyErrorSource(e.reason?.stack, e.reason?.stack)) return;
-    showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.reason?.message || e.reason || 'unknown error') + '). Coba refresh halaman.');
+    // Sama kayak di atas -- cukup log ke console, nggak tampil ke user.
   });
   function showFatalErrorBanner(text){
     if (document.getElementById('fatalErrBanner')) return;
