@@ -10,68 +10,85 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
 <script type="module">
-  try {
-    const { createAppKit, WagmiAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
+  // AppKit (WalletConnect) sengaja di-lazy-load -- baru diinisialisasi pas user
+  // benar-benar buka tab Wallet atau pencet tombol connect, bukan langsung pas
+  // halaman Chat dimuat. Ini nyegah bug/incompatibility library pihak ketiga
+  // (misal di WebView Android tertentu) ikut nge-crash tampilan Chat yang
+  // sebenarnya nggak butuh AppKit sama sekali.
+  async function initWalletConnect(){
+    try {
+      const { createAppKit, WagmiAdapter } = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
 
-    const projectId = '1c2c95e6fa47a2949a74825b50fe477d';
-    const mainnet = {
-      id: 1, name: 'Ethereum',
-      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
-    };
-    const networks = [mainnet];
-    const wagmiAdapter = new WagmiAdapter({ networks, projectId });
-    const metadata = {
-      name: 'ZO AI',
-      description: 'ZO AI Wallet',
-      url: 'https://zo-ai.vercel.app',
-      icons: ['https://zo-ai.vercel.app/assets/logo2-96.png'],
-    };
+      const projectId = '1c2c95e6fa47a2949a74825b50fe477d';
+      const mainnet = {
+        id: 1, name: 'Ethereum',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
+      };
+      const networks = [mainnet];
+      const wagmiAdapter = new WagmiAdapter({ networks, projectId });
+      const metadata = {
+        name: 'ZO AI',
+        description: 'ZO AI Wallet',
+        url: 'https://zo-ai.vercel.app',
+        icons: ['https://zo-ai.vercel.app/assets/logo2-96.png'],
+      };
 
-    window.zoAppKit = createAppKit({
-      adapters: [wagmiAdapter],
-      networks,
-      projectId,
-      metadata,
-      features: { analytics: false },
-    });
-
-    // Dengerin perubahan koneksi wallet, terusin ke fungsi showConnected() yang udah ada
-    window.zoAppKit.subscribeAccount((account) => {
-      window.dispatchEvent(new CustomEvent('zo-wallet-account', { detail: account }));
-    });
-
-    // Provider EIP-1193 buat kirim transaksi (approve/send) -- WalletConnect nggak
-    // nyuntikin window.ethereum, jadi kita ambil provider-nya langsung dari AppKit.
-    window.zoAppKit.subscribeProviders((state) => {
-      window.zoEvmProvider = state['eip155'] || null;
-    });
-
-    // Jembatan buat kirim transaksi lewat sesi WalletConnect yang lagi connect
-    // (dipake sama script utama non-module buat fitur Kirim/Withdraw & Swap)
-    // Catatan: pakai provider EIP-1193 langsung (bukan WagmiCore, yang tidak
-    // diimport di module ini) supaya konsisten dengan getEvmProvider() di script utama.
-    window.zoSendTx = async (txParams) => {
-      const provider = window.zoEvmProvider;
-      if (!provider) throw new Error('Wallet provider tidak tersedia. Sambungkan wallet dulu.');
-      const account = await window.zoAppKit.getAccount?.();
-      const from = txParams.from || account?.address;
-      if (!from) throw new Error('Alamat pengirim tidak ditemukan.');
-      return await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from,
-          to: txParams.to,
-          data: txParams.data || '0x',
-          value: txParams.value || '0x0',
-        }],
+      window.zoAppKit = createAppKit({
+        adapters: [wagmiAdapter],
+        networks,
+        projectId,
+        metadata,
+        features: { analytics: false },
       });
-    };
-  } catch (err) {
-    console.error('Gagal inisialisasi wallet connect (AppKit):', err);
-    // window.zoAppKit sengaja dibiarin undefined -- tombol wallet udah pakai `?.`
-    // jadi gak bakal crash, cuma fitur connect walletnya belum bisa dipakai.
+
+      // Dengerin perubahan koneksi wallet, terusin ke fungsi showConnected() yang udah ada
+      window.zoAppKit.subscribeAccount((account) => {
+        window.dispatchEvent(new CustomEvent('zo-wallet-account', { detail: account }));
+      });
+
+      // Provider EIP-1193 buat kirim transaksi (approve/send) -- WalletConnect nggak
+      // nyuntikin window.ethereum, jadi kita ambil provider-nya langsung dari AppKit.
+      window.zoAppKit.subscribeProviders((state) => {
+        window.zoEvmProvider = state['eip155'] || null;
+      });
+
+      // Jembatan buat kirim transaksi lewat sesi WalletConnect yang lagi connect
+      // (dipake sama script utama non-module buat fitur Kirim/Withdraw & Swap)
+      // Catatan: pakai provider EIP-1193 langsung (bukan WagmiCore, yang tidak
+      // diimport di module ini) supaya konsisten dengan getEvmProvider() di script utama.
+      window.zoSendTx = async (txParams) => {
+        const provider = window.zoEvmProvider;
+        if (!provider) throw new Error('Wallet provider tidak tersedia. Sambungkan wallet dulu.');
+        const account = await window.zoAppKit.getAccount?.();
+        const from = txParams.from || account?.address;
+        if (!from) throw new Error('Alamat pengirim tidak ditemukan.');
+        return await provider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from,
+            to: txParams.to,
+            data: txParams.data || '0x',
+            value: txParams.value || '0x0',
+          }],
+        });
+      };
+      return true;
+    } catch (err) {
+      console.error('Gagal inisialisasi wallet connect (AppKit):', err);
+      // window.zoAppKit sengaja dibiarin undefined -- tombol wallet udah pakai `?.`
+      // jadi gak bakal crash, cuma fitur connect walletnya belum bisa dipakai.
+      return false;
+    }
   }
+
+  // Dipanggil dari script utama (non-module) pas user pertama kali buka tab
+  // Wallet atau pencet tombol connect. Idempotent -- kalau udah pernah
+  // dipanggil, promise yang sama dikembalikan lagi (nggak double-init).
+  window.zoEnsureWalletConnect = () => {
+    if (!window.__zoWalletConnectReady) window.__zoWalletConnectReady = initWalletConnect();
+    return window.__zoWalletConnectReady;
+  };
 </script>
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -530,20 +547,24 @@
   // ============ GLOBAL ERROR SAFETY NET ============
   // Nangkep error yang gak ketangkep, biar tombol gak "mati total" secara diam-diam.
   window.__suppressErrorBanner = false; // di-toggle sementara sama proses yang udah nangkep errornya sendiri (misal load model offline)
+  function isThirdPartyErrorSource(filename, stack){
+    const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown', 'appkit'];
+    const text = [filename, stack].filter(Boolean).join(' ');
+    return text && thirdPartyHosts.some((h) => text.includes(h));
+  }
   window.addEventListener('error', (e) => {
     console.error('Uncaught error:', e.error || e.message, 'from:', e.filename);
     if (window.__suppressErrorBanner) return;
     // Error dari library CDN pihak ketiga (Solana web3.js, AppKit, QRCode, dll)
     // biasanya nggak bikin fitur inti (chat) ikut mati -- cukup dicatat di console,
     // jangan nakut-nakutin user pake banner merah gede kalau bukan dari kode kita sendiri.
-    const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown'];
-    const isThirdParty = e.filename && thirdPartyHosts.some((h) => e.filename.includes(h));
-    if (isThirdParty) return;
+    if (isThirdPartyErrorSource(e.filename, e.error?.stack)) return;
     showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
   });
   window.addEventListener('unhandledrejection', (e) => {
     console.error('Unhandled rejection:', e.reason);
     if (window.__suppressErrorBanner) return;
+    if (isThirdPartyErrorSource(e.reason?.stack, e.reason?.stack)) return;
     showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.reason?.message || e.reason || 'unknown error') + '). Coba refresh halaman.');
   });
   function showFatalErrorBanner(text){
@@ -861,6 +882,7 @@
         modeBar.style.display = 'none';
         pageTitle.textContent = t('walletTitle');
         pageSub.textContent = t('nonCustodial');
+        window.zoEnsureWalletConnect?.();
       }
     });
   });
@@ -1606,8 +1628,8 @@
   }
   function hasPhan(){ return typeof window.solana !== 'undefined' && window.solana.isPhantom; }
 
-  document.getElementById('btnMetaMask').addEventListener('click', () => window.zoAppKit?.open());
-  document.getElementById('btnTrust').addEventListener('click', () => window.zoAppKit?.open());
+  document.getElementById('btnMetaMask').addEventListener('click', async () => { await window.zoEnsureWalletConnect?.(); window.zoAppKit?.open(); });
+  document.getElementById('btnTrust').addEventListener('click', async () => { await window.zoEnsureWalletConnect?.(); window.zoAppKit?.open(); });
 
   // Nangkep event dari script AppKit (module) di head -- begitu wallet EVM
   // ke-connect lewat WalletConnect, langsung update tampilan Wallet.
