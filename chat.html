@@ -525,19 +525,14 @@
     // Error dari library CDN pihak ketiga (Solana web3.js, AppKit, QRCode, dll)
     // biasanya nggak bikin fitur inti (chat) ikut mati -- cukup dicatat di console,
     // jangan nakut-nakutin user pake banner merah gede kalau bukan dari kode kita sendiri.
-    const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown', '/_vercel/', 'insights/script.js'];
+    const thirdPartyHosts = ['unpkg.com', 'jsdelivr.net', 'cdnjs.cloudflare.com', 'walletconnect', 'reown'];
     const isThirdParty = e.filename && thirdPartyHosts.some((h) => e.filename.includes(h));
     // Kalau browser gak kasih tau filename-nya sama sekali (biasanya muncul sebagai
     // "Script error." doang) itu tandanya errornya dari script cross-origin (CDN),
     // bukan dari kode kita sendiri -- kode kita selalu same-origin jadi selalu
     // dapet filename yang jelas. Anggap ini pihak ketiga juga & jangan tampilin banner.
     const isSanitizedCrossOrigin = !e.filename && (!e.message || e.message === 'Script error.' || e.message === 'Script error');
-    // Known issue: kalau Vercel Web Analytics (/_vercel/insights/script.js) gagal
-    // dimuat/di-block adblocker/privacy shield di HP user, placeholder window.va()
-    // yang kita definisikan sendiri bisa nge-throw persis "reading 'bind'" ini pas
-    // dipanggil script analytics-nya sendiri. Ini bukan bug fitur inti ZO AI.
-    const isKnownAnalyticsNoise = (e.message || '').toLowerCase().includes("reading 'bind'");
-    if (isThirdParty || isSanitizedCrossOrigin || isKnownAnalyticsNoise) return;
+    if (isThirdParty || isSanitizedCrossOrigin) return;
     showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.message || 'unknown error') + '). Coba refresh halaman.');
   });
   window.addEventListener('unhandledrejection', (e) => {
@@ -552,8 +547,7 @@
     const reasonStack = (e.reason && e.reason.stack) ? String(e.reason.stack) : '';
     const reasonMsg = (e.reason && e.reason.message) ? String(e.reason.message) : String(e.reason || '');
     const isThirdParty = thirdPartyHosts.some((h) => reasonStack.toLowerCase().includes(h) || reasonMsg.toLowerCase().includes(h));
-    const isKnownAnalyticsNoise = reasonMsg.toLowerCase().includes("reading 'bind'");
-    if (isThirdParty || isKnownAnalyticsNoise) return;
+    if (isThirdParty) return;
     showFatalErrorBanner('Ada komponen yang gagal dimuat (' + (e.reason?.message || e.reason || 'unknown error') + '). Coba refresh halaman.');
   });
   function showFatalErrorBanner(text){
