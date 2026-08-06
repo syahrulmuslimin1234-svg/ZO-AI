@@ -87,17 +87,6 @@
   .pay-btn{width:100%; background:var(--red); color:#fff; border:none; padding:16px; border-radius:100px; font-weight:700; font-size:14.5px; margin-top:26px; cursor:pointer; position:relative;}
 
   footer{padding:44px 24px 50px; text-align:center; color:var(--muted); font-size:12px; font-family:var(--font-mono); border-top:1px solid var(--line); margin-top:20px;}
-
-  .lang-dropdown{position:relative;}
-  .lang-btn{display:flex; align-items:center; gap:6px; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:100px; padding:7px 12px; font-size:12px; font-family:var(--font-body); cursor:pointer;}
-  .lang-btn svg:first-child{color:var(--muted); flex-shrink:0;}
-  .lang-btn svg:last-child{color:var(--muted); flex-shrink:0; transition:transform 0.15s;}
-  .lang-dropdown.open .lang-btn svg:last-child{transform:rotate(180deg);}
-  .lang-menu{position:absolute; top:calc(100% + 8px); right:0; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:6px; min-width:170px; max-height:0; overflow:hidden; opacity:0; transition:max-height 0.2s ease, opacity 0.15s ease; z-index:20; box-shadow:0 12px 32px rgba(0,0,0,0.5);}
-  .lang-dropdown.open .lang-menu{max-height:400px; opacity:1; overflow-y:auto;}
-  .lang-option{display:block; width:100%; text-align:left; background:none; border:none; color:var(--text); font-size:13.5px; font-family:var(--font-body); padding:10px 12px; border-radius:8px; cursor:pointer;}
-  .lang-option:active{background:rgba(255,255,255,0.06);}
-  .lang-option.active{color:var(--red); font-weight:700;}
 </style>
 </head>
 <body>
@@ -108,26 +97,6 @@
     <div class="logo">ZO <span class="red">AI</span></div>
   </a>
   <div style="display:flex; align-items:center; gap:8px;">
-    <div class="lang-dropdown" id="langDropdown">
-      <button class="lang-btn" id="langBtn" type="button">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span id="langBtnLabel">English</span>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      <div class="lang-menu" id="langMenu">
-        <button class="lang-option" data-value="en-US">English</button>
-        <button class="lang-option" data-value="id-ID">Bahasa Indonesia</button>
-        <button class="lang-option" data-value="es-ES">Español</button>
-        <button class="lang-option" data-value="pt-BR">Português</button>
-        <button class="lang-option" data-value="fr-FR">Français</button>
-        <button class="lang-option" data-value="de-DE">Deutsch</button>
-        <button class="lang-option" data-value="ja-JP">日本語</button>
-        <button class="lang-option" data-value="ko-KR">한국어</button>
-        <button class="lang-option" data-value="zh-CN">中文</button>
-        <button class="lang-option" data-value="ar-SA">العربية</button>
-        <button class="lang-option" data-value="hi-IN">हिन्दी</button>
-      </div>
-    </div>
     <a href="subscribe.html"><button class="btn-ghost" id="getStartedBtn">Get started</button></a>
   </div>
 </header>
@@ -359,38 +328,14 @@
     document.getElementById('footerText').textContent = dict.footerText;
   }
 
-  // Bahasa disimpen di localStorage key yang SAMA dengan chat.html ('zo_voice_lang'),
-  // jadi begitu user ganti bahasa di salah satu halaman, halaman lain ikut nyambung.
+  // Bahasa disimpen di localStorage key yang SAMA dengan chat.html ('zo_voice_lang').
+  // Pengaturan bahasa sekarang cuma ada di satu tempat -- menu Chat -- biar nggak
+  // ada 2 tempat ganti-ganti bahasa yang bikin bingung. Landing page ini otomatis
+  // ngikutin preferensi yang udah pernah dipilih user di sana (kalau ada); kalau
+  // belum pernah ada preferensi tersimpan (pengunjung baru), landing tampil default English.
   const savedLang = localStorage.getItem('zo_voice_lang') || 'en-US';
   const langCode = savedLang.split('-')[0];
-  const langDropdown = document.getElementById('langDropdown');
-  const langBtn = document.getElementById('langBtn');
-  const langBtnLabel = document.getElementById('langBtnLabel');
-  const langMenu = document.getElementById('langMenu');
-  const langOptions = document.querySelectorAll('.lang-option');
-
-  function setActiveLangOption(value){
-    langOptions.forEach(opt => opt.classList.toggle('active', opt.dataset.value === value));
-    const match = document.querySelector('.lang-option[data-value="' + value + '"]');
-    if (match) langBtnLabel.textContent = match.textContent;
-  }
-
-  setActiveLangOption(landingTranslations[langCode] ? savedLang : 'en-US');
   applyLandingLanguage(landingTranslations[langCode] ? langCode : 'en');
-
-  langBtn.addEventListener('click', () => langDropdown.classList.toggle('open'));
-  document.addEventListener('click', (e) => {
-    if (!langDropdown.contains(e.target)) langDropdown.classList.remove('open');
-  });
-  langOptions.forEach(opt => {
-    opt.addEventListener('click', () => {
-      const value = opt.dataset.value;
-      localStorage.setItem('zo_voice_lang', value);
-      setActiveLangOption(value);
-      applyLandingLanguage(value.split('-')[0]);
-      langDropdown.classList.remove('open');
-    });
-  });
 </script>
 </body>
 </html>
