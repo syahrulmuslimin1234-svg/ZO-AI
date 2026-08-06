@@ -154,7 +154,8 @@
   #micBtn.listening svg{stroke:#fff;}
   .field{flex:1; background:var(--field-bg); border-radius:100px; padding:10px 15px; color:var(--ink); font-size:13.5px; border:none; outline:none;}
   .field:disabled{color:var(--muted);}
-  .send{width:32px; height:32px; border-radius:100px; background:var(--red); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  .send{width:32px; height:32px; border-radius:100px; background:var(--red); display:none; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer;}
+  .send.show{display:flex;}
   .send:disabled{opacity:0.4;}
   .send svg{color:#fff;}
   .quota-line{font-size:11px; color:var(--muted); text-align:center; padding:6px 0 0;}
@@ -1278,6 +1279,7 @@
     recognition.addEventListener('result', (e) => {
       const transcript = e.results?.[0]?.[0]?.transcript || '';
       if (transcript) chatInput.value = (chatInput.value ? chatInput.value + ' ' : '') + transcript;
+      updateSendMicToggle();
     });
     recognition.addEventListener('end', () => {
       isListening = false;
@@ -1406,9 +1408,22 @@
     micBtn.addEventListener('mousedown', micPressStart);
     micBtn.addEventListener('mouseup', micPressEnd);
   } else {
-    // Browser nggak support Web Speech API -> sembunyiin tombolnya aja
+    // Browser nggak support Web Speech API -> sembunyiin tombol mic, kirim selalu tampil
     micBtn.style.display = 'none';
+    sendBtn.classList.add('show');
   }
+
+  // ---- Toggle tombol mic <-> kirim, ala ChatGPT: kolom kosong = tombol suara,
+  // begitu mulai ngetik langsung ganti jadi tombol kirim ----
+  function updateSendMicToggle(){
+    if (!SpeechRecognitionAPI) return; // sendBtn udah permanen ditampilin di atas
+    const hasText = chatInput.value.trim().length > 0;
+    micBtn.style.display = hasText ? 'none' : 'flex';
+    sendBtn.classList.toggle('show', hasText);
+  }
+  chatInput.addEventListener('input', updateSendMicToggle);
+  updateSendMicToggle();
+
   const quotaLine = document.getElementById('quotaLine');
 
   const modeLabels = { online: 'ZO AI · Gratis Online', offline: 'ZO AI · Gratis Offline', cloud: 'ZO AI · Premium' };
@@ -1421,6 +1436,7 @@
     renderMessage(promptText, 'user', { role: 'user', content: promptText, time: new Date().toISOString() });
     if (currentMode !== 'offline') saveMessage('user', promptText);
     chatInput.value = '';
+    updateSendMicToggle();
     document.getElementById('plusBtn').disabled = true;
 
     const loadingDiv = renderMessage('Membuat gambar...', 'ai');
@@ -1520,6 +1536,7 @@
     history.push(entry);
     renderMessage(val, 'user', entry);
     chatInput.value = '';
+    updateSendMicToggle();
     sendBtn.disabled = true;
 
     if (currentMode !== 'offline') saveMessage('user', val).then(id => { entry.id = id; });
