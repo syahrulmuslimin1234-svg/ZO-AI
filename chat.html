@@ -131,6 +131,17 @@
   .page.active{display:flex; flex-direction:column;}
 
   .messages{flex:1; padding:18px; display:flex; flex-direction:column; gap:16px; overflow-x:hidden; max-width:100vw;}
+
+  /* ===== CHAT EMPTY STATE (tampilan sebelum ada pesan) ===== */
+  .chat-empty{flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px 22px; text-align:center;}
+  .chat-empty.show{display:flex;}
+  .chat-empty-mark{width:52px; height:52px; opacity:0.92;}
+  .chat-empty-mark img{width:100%; height:100%; object-fit:contain;}
+  .chat-empty-title{font-size:22px; font-weight:700; color:var(--ink); line-height:1.3; max-width:280px;}
+  .chat-empty-chips{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:340px;}
+  .chip{border:1px solid var(--line); background:var(--surface2); color:var(--ink); font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:100px; cursor:pointer;}
+  .chip:active{background:var(--field-bg);}
+  .chat-disclaimer{font-size:10.5px; color:var(--muted); text-align:center; padding:6px 20px 4px; flex-shrink:0;}
   .msg-ai{font-size:14.5px; line-height:1.55; max-width:92%; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;}
   .msg-ai .label{font-size:10.5px; color:var(--red); font-weight:700; margin-bottom:4px; font-family:monospace; text-transform:uppercase;}
   .msg-me{align-self:flex-end; background:var(--surface2); padding:11px 15px; border-radius:16px; border-bottom-right-radius:4px; font-size:14.5px; max-width:78%; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;}
@@ -315,6 +326,15 @@
 
   <!-- ===== CHAT PAGE ===== -->
   <div class="page active" id="pageChat">
+    <div class="chat-empty" id="chatEmpty">
+      <div class="chat-empty-mark"><img src="assets/logo2-transparent-192.png" alt="ZO AI"></div>
+      <div class="chat-empty-title" id="chatEmptyTitle" data-i18n="chatEmptyTitle">Mau mulai dari mana?</div>
+      <div class="chat-empty-chips">
+        <button class="chip" data-prompt="Harga Bitcoin sama Ethereum sekarang berapa?" data-i18n="chipPrice">Cek harga kripto</button>
+        <button class="chip" data-prompt="Ada berita ekonomi penting hari ini nggak?" data-i18n="chipNews">Berita ekonomi hari ini</button>
+        <button class="chip" data-prompt="ZO AI bisa bantu apa aja?" data-i18n="chipHelp">Apa yang bisa ZO AI lakukan?</button>
+      </div>
+    </div>
     <div class="messages" id="messagesBox"></div>
     <div class="quota-line" id="quotaLine"></div>
     <div class="inputbar">
@@ -323,6 +343,7 @@
       <button class="plus" id="micBtn" title="Tap: rekam suara. Tahan: mode obrolan suara"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
       <button class="send" id="sendBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
     </div>
+    <div class="chat-disclaimer" id="chatDisclaimer" data-i18n="chatDisclaimer">ZO AI bisa saja salah. Cek ulang info penting sebelum kamu ambil keputusan finansial.</div>
   </div>
 
   <!-- ===== WALLET PAGE ===== -->
@@ -593,6 +614,11 @@
       modeOffline: 'Gratis Offline',
       modeCloud: 'Premium',
       chatPlaceholder: 'Ketik pesan…',
+      chatEmptyTitle: 'Mau mulai dari mana?',
+      chipPrice: 'Cek harga kripto',
+      chipNews: 'Berita ekonomi hari ini',
+      chipHelp: 'Apa yang bisa ZO AI lakukan?',
+      chatDisclaimer: 'ZO AI bisa saja salah. Cek ulang info penting sebelum kamu ambil keputusan finansial.',
       connectHeadline: 'Hubungkan wallet kamu',
       connectDesc: 'ZO AI cuma baca alamat & saldo. Kunci pribadi kamu nggak pernah keluar dari wallet kamu sendiri.',
       disconnect: 'Putuskan',
@@ -651,6 +677,11 @@
       modeOffline: 'Free Offline',
       modeCloud: 'Premium',
       chatPlaceholder: 'Type a message…',
+      chatEmptyTitle: 'Where should we start?',
+      chipPrice: 'Check crypto prices',
+      chipNews: "Today's economic news",
+      chipHelp: 'What can ZO AI do?',
+      chatDisclaimer: 'ZO AI can make mistakes. Double-check important info before making financial decisions.',
       connectHeadline: 'Connect your wallet',
       connectDesc: "ZO AI only reads your address & balance. Your private keys never leave your own wallet.",
       disconnect: 'Disconnect',
@@ -884,6 +915,7 @@
     div.textContent = text;
     messagesBox.appendChild(div);
     messagesBox.scrollTop = messagesBox.scrollHeight;
+    updateChatEmptyState();
   }
 
   // ============ MENU / SHEETS ============
@@ -979,6 +1011,7 @@
       currentConversationId = data.id;
       history = [];
       messagesBox.innerHTML = '';
+      updateChatEmptyState();
       chatInput.disabled = false;
       sendBtn.disabled = false;
       chatInput.focus();
@@ -1046,6 +1079,7 @@
     currentConversationId = convId;
     history = [];
     messagesBox.innerHTML = '';
+    updateChatEmptyState();
     chatInput.disabled = false;
     sendBtn.disabled = false;
     await loadHistory();
@@ -1060,6 +1094,7 @@
         currentConversationId = null;
         history = [];
         messagesBox.innerHTML = '';
+        updateChatEmptyState();
         chatInput.disabled = false;
         sendBtn.disabled = false;
         await initConversation();
@@ -1144,6 +1179,23 @@
   const chatInput = document.getElementById('chatInput');
   const sendBtn = document.getElementById('sendBtn');
   const micBtn = document.getElementById('micBtn');
+  const chatEmpty = document.getElementById('chatEmpty');
+
+  // Nunjukin layar "mau mulai dari mana?" (ala ChatGPT) kalau belum ada pesan
+  // sama sekali di obrolan ini, dan nyembunyiin pas udah ada pesan pertama.
+  function updateChatEmptyState(){
+    const isEmpty = messagesBox.children.length === 0;
+    chatEmpty.classList.toggle('show', isEmpty);
+    messagesBox.style.display = isEmpty ? 'none' : 'flex';
+  }
+  updateChatEmptyState();
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chatInput.value = chip.dataset.prompt || chip.textContent;
+      send();
+    });
+  });
 
   // ---- Picker generic: ganti <select> bawaan Android biar seragam sama tema app ----
   const TOKEN_ICONS = { ETH: 'Ξ', USDT: '₮', SOL: '◎', BTC: '₿' };
@@ -1397,6 +1449,7 @@
         div.appendChild(img);
         messagesBox.appendChild(div);
         messagesBox.scrollTop = messagesBox.scrollHeight;
+        updateChatEmptyState();
         if (typeof data.remaining === 'number') quotaLine.textContent = data.remaining + ' gambar gratis tersisa hari ini';
       }
     } catch (e) {
@@ -1441,6 +1494,7 @@
 
     messagesBox.appendChild(div);
     messagesBox.scrollTop = messagesBox.scrollHeight;
+    updateChatEmptyState();
     return div;
   }
 
@@ -1525,6 +1579,7 @@
     progDiv.innerHTML = 'Mengunduh model AI on-device (sekali aja, ~300-400MB)...<div class="offline-bar"><div class="offline-bar-fill" id="offlineBarFill"></div></div>';
     messagesBox.appendChild(progDiv);
     messagesBox.scrollTop = messagesBox.scrollHeight;
+    updateChatEmptyState();
     const fill = document.getElementById('offlineBarFill');
 
     // Library model offline ini kadang lempar error dari dalam Web Worker/WASM-nya sendiri,
