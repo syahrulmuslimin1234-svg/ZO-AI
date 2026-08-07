@@ -2102,6 +2102,15 @@
   async function send(){
     const val = chatInput.value.trim();
     if (!val) return;
+
+    // Kalau lagi di mode offline dan model AI-nya masih proses download/loading,
+    // jangan kirim dulu -- kasih tau user buat nunggu progress bar-nya kelar,
+    // daripada pesannya "ilang" gagal diam-diam kayak sebelumnya.
+    if (currentMode === 'offline' && offlineLoading) {
+      addNote('Model AI on-device masih diunduh/disiapkan. Tunggu progress bar-nya selesai dulu ya, baru kirim pesan.');
+      return;
+    }
+
     const entry = { role: 'user', content: val, id: null, time: new Date().toISOString() };
     history.push(entry);
     renderMessage(val, 'user', entry);
@@ -2161,6 +2170,9 @@
   async function preloadOfflineModel(){
     if (offlineGenerator || offlineLoading) return;
     offlineLoading = true;
+    chatInput.disabled = true;
+    chatInput.placeholder = 'Menunggu model AI siap...';
+    sendBtn.disabled = true;
     const progDiv = document.createElement('div');
     progDiv.className = 'offline-progress';
     progDiv.innerHTML = 'Mengunduh model AI on-device (sekali aja, ~300-400MB)...<div class="offline-bar"><div class="offline-bar-fill" id="offlineBarFill"></div></div>';
@@ -2203,6 +2215,9 @@
       window.removeEventListener('error', catchWorkerErr);
       window.removeEventListener('unhandledrejection', catchWorkerErr);
       window.__suppressErrorBanner = false;
+      chatInput.disabled = false;
+      chatInput.placeholder = t('chatPlaceholder');
+      sendBtn.disabled = false;
     }
     offlineLoading = false;
   }
