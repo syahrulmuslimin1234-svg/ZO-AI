@@ -2194,8 +2194,11 @@
       progDiv.remove();
       addNote(hasWebGPU ? 'Model AI on-device siap (dipercepat WebGPU).' : 'Model AI on-device siap (mode CPU, mungkin lebih lambat).');
     } catch (e) {
-      console.error('Gagal load model offline:', workerErrCaught || e);
-      progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini (biasanya karena keterbatasan WebAssembly/Worker di browser kamu). Coba pakai Free Online atau Premium dulu ya.';
+      const errObj = workerErrCaught || e;
+      const errMsg = (errObj && errObj.message) ? errObj.message : String(errObj);
+      console.error('Gagal load model offline:', errObj);
+      const escaped = errMsg.slice(0, 220).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini.<br><span style="font-size:10.5px; opacity:0.7; word-break:break-word; display:block; margin-top:6px;">Detail teknis: ' + escaped + '</span><br>Coba pakai Free Online atau Premium dulu ya.';
     } finally {
       window.removeEventListener('error', catchWorkerErr);
       window.removeEventListener('unhandledrejection', catchWorkerErr);
