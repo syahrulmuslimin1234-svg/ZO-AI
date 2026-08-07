@@ -1477,7 +1477,17 @@
     currentMode = mode;
     modeOpts.forEach(o => o.classList.remove('active'));
     ({ online: modeOnline, offline: modeOffline, cloud: modeCloud })[mode].classList.add('active');
-    if (mode === 'offline') preloadOfflineModel();
+    if (mode === 'offline') {
+      preloadOfflineModel();
+    } else {
+      // Keluar dari mode offline -- kolom chat harus langsung normal lagi
+      // walaupun proses download model di background masih jalan/macet.
+      // Kalau modelnya kelar belakangan, biarin aja (tersimpan di offlineGenerator),
+      // tapi jangan sampe nge-lock UI mode lain gara-gara ini.
+      chatInput.disabled = false;
+      chatInput.placeholder = t('chatPlaceholder');
+      sendBtn.disabled = false;
+    }
   }
 
   function addNote(text){
@@ -2190,18 +2200,36 @@
     window.addEventListener('error', catchWorkerErr);
     window.addEventListener('unhandledrejection', catchWorkerErr);
 
+    // Kalau proses download/inisialisasi macet total (nggak ada progress sama
+    // sekali) lebih dari 45 detik, anggap gagal -- daripada nge-hang selamanya
+    // dan nge-lock UI (ini yang kejadian sebelumnya).
+    const STALL_MS = 45000;
+    let stallTimer = null;
+    let stallReject = null;
+    const resetStallTimer = () => {
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => {
+        if (stallReject) stallReject(new Error('Waktu tunggu habis -- proses macet lebih dari 45 detik tanpa progress. Kemungkinan koneksi internet lambat/putus, atau CDN model diblokir jaringan kamu.'));
+      }, STALL_MS);
+    };
+    const stallPromise = new Promise((_, reject) => { stallReject = reject; resetStallTimer(); });
+
     try {
       const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6');
       let hasWebGPU = false;
       try { hasWebGPU = !!(navigator.gpu && (await navigator.gpu.requestAdapter())); } catch (e) {}
 
-      offlineGenerator = await pipeline('text-generation', 'onnx-community/Qwen3-0.6B-ONNX', {
-        dtype: 'q4',
-        device: hasWebGPU ? 'webgpu' : 'wasm',
-        progress_callback: (p) => {
-          if (p.status === 'progress' && fill) fill.style.width = Math.round(p.progress || 0) + '%';
-        }
-      });
+      offlineGenerator = await Promise.race([
+        pipeline('text-generation', 'onnx-community/Qwen3-0.6B-ONNX', {
+          dtype: 'q4',
+          device: hasWebGPU ? 'webgpu' : 'wasm',
+          progress_callback: (p) => {
+            resetStallTimer(); // ada progress -> reset penghitung macet
+            if (p.status === 'progress' && fill) fill.style.width = Math.round(p.progress || 0) + '%';
+          }
+        }),
+        stallPromise,
+      ]);
       if (workerErrCaught) throw new Error('worker-error');
       progDiv.remove();
       addNote(hasWebGPU ? 'Model AI on-device siap (dipercepat WebGPU).' : 'Model AI on-device siap (mode CPU, mungkin lebih lambat).');
@@ -2212,12 +2240,17 @@
       const escaped = errMsg.slice(0, 220).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
       progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini.<br><span style="font-size:10.5px; opacity:0.7; word-break:break-word; display:block; margin-top:6px;">Detail teknis: ' + escaped + '</span><br>Coba pakai Free Online atau Premium dulu ya.';
     } finally {
+      clearTimeout(stallTimer);
       window.removeEventListener('error', catchWorkerErr);
       window.removeEventListener('unhandledrejection', catchWorkerErr);
       window.__suppressErrorBanner = false;
-      chatInput.disabled = false;
-      chatInput.placeholder = t('chatPlaceholder');
-      sendBtn.disabled = false;
+      // Cuma balikin ke normal kalau user masih di mode offline -- kalau udah
+      // pindah mode duluan (setMode udah nanganin itu), jangan overwrite lagi.
+      if (currentMode === 'offline') {
+        chatInput.disabled = false;
+        chatInput.placeholder = t('chatPlaceholder');
+        sendBtn.disabled = false;
+      }
     }
     offlineLoading = false;
   }
