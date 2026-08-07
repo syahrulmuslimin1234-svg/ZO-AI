@@ -2666,5 +2666,18 @@
     renderTokens([{ symbol: 'SOL', icon: '◎', amount: solBal.toFixed(4), usd: totalUsd.toFixed(2) }]);
   }
 </script>
+  <script>
+    // Daftarin service worker biar app-shell (halaman + model AI offline) ke-cache
+    // di HP. PENTING: ini juga dipasang di sini (bukan cuma landing.html), soalnya
+    // user yang udah login biasanya auto-redirect langsung ke chat.html, jadi
+    // kalau cuma landing.html yang daftarin, mereka gak pernah kebagian.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch((err) => {
+          console.error('Gagal daftar service worker:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
