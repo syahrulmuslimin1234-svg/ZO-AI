@@ -450,6 +450,7 @@
       <div class="model-card-status" id="modelStatusText" data-i18n="modelNotDownloaded">Belum diunduh</div>
       <div class="model-card-actions">
         <button class="model-btn model-btn-primary" id="modelDownloadBtn" data-i18n="modelDownload">Unduh</button>
+        <button class="model-btn model-btn-danger" id="modelCancelBtn" style="display:none;" data-i18n="modelCancel">Batal</button>
         <button class="model-btn" id="modelReleaseBtn" style="display:none;" data-i18n="modelRelease">Lepas</button>
         <button class="model-btn model-btn-danger" id="modelDeleteBtn" style="display:none;" data-i18n="modelDelete">Hapus</button>
       </div>
@@ -710,6 +711,7 @@
       modelDownload: 'Unduh',
       modelRelease: 'Lepas',
       modelDelete: 'Hapus',
+      modelCancel: 'Batal',
       modelNote: 'Model lain (Gemma, Bonsai, LFM, dll) segera hadir. Untuk sekarang ZO AI Offline pakai Qwen3 0.6B.',
     },
     en: {
@@ -781,6 +783,7 @@
       modelDownload: 'Download',
       modelRelease: 'Release',
       modelDelete: 'Delete',
+      modelCancel: 'Cancel',
       modelNote: 'More models (Gemma, Bonsai, LFM, etc.) coming soon. For now ZO AI Offline uses Qwen3 0.6B.',
     },
     es: {
@@ -852,6 +855,7 @@
       modelDownload: 'Descargar',
       modelRelease: 'Liberar',
       modelDelete: 'Eliminar',
+      modelCancel: 'Cancelar',
       modelNote: 'Más modelos (Gemma, Bonsai, LFM, etc.) próximamente. Por ahora ZO AI Offline usa Qwen3 0.6B.',
     },
     pt: {
@@ -923,6 +927,7 @@
       modelDownload: 'Baixar',
       modelRelease: 'Liberar',
       modelDelete: 'Excluir',
+      modelCancel: 'Cancelar',
       modelNote: 'Mais modelos (Gemma, Bonsai, LFM, etc.) em breve. Por enquanto, o ZO AI Offline usa o Qwen3 0.6B.',
     },
     fr: {
@@ -994,6 +999,7 @@
       modelDownload: 'Télécharger',
       modelRelease: 'Libérer',
       modelDelete: 'Supprimer',
+      modelCancel: 'Annuler',
       modelNote: "D'autres modèles (Gemma, Bonsai, LFM, etc.) arrivent bientôt. Pour l'instant, ZO AI Offline utilise Qwen3 0.6B.",
     },
     de: {
@@ -1065,6 +1071,7 @@
       modelDownload: 'Herunterladen',
       modelRelease: 'Freigeben',
       modelDelete: 'Löschen',
+      modelCancel: 'Abbrechen',
       modelNote: 'Weitere Modelle (Gemma, Bonsai, LFM usw.) folgen bald. Derzeit nutzt ZO AI Offline Qwen3 0.6B.',
     },
     ja: {
@@ -1136,6 +1143,7 @@
       modelDownload: 'ダウンロード',
       modelRelease: '解放',
       modelDelete: '削除',
+      modelCancel: 'キャンセル',
       modelNote: '他のモデル(Gemma、Bonsai、LFMなど)は近日追加予定です。現在ZO AIオフラインはQwen3 0.6Bを使用しています。',
     },
     ko: {
@@ -1207,6 +1215,7 @@
       modelDownload: '다운로드',
       modelRelease: '해제',
       modelDelete: '삭제',
+      modelCancel: '취소',
       modelNote: '다른 모델(Gemma, Bonsai, LFM 등)은 곧 추가됩니다. 현재 ZO AI 오프라인은 Qwen3 0.6B를 사용합니다.',
     },
     zh: {
@@ -1278,6 +1287,7 @@
       modelDownload: '下载',
       modelRelease: '释放',
       modelDelete: '删除',
+      modelCancel: '取消',
       modelNote: '更多模型（Gemma、Bonsai、LFM 等）即将推出。目前 ZO AI 离线版使用 Qwen3 0.6B。',
     },
     ar: {
@@ -1349,6 +1359,7 @@
       modelDownload: 'تنزيل',
       modelRelease: 'تحرير',
       modelDelete: 'حذف',
+      modelCancel: 'إلغاء',
       modelNote: 'نماذج أخرى (Gemma وBonsai وLFM وغيرها) ستتوفر قريبًا. حاليًا يستخدم وضع ZO AI غير المتصل نموذج Qwen3 0.6B.',
     },
     hi: {
@@ -1420,6 +1431,7 @@
       modelDownload: 'डाउनलोड करें',
       modelRelease: 'रिलीज़ करें',
       modelDelete: 'हटाएं',
+      modelCancel: 'रद्द करें',
       modelNote: 'अन्य मॉडल (Gemma, Bonsai, LFM, आदि) जल्द आ रहे हैं। फ़िलहाल ZO AI ऑफ़लाइन Qwen3 0.6B इस्तेमाल करता है।',
     },
   };
@@ -2395,6 +2407,7 @@
     const dot = document.getElementById('modelStatusDot');
     const statusText = document.getElementById('modelStatusText');
     const downloadBtn = document.getElementById('modelDownloadBtn');
+    const cancelBtn = document.getElementById('modelCancelBtn');
     const releaseBtn = document.getElementById('modelReleaseBtn');
     const deleteBtn = document.getElementById('modelDeleteBtn');
     const downloaded = localStorage.getItem(OFFLINE_MODEL_FLAG_KEY) === '1';
@@ -2404,23 +2417,37 @@
       dot.classList.add('loading');
       statusText.textContent = t('modelDownloading');
       downloadBtn.style.display = 'none';
+      cancelBtn.style.display = '';
       releaseBtn.style.display = 'none';
       deleteBtn.style.display = 'none';
     } else if (downloaded) {
       dot.classList.add('ready');
       statusText.textContent = t('modelReady') + (offlineGenerator ? '' : ' · idle');
       downloadBtn.style.display = 'none';
+      cancelBtn.style.display = 'none';
       releaseBtn.style.display = '';
       deleteBtn.style.display = '';
     } else {
       statusText.textContent = t('modelNotDownloaded');
       downloadBtn.style.display = '';
+      cancelBtn.style.display = 'none';
       releaseBtn.style.display = 'none';
       deleteBtn.style.display = 'none';
     }
   }
 
   document.getElementById('modelDownloadBtn').addEventListener('click', () => preloadOfflineModel());
+
+  // Batalin proses download yang lagi jalan. Ini "soft cancel" -- gak beneran
+  // motong koneksi network di tengah jalan (library-nya gak nyediain API buat
+  // itu), tapi langsung ngelepas UI dari kondisi "nunggu" dan berhentiin proses
+  // nunggu hasil pipeline(). File-file yang KEBETULAN udah lengkap kedownload
+  // (dicache sama service worker) bakal tetap kepake pas nanti unduh lagi, jadi
+  // efeknya kayak "resume" per-file, bukan mulai dari nol lagi.
+  let offlineCancelReject = null;
+  document.getElementById('modelCancelBtn').addEventListener('click', () => {
+    if (offlineCancelReject) offlineCancelReject(new Error('Download dibatalkan oleh user.'));
+  });
 
   document.getElementById('modelReleaseBtn').addEventListener('click', () => {
     // "Lepas" cuma ngosongin dari memori (RAM) -- file model yang udah kedownload
@@ -2480,6 +2507,7 @@
       }, STALL_MS);
     };
     const stallPromise = new Promise((_, reject) => { stallReject = reject; resetStallTimer(); });
+    const cancelPromise = new Promise((_, reject) => { offlineCancelReject = reject; });
 
     try {
       const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6');
@@ -2496,18 +2524,29 @@
           }
         }),
         stallPromise,
+        cancelPromise,
       ]);
       if (workerErrCaught) throw new Error('worker-error');
       progDiv.remove();
       localStorage.setItem(OFFLINE_MODEL_FLAG_KEY, '1');
       addNote(hasWebGPU ? 'Model AI on-device siap (dipercepat WebGPU).' : 'Model AI on-device siap (mode CPU, mungkin lebih lambat).');
     } catch (e) {
-      const errObj = workerErrCaught || e;
-      const errMsg = (errObj && errObj.message) ? errObj.message : String(errObj);
-      console.error('Gagal load model offline:', errObj);
-      const escaped = errMsg.slice(0, 220).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-      progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini.<br><span style="font-size:10.5px; opacity:0.7; word-break:break-word; display:block; margin-top:6px;">Detail teknis: ' + escaped + '</span><br>Coba pakai Free Online atau Premium dulu ya.';
+      offlineGenerator = null;
+      if (e && e.message === 'Download dibatalkan oleh user.') {
+        // Dibatalkan sendiri sama user -- bukan error, cukup info netral.
+        // File yang udah sempet lengkap kedownload tetap kecache, jadi lain kali
+        // tekan Unduh lagi bakal lebih cepet (gak mulai dari nol).
+        progDiv.remove();
+        addNote('Download model dibatalkan. File yang udah sempat lengkap tetap tersimpan, jadi lain kali lanjut lebih cepat.');
+      } else {
+        const errObj = workerErrCaught || e;
+        const errMsg = (errObj && errObj.message) ? errObj.message : String(errObj);
+        console.error('Gagal load model offline:', errObj);
+        const escaped = errMsg.slice(0, 220).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+        progDiv.innerHTML = 'Mode offline belum bisa jalan di perangkat/browser ini.<br><span style="font-size:10.5px; opacity:0.7; word-break:break-word; display:block; margin-top:6px;">Detail teknis: ' + escaped + '</span><br>Coba pakai Free Online atau Premium dulu ya.';
+      }
     } finally {
+      offlineCancelReject = null;
       clearTimeout(stallTimer);
       window.removeEventListener('error', catchWorkerErr);
       window.removeEventListener('unhandledrejection', catchWorkerErr);
