@@ -257,6 +257,22 @@
   .sheet-row:last-child{border-bottom:none;}
   .sheet-close{width:100%; background:var(--surface2); color:var(--ink); border:none; border-radius:100px; padding:14px; font-weight:700; font-size:13.5px; margin-top:14px; cursor:pointer;}
 
+  .model-card{border:1px solid var(--line); border-radius:14px; padding:14px;}
+  .model-card-top{display:flex; align-items:flex-start; justify-content:space-between;}
+  .model-card-name{font-size:14px; font-weight:700;}
+  .model-card-size{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .model-dot{width:9px; height:9px; border-radius:50%; background:var(--muted); flex-shrink:0; margin-top:3px;}
+  .model-dot.ready{background:#2ecc71;}
+  .model-dot.loading{background:#f5a623; animation:pulseDot 1s infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  .model-card-status{font-size:12px; color:var(--muted); margin-top:8px;}
+  .model-card-actions{display:flex; gap:8px; margin-top:12px;}
+  .model-btn{flex:1; border:1px solid var(--line); background:var(--surface2); color:var(--ink); border-radius:100px; padding:10px; font-size:12.5px; font-weight:700; cursor:pointer;}
+  .model-btn:disabled{opacity:0.5; cursor:default;}
+  .model-btn-primary{background:var(--red); color:#fff; border-color:var(--red);}
+  .model-btn-danger{color:#e3242b; border-color:rgba(227,36,43,0.35);}
+  .model-card-note{font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5;}
+
   .conv-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
   .conv-item.active{color:var(--red);}
   .conv-title{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:600;}
@@ -314,6 +330,7 @@
       </div>
     </div>
     <div class="h-right">
+      <button id="modelBtn" title="Model AI Offline" style="display:none;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h.01M15 9h.01M9 15h6"/></svg></button>
       <button id="newChatBtn" title="Obrolan Baru"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
       <button id="historyBtn" title="Riwayat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
     </div>
@@ -415,6 +432,30 @@
     <div class="sheet-row" id="newConvRow" style="color:var(--red);" data-i18n="newChat">+ Obrolan Baru</div>
     <div id="historyList"></div>
     <button class="sheet-close" data-close-sheet="historySheet" data-i18n="close">Tutup</button>
+  </div>
+</div>
+
+<!-- ============ MODEL (OFFLINE) SHEET ============ -->
+<div class="sheet-overlay" id="modelSheet">
+  <div class="sheet">
+    <div class="sheet-title" data-i18n="modelTitle">Model AI Offline</div>
+    <div class="model-card" id="modelCardQwen">
+      <div class="model-card-top">
+        <div>
+          <div class="model-card-name">Qwen3 0.6B</div>
+          <div class="model-card-size" id="modelSizeLabel">~400 MB</div>
+        </div>
+        <span class="model-dot" id="modelStatusDot"></span>
+      </div>
+      <div class="model-card-status" id="modelStatusText" data-i18n="modelNotDownloaded">Belum diunduh</div>
+      <div class="model-card-actions">
+        <button class="model-btn model-btn-primary" id="modelDownloadBtn" data-i18n="modelDownload">Unduh</button>
+        <button class="model-btn" id="modelReleaseBtn" style="display:none;" data-i18n="modelRelease">Lepas</button>
+        <button class="model-btn model-btn-danger" id="modelDeleteBtn" style="display:none;" data-i18n="modelDelete">Hapus</button>
+      </div>
+    </div>
+    <div class="model-card-note" data-i18n="modelNote">Model lain (Gemma, Bonsai, LFM, dll) segera hadir. Untuk sekarang ZO AI Offline pakai Qwen3 0.6B.</div>
+    <button class="sheet-close" data-close-sheet="modelSheet" data-i18n="close">Tutup</button>
   </div>
 </div>
 
@@ -662,6 +703,14 @@
       enterAmount: 'Masukkan jumlah',
       themeLight: 'Terang',
       themeDark: 'Gelap',
+      modelTitle: 'Model AI Offline',
+      modelNotDownloaded: 'Belum diunduh',
+      modelDownloading: 'Sedang mengunduh...',
+      modelReady: 'Siap dipakai',
+      modelDownload: 'Unduh',
+      modelRelease: 'Lepas',
+      modelDelete: 'Hapus',
+      modelNote: 'Model lain (Gemma, Bonsai, LFM, dll) segera hadir. Untuk sekarang ZO AI Offline pakai Qwen3 0.6B.',
     },
     en: {
       loginHeadline: 'Your daily crypto & trading assistant, accessible with just your email.',
@@ -725,6 +774,14 @@
       enterAmount: 'Enter amount',
       themeLight: 'Light',
       themeDark: 'Dark',
+      modelTitle: 'Offline AI Model',
+      modelNotDownloaded: 'Not downloaded',
+      modelDownloading: 'Downloading...',
+      modelReady: 'Ready to use',
+      modelDownload: 'Download',
+      modelRelease: 'Release',
+      modelDelete: 'Delete',
+      modelNote: 'More models (Gemma, Bonsai, LFM, etc.) coming soon. For now ZO AI Offline uses Qwen3 0.6B.',
     },
     es: {
       loginHeadline: 'Tu asistente diario de criptomonedas y trading, accesible solo con tu correo electrónico.',
@@ -788,6 +845,14 @@
       enterAmount: 'Ingresa la cantidad',
       themeLight: 'Claro',
       themeDark: 'Oscuro',
+      modelTitle: 'Modelo de IA sin conexión',
+      modelNotDownloaded: 'No descargado',
+      modelDownloading: 'Descargando...',
+      modelReady: 'Listo para usar',
+      modelDownload: 'Descargar',
+      modelRelease: 'Liberar',
+      modelDelete: 'Eliminar',
+      modelNote: 'Más modelos (Gemma, Bonsai, LFM, etc.) próximamente. Por ahora ZO AI Offline usa Qwen3 0.6B.',
     },
     pt: {
       loginHeadline: 'Seu assistente diário de cripto e trading, acessível apenas com seu e-mail.',
@@ -851,6 +916,14 @@
       enterAmount: 'Digite a quantia',
       themeLight: 'Claro',
       themeDark: 'Escuro',
+      modelTitle: 'Modelo de IA offline',
+      modelNotDownloaded: 'Não baixado',
+      modelDownloading: 'Baixando...',
+      modelReady: 'Pronto para usar',
+      modelDownload: 'Baixar',
+      modelRelease: 'Liberar',
+      modelDelete: 'Excluir',
+      modelNote: 'Mais modelos (Gemma, Bonsai, LFM, etc.) em breve. Por enquanto, o ZO AI Offline usa o Qwen3 0.6B.',
     },
     fr: {
       loginHeadline: 'Votre assistant crypto et trading quotidien, accessible juste avec votre e-mail.',
@@ -914,6 +987,14 @@
       enterAmount: 'Entrez le montant',
       themeLight: 'Clair',
       themeDark: 'Sombre',
+      modelTitle: 'Modèle IA hors ligne',
+      modelNotDownloaded: 'Non téléchargé',
+      modelDownloading: 'Téléchargement...',
+      modelReady: "Prêt à l'emploi",
+      modelDownload: 'Télécharger',
+      modelRelease: 'Libérer',
+      modelDelete: 'Supprimer',
+      modelNote: "D'autres modèles (Gemma, Bonsai, LFM, etc.) arrivent bientôt. Pour l'instant, ZO AI Offline utilise Qwen3 0.6B.",
     },
     de: {
       loginHeadline: 'Dein täglicher Krypto- und Trading-Assistent, erreichbar nur mit deiner E-Mail.',
@@ -977,6 +1058,14 @@
       enterAmount: 'Betrag eingeben',
       themeLight: 'Hell',
       themeDark: 'Dunkel',
+      modelTitle: 'Offline-KI-Modell',
+      modelNotDownloaded: 'Nicht heruntergeladen',
+      modelDownloading: 'Wird heruntergeladen...',
+      modelReady: 'Einsatzbereit',
+      modelDownload: 'Herunterladen',
+      modelRelease: 'Freigeben',
+      modelDelete: 'Löschen',
+      modelNote: 'Weitere Modelle (Gemma, Bonsai, LFM usw.) folgen bald. Derzeit nutzt ZO AI Offline Qwen3 0.6B.',
     },
     ja: {
       loginHeadline: 'あなたの毎日の暗号資産・トレーディングアシスタント。メールアドレスだけで利用できます。',
@@ -1040,6 +1129,14 @@
       enterAmount: '数量を入力',
       themeLight: 'ライト',
       themeDark: 'ダーク',
+      modelTitle: 'オフラインAIモデル',
+      modelNotDownloaded: '未ダウンロード',
+      modelDownloading: 'ダウンロード中...',
+      modelReady: '準備完了',
+      modelDownload: 'ダウンロード',
+      modelRelease: '解放',
+      modelDelete: '削除',
+      modelNote: '他のモデル(Gemma、Bonsai、LFMなど)は近日追加予定です。現在ZO AIオフラインはQwen3 0.6Bを使用しています。',
     },
     ko: {
       loginHeadline: '이메일만으로 이용할 수 있는 나만의 매일 암호화폐·트레이딩 어시스턴트.',
@@ -1103,6 +1200,14 @@
       enterAmount: '금액 입력',
       themeLight: '라이트',
       themeDark: '다크',
+      modelTitle: '오프라인 AI 모델',
+      modelNotDownloaded: '다운로드 안 됨',
+      modelDownloading: '다운로드 중...',
+      modelReady: '사용 준비 완료',
+      modelDownload: '다운로드',
+      modelRelease: '해제',
+      modelDelete: '삭제',
+      modelNote: '다른 모델(Gemma, Bonsai, LFM 등)은 곧 추가됩니다. 현재 ZO AI 오프라인은 Qwen3 0.6B를 사용합니다.',
     },
     zh: {
       loginHeadline: '你的每日加密货币与交易助手，仅需邮箱即可使用。',
@@ -1166,6 +1271,14 @@
       enterAmount: '输入数量',
       themeLight: '浅色',
       themeDark: '深色',
+      modelTitle: '离线 AI 模型',
+      modelNotDownloaded: '未下载',
+      modelDownloading: '下载中...',
+      modelReady: '已就绪',
+      modelDownload: '下载',
+      modelRelease: '释放',
+      modelDelete: '删除',
+      modelNote: '更多模型（Gemma、Bonsai、LFM 等）即将推出。目前 ZO AI 离线版使用 Qwen3 0.6B。',
     },
     ar: {
       loginHeadline: 'مساعدك اليومي للعملات الرقمية والتداول، يمكنك الوصول إليه بالبريد الإلكتروني فقط.',
@@ -1229,6 +1342,14 @@
       enterAmount: 'أدخل المبلغ',
       themeLight: 'فاتح',
       themeDark: 'داكن',
+      modelTitle: 'نموذج الذكاء الاصطناعي غير المتصل',
+      modelNotDownloaded: 'لم يتم التنزيل',
+      modelDownloading: 'جارٍ التنزيل...',
+      modelReady: 'جاهز للاستخدام',
+      modelDownload: 'تنزيل',
+      modelRelease: 'تحرير',
+      modelDelete: 'حذف',
+      modelNote: 'نماذج أخرى (Gemma وBonsai وLFM وغيرها) ستتوفر قريبًا. حاليًا يستخدم وضع ZO AI غير المتصل نموذج Qwen3 0.6B.',
     },
     hi: {
       loginHeadline: 'आपका रोज़ाना का क्रिप्टो और ट्रेडिंग असिस्टेंट, जिसे सिर्फ़ आपके ईमेल से एक्सेस किया जा सकता है।',
@@ -1292,6 +1413,14 @@
       enterAmount: 'राशि डालें',
       themeLight: 'लाइट',
       themeDark: 'डार्क',
+      modelTitle: 'ऑफ़लाइन AI मॉडल',
+      modelNotDownloaded: 'डाउनलोड नहीं हुआ',
+      modelDownloading: 'डाउनलोड हो रहा है...',
+      modelReady: 'इस्तेमाल के लिए तैयार',
+      modelDownload: 'डाउनलोड करें',
+      modelRelease: 'रिलीज़ करें',
+      modelDelete: 'हटाएं',
+      modelNote: 'अन्य मॉडल (Gemma, Bonsai, LFM, आदि) जल्द आ रहे हैं। फ़िलहाल ZO AI ऑफ़लाइन Qwen3 0.6B इस्तेमाल करता है।',
     },
   };
   // Peta kode voice-lang ('id-ID', 'en-US', dst) ke kode dictionary ('id'/'en'/dst).
@@ -1473,13 +1602,28 @@
     setMode('cloud');
   });
 
+  const modelBtn = document.getElementById('modelBtn');
+
   function setMode(mode){
+    const prevMode = currentMode;
     currentMode = mode;
     modeOpts.forEach(o => o.classList.remove('active'));
     ({ online: modeOnline, offline: modeOffline, cloud: modeCloud })[mode].classList.add('active');
-    if (mode === 'offline') {
+    modelBtn.style.display = mode === 'offline' ? '' : 'none';
+    document.getElementById('historyBtn').style.display = mode === 'offline' ? 'none' : '';
+
+    // Chat offline sengaja dipisah TOTAL dari chat online/premium -- pindah mode
+    // berarti ganti "ruang obrolan" yang ditampilin (riwayatnya beda, disimpen
+    // di tempat beda), bukan cuma ganti tujuan API-nya doang. Online & Premium
+    // tetap satu ruang obrolan yang sama (nyambung), cuma Offline yang berdiri sendiri.
+    if (mode === 'offline' && prevMode !== 'offline') {
+      renderOfflineChatView();
       preloadOfflineModel();
-    } else {
+    } else if (mode !== 'offline' && prevMode === 'offline') {
+      renderOnlineChatView();
+    }
+
+    if (mode !== 'offline') {
       // Keluar dari mode offline -- kolom chat harus langsung normal lagi
       // walaupun proses download model di background masih jalan/macet.
       // Kalau modelnya kelar belakangan, biarin aja (tersimpan di offlineGenerator),
@@ -1561,6 +1705,10 @@
   });
 
   document.getElementById('newChatBtn').addEventListener('click', startNewConversation);
+  document.getElementById('modelBtn').addEventListener('click', () => {
+    document.getElementById('modelSheet').classList.add('show');
+    updateModelSheetUI();
+  });
   document.getElementById('historyBtn').addEventListener('click', () => {
     document.getElementById('historySheet').classList.add('show');
     renderConversationList();
@@ -1586,6 +1734,14 @@
   }
 
   async function startNewConversation(){
+    // Chat offline berdiri sendiri, disimpen lokal di HP -- "Obrolan Baru" di
+    // mode ini cukup ngosongin riwayat lokalnya, gak perlu (dan gak boleh)
+    // nyentuh Supabase sama sekali, sesuai prinsip "jalan tanpa internet".
+    if (currentMode === 'offline') {
+      clearOfflineChat();
+      chatInput.focus();
+      return;
+    }
     try {
       const { data, error } = await sb.from('conversations').insert({ user_id: userId, title: 'New chat' }).select('id').single();
       if (error) throw error;
@@ -1924,9 +2080,13 @@
         setLiveState(null, 'Berpikir...');
 
         const entry = { role: 'user', content: transcript, id: null, time: new Date().toISOString() };
-        history.push(entry);
         renderMessage(transcript, 'user', entry);
-        if (currentMode !== 'offline') saveMessage('user', transcript).then(id => { entry.id = id; });
+        if (currentMode === 'offline') {
+          saveOfflineChatMessage(entry);
+        } else {
+          history.push(entry);
+          saveMessage('user', transcript).then(id => { entry.id = id; });
+        }
 
         const result = currentMode === 'offline' ? await sendToOfflineModel(transcript) : await sendToServer();
         if (!liveActive) return;
@@ -1934,7 +2094,9 @@
         const replyText = result.ok ? result.reply : result.message;
         if (result.ok) {
           const replyEntry = { role: 'assistant', content: replyText, id: null, time: new Date().toISOString() };
-          if (currentMode !== 'offline') {
+          if (currentMode === 'offline') {
+            saveOfflineChatMessage(replyEntry);
+          } else {
             history.push(replyEntry);
             saveMessage('assistant', replyText).then(id => { replyEntry.id = id; });
           }
@@ -2010,11 +2172,15 @@
 
   // ---- Generate gambar (tombol "+") ----
   async function generateImage(){
+    if (currentMode === 'offline') {
+      addNote('Bikin gambar butuh koneksi internet, belum bisa dipakai di mode Offline. Coba pindah ke Gratis Online atau Premium dulu ya.');
+      return;
+    }
     const promptText = chatInput.value.trim();
     if (!promptText) { addNote('Ketik dulu deskripsi gambarnya di kolom pesan, baru tap tombol ini.'); return; }
 
     renderMessage(promptText, 'user', { role: 'user', content: promptText, time: new Date().toISOString() });
-    if (currentMode !== 'offline') saveMessage('user', promptText);
+    saveMessage('user', promptText);
     chatInput.value = '';
     updateSendMicToggle();
     document.getElementById('plusBtn').disabled = true;
@@ -2122,13 +2288,17 @@
     }
 
     const entry = { role: 'user', content: val, id: null, time: new Date().toISOString() };
-    history.push(entry);
     renderMessage(val, 'user', entry);
     chatInput.value = '';
     updateSendMicToggle();
     sendBtn.disabled = true;
 
-    if (currentMode !== 'offline') saveMessage('user', val).then(id => { entry.id = id; });
+    if (currentMode === 'offline') {
+      saveOfflineChatMessage(entry);
+    } else {
+      history.push(entry);
+      saveMessage('user', val).then(id => { entry.id = id; });
+    }
 
     const loadingDiv = renderMessage('Berpikir...', 'ai');
 
@@ -2145,7 +2315,9 @@
       addNote(result.message);
     } else {
       const replyEntry = { role: 'assistant', content: result.reply, id: null, time: new Date().toISOString() };
-      if (currentMode !== 'offline') {
+      if (currentMode === 'offline') {
+        saveOfflineChatMessage(replyEntry);
+      } else {
         history.push(replyEntry);
         saveMessage('assistant', result.reply).then(id => { replyEntry.id = id; });
       }
@@ -2177,9 +2349,104 @@
   let offlineLoading = false;
   let offlineHistory = [{ role: 'system', content: 'Kamu adalah ZO AI mode offline, asisten ringan yang jalan langsung di perangkat tanpa internet. Jawab singkat dan jelas.' }];
 
+  // ---- Chat offline disimpen LOKAL di HP (localStorage), terpisah total dari
+  // riwayat obrolan online/premium yang ada di Supabase. Prinsipnya: mode
+  // offline harus tetap kepake walau HP beneran tanpa internet sama sekali. ----
+  const OFFLINE_CHAT_KEY = 'zo_offline_chat_messages';
+  let offlineChatMessages = [];
+  try { offlineChatMessages = JSON.parse(localStorage.getItem(OFFLINE_CHAT_KEY) || '[]'); } catch (e) { offlineChatMessages = []; }
+
+  function persistOfflineChat(){
+    if (offlineChatMessages.length > 200) offlineChatMessages = offlineChatMessages.slice(-200);
+    try { localStorage.setItem(OFFLINE_CHAT_KEY, JSON.stringify(offlineChatMessages)); } catch (e) {}
+  }
+
+  function saveOfflineChatMessage(entry){
+    offlineChatMessages.push(entry);
+    persistOfflineChat();
+  }
+
+  function renderOfflineChatView(){
+    messagesBox.innerHTML = '';
+    offlineChatMessages.forEach((m) => renderMessage(m.content, m.role, m));
+    updateChatEmptyState();
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  function renderOnlineChatView(){
+    messagesBox.innerHTML = '';
+    history.forEach((m) => { if (m.role !== 'system') renderMessage(m.content, m.role, m); });
+    updateChatEmptyState();
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  function clearOfflineChat(){
+    offlineChatMessages = [];
+    try { localStorage.removeItem(OFFLINE_CHAT_KEY); } catch (e) {}
+    offlineHistory = [offlineHistory[0]]; // pertahankan system prompt aja
+    renderOfflineChatView();
+  }
+
+  // ---- Manajemen model ala PocketPal: Unduh / Lepas (unload dari RAM, file
+  // tetap tersimpen) / Hapus (bersihin beneran dari penyimpanan HP). ----
+  const OFFLINE_MODEL_FLAG_KEY = 'zo_offline_model_downloaded';
+
+  function updateModelSheetUI(){
+    const dot = document.getElementById('modelStatusDot');
+    const statusText = document.getElementById('modelStatusText');
+    const downloadBtn = document.getElementById('modelDownloadBtn');
+    const releaseBtn = document.getElementById('modelReleaseBtn');
+    const deleteBtn = document.getElementById('modelDeleteBtn');
+    const downloaded = localStorage.getItem(OFFLINE_MODEL_FLAG_KEY) === '1';
+
+    dot.className = 'model-dot';
+    if (offlineLoading) {
+      dot.classList.add('loading');
+      statusText.textContent = t('modelDownloading');
+      downloadBtn.style.display = 'none';
+      releaseBtn.style.display = 'none';
+      deleteBtn.style.display = 'none';
+    } else if (downloaded) {
+      dot.classList.add('ready');
+      statusText.textContent = t('modelReady') + (offlineGenerator ? '' : ' · idle');
+      downloadBtn.style.display = 'none';
+      releaseBtn.style.display = '';
+      deleteBtn.style.display = '';
+    } else {
+      statusText.textContent = t('modelNotDownloaded');
+      downloadBtn.style.display = '';
+      releaseBtn.style.display = 'none';
+      deleteBtn.style.display = 'none';
+    }
+  }
+
+  document.getElementById('modelDownloadBtn').addEventListener('click', () => preloadOfflineModel());
+
+  document.getElementById('modelReleaseBtn').addEventListener('click', () => {
+    // "Lepas" cuma ngosongin dari memori (RAM) -- file model yang udah kedownload
+    // TETAP ada di penyimpanan HP, jadi kalau dipake lagi gak perlu download ulang.
+    offlineGenerator = null;
+    updateModelSheetUI();
+    addNote('Model dilepas dari memori. File model tetap tersimpan, jadi gak perlu download ulang pas dipakai lagi.');
+  });
+
+  document.getElementById('modelDeleteBtn').addEventListener('click', async () => {
+    const confirmed = await showConfirm('Hapus model AI offline?', 'File model (~400MB) bakal dihapus dari penyimpanan HP. Kalau mau pakai lagi, perlu download ulang.');
+    if (!confirmed) return;
+    offlineGenerator = null;
+    localStorage.removeItem(OFFLINE_MODEL_FLAG_KEY);
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k.includes('model') || k.includes('transformers')).map((k) => caches.delete(k)));
+    } catch (e) { console.error('Gagal hapus cache model:', e); }
+    updateModelSheetUI();
+    addNote('Model AI offline dihapus dari penyimpanan HP.');
+  });
+
   async function preloadOfflineModel(){
     if (offlineGenerator || offlineLoading) return;
     offlineLoading = true;
+    updateModelSheetUI();
     chatInput.disabled = true;
     chatInput.placeholder = 'Menunggu model AI siap...';
     sendBtn.disabled = true;
@@ -2232,6 +2499,7 @@
       ]);
       if (workerErrCaught) throw new Error('worker-error');
       progDiv.remove();
+      localStorage.setItem(OFFLINE_MODEL_FLAG_KEY, '1');
       addNote(hasWebGPU ? 'Model AI on-device siap (dipercepat WebGPU).' : 'Model AI on-device siap (mode CPU, mungkin lebih lambat).');
     } catch (e) {
       const errObj = workerErrCaught || e;
@@ -2253,6 +2521,7 @@
       }
     }
     offlineLoading = false;
+    updateModelSheetUI();
   }
 
   async function sendToOfflineModel(userText){
