@@ -1641,10 +1641,19 @@
         modeBar.style.display = 'flex';
         pageTitle.textContent = t('newChat2');
         pageSub.textContent = 'ZO AI';
+        document.getElementById('newChatBtn').style.display = '';
+        // historyBtn/modelBtn baliknya diatur lagi sama setMode() sesuai mode
+        // chat yang lagi aktif (online/offline/premium).
+        setMode(currentMode);
       } else {
         modeBar.style.display = 'none';
         pageTitle.textContent = t('walletTitle');
         pageSub.textContent = t('nonCustodial');
+        // Tombol "Obrolan Baru", "Riwayat", "Model" cuma relevan buat halaman
+        // Chat -- sembunyiin total pas lagi di halaman Wallet.
+        document.getElementById('newChatBtn').style.display = 'none';
+        document.getElementById('historyBtn').style.display = 'none';
+        document.getElementById('modelBtn').style.display = 'none';
       }
     });
   });
