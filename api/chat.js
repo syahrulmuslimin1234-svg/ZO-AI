@@ -201,6 +201,25 @@ const MARKET_DATA_TOOL = {
   },
 };
 
+// Sama kayak MARKET_DATA_TOOL, cuma formatnya disesuaikan sama function-calling
+// Gemini (parameters bukan input_schema, type pake huruf besar OBJECT/STRING).
+const GEMINI_MARKET_TOOL = {
+  name: "get_market_data",
+  description: MARKET_DATA_TOOL.description,
+  parameters: {
+    type: "OBJECT",
+    properties: {
+      symbol: { type: "STRING", description: MARKET_DATA_TOOL.input_schema.properties.symbol.description },
+      asset_type: {
+        type: "STRING",
+        enum: ["crypto", "stocks"],
+        description: MARKET_DATA_TOOL.input_schema.properties.asset_type.description,
+      },
+    },
+    required: ["symbol", "asset_type"],
+  },
+};
+
 // ---- Tool baru #1: CoinGecko -- cakupan token jauh lebih luas dari Polygon,
 // cocok buat token kecil/long-tail. Gratis, gak perlu API key. ----
 const COIN_INFO_TOOL = {
