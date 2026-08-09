@@ -177,7 +177,8 @@ const SYSTEM_PROMPT =
   "- 'get_market_data': harga terkini + berita & sentiment dari Polygon/Massive, buat aset besar (crypto utama & saham).\n" +
   "- 'get_coin_info': harga, market cap, dan perubahan 24 jam dari CoinGecko, buat cakupan token yang lebih luas termasuk token kecil/long-tail yang nggak ada di Polygon.\n" +
   "- 'get_fear_greed_index': indeks sentimen pasar kripto keseluruhan (Fear & Greed Index), 0-100.\n" +
-  "- 'get_wallet_activity': aktivitas on-chain (transaksi terbaru + saldo) sebuah alamat wallet Ethereum, kalau user kasih alamat wallet spesifik atau nanya soal 'whale'/transaksi besar pada alamat tertentu.";
+  "- 'get_wallet_activity': aktivitas on-chain (transaksi terbaru + saldo) sebuah alamat wallet Ethereum, kalau user kasih alamat wallet spesifik atau nanya soal 'whale'/transaksi besar pada alamat tertentu.\n" +
+  "- 'get_etf_flow_data': data arus dana (inflow/outflow) harian ETF spot Bitcoin/Ethereum/Solana dari Farside Investors, buat nanya soal sentimen institusi/uang institusional masuk-keluar.";
 
 const MARKET_DATA_TOOL = {
   name: "get_market_data",
@@ -316,6 +317,41 @@ const GEMINI_WALLET_ACTIVITY_TOOL = {
   },
 };
 
+// ---- Tool baru #5: Farside Investors -- data arus dana (inflow/outflow)
+// ETF spot Bitcoin/Ethereum/Solana. Gratis, gak ada API key -- scrape
+// langsung dari tabel di situsnya. ----
+const ETF_FLOW_TOOL = {
+  name: "get_etf_flow_data",
+  description:
+    "Ambil data arus dana harian (inflow/outflow) ETF spot dari Farside Investors, dalam satuan US$ juta. Pakai ini kalau user nanya soal 'ETF flow', 'inflow/outflow ETF Bitcoin', institutional money masuk/keluar, atau sentimen institusi lewat ETF.",
+  input_schema: {
+    type: "object",
+    properties: {
+      asset: {
+        type: "string",
+        enum: ["bitcoin", "ethereum", "solana"],
+        description: "Aset yang ETF flow-nya mau dicek: 'bitcoin', 'ethereum', atau 'solana'.",
+      },
+    },
+    required: ["asset"],
+  },
+};
+const GEMINI_ETF_FLOW_TOOL = {
+  name: "get_etf_flow_data",
+  description: ETF_FLOW_TOOL.description,
+  parameters: {
+    type: "OBJECT",
+    properties: {
+      asset: {
+        type: "STRING",
+        enum: ["bitcoin", "ethereum", "solana"],
+        description: ETF_FLOW_TOOL.input_schema.properties.asset.description,
+      },
+    },
+    required: ["asset"],
+  },
+};
+
 // Dispatcher tunggal dipakai kedua loop (Claude & Gemini) biar gak duplikat
 // logika switch-nya di 2 tempat.
 async function runTool(name, args) {
@@ -330,6 +366,8 @@ async function runTool(name, args) {
       return await getFearGreedIndex();
     case "get_wallet_activity":
       return await getWalletActivity(args.address);
+    case "get_etf_flow_data":
+      return await getEtfFlowData(args.asset);
     default:
       return "Tool tidak dikenali.";
   }
@@ -341,8 +379,8 @@ async function runTool(name, args) {
 // tier gratis lagi. Fungsi & definisinya dibiarin ada di file ini (siap
 // dipakai lagi kapan aja kalau nanti langganan salah satu provider itu),
 // tapi gak diaktifin dulu biar AI gak nyoba manggil tool yang pasti gagal.
-const ALL_TOOLS_CLAUDE = [MARKET_DATA_TOOL, COIN_INFO_TOOL, FEAR_GREED_TOOL, WALLET_ACTIVITY_TOOL];
-const ALL_TOOLS_GEMINI = [GEMINI_MARKET_TOOL, GEMINI_COIN_INFO_TOOL, GEMINI_FEAR_GREED_TOOL, GEMINI_WALLET_ACTIVITY_TOOL];
+const ALL_TOOLS_CLAUDE = [MARKET_DATA_TOOL, COIN_INFO_TOOL, FEAR_GREED_TOOL, WALLET_ACTIVITY_TOOL, ETF_FLOW_TOOL];
+const ALL_TOOLS_GEMINI = [GEMINI_MARKET_TOOL, GEMINI_COIN_INFO_TOOL, GEMINI_FEAR_GREED_TOOL, GEMINI_WALLET_ACTIVITY_TOOL, GEMINI_ETF_FLOW_TOOL];
 
 // Loop function-calling buat Gemini: mirip callClaudeWithTools, tapi format
 // request/response beda (functionCall/functionResponse, bukan tool_use/tool_result).
@@ -713,5 +751,65 @@ async function getWalletActivity(address) {
   } catch (e) {
     console.error("Etherscan error:", e);
     return `Gagal mengambil data wallet: ${e.message}`;
+  }
+}
+
+// ---- Farside Investors: data arus dana (inflow/outflow) ETF spot Bitcoin,
+// Ethereum, dan Solana. Farside GAK punya API resmi/gratis-berbayar apa pun,
+// jadi ini scrape langsung dari tabel HTML di situsnya (gratis selamanya,
+// nggak ada limit panggilan atau biaya). Konsekuensinya: kalau Farside
+// ngerombak total struktur halaman mereka, fungsi ini bisa berhenti bekerja
+// dan perlu diperbaiki ulang -- risiko yang wajar buat sumber gratis tanpa API resmi. ----
+async function getEtfFlowData(asset) {
+  const paths = { bitcoin: "btc", ethereum: "eth", solana: "sol" };
+  const key = (asset || "bitcoin").toLowerCase();
+  const path = paths[key] || "btc";
+  const cacheKey = `etfflow:${path}`;
+  const cached = await redisGet(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(`https://farside.co.uk/${path}/`, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ZOAI/1.0; +https://zo-ai.vercel.app)" },
+    });
+    const html = await res.text();
+
+    // Ambil blok <table>...</table> yang isinya kelihatan kayak data beneran
+    // (mengandung setidaknya satu baris tanggal format "07 Aug 2026").
+    const tableMatches = html.match(/<table[\s\S]*?<\/table>/gi) || [];
+    const table = tableMatches.find((t) => /\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/.test(t));
+    if (!table) return `Data ETF flow tidak ditemukan -- kemungkinan struktur halaman Farside berubah.`;
+
+    const rows = table.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+    const parsedRows = rows
+      .map((row) => {
+        const cells = row.match(/<t[dh][\s\S]*?<\/t[dh]>/gi) || [];
+        return cells.map((c) =>
+          c
+            .replace(/<[^>]+>/g, " ")
+            .replace(/&nbsp;/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+        );
+      })
+      .filter((r) => r.length > 1 && r.some((c) => c));
+
+    const dateRows = parsedRows.filter((r) => /^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$/.test(r[0]));
+    const totalRow = parsedRows.find((r) => /^total$/i.test(r[0]));
+    if (dateRows.length === 0) return `Gagal membaca tabel ETF flow dari Farside (format tabel mungkin berubah).`;
+
+    const assetLabel = { bitcoin: "Bitcoin", ethereum: "Ethereum", solana: "Solana" }[key] || "Bitcoin";
+    let summary = `ETF FLOW harian (US$ juta) -- ${assetLabel} spot ETF, sumber: Farside Investors (farside.co.uk/${path}/):\n\n`;
+    dateRows.slice(-7).forEach((r) => {
+      summary += `${r[0]}: ${r[r.length - 1]} juta\n`;
+    });
+    if (totalRow) summary += `\nTotal kumulatif sejak ETF ini pertama diluncurkan: ${totalRow[totalRow.length - 1]} juta`;
+    summary += `\n\n(Angka negatif dalam kurung/tanda minus = net outflow/dana keluar. Data buat semua fund digabung jadi satu kolom Total per hari -- kalau butuh rincian per fund seperti IBIT/FBTC/GBTC, arahkan user cek langsung ke farside.co.uk/${path}/)`;
+
+    await redisSet(cacheKey, summary, 900); // 15 menit -- data ini update harian, gak perlu sering2 amat
+    return summary;
+  } catch (e) {
+    console.error("Farside ETF flow error:", e);
+    return `Gagal mengambil data ETF flow dari Farside: ${e.message}`;
   }
 }
