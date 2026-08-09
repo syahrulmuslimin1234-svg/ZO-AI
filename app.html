@@ -71,7 +71,14 @@
   :root{ --ink:#141414; --muted:#8a8a8a; --line:#ececec; --red:#e3242b; --bg-dark:#161616; --bg:#faf9f7; --surface:#ffffff; --surface2:#f2f2f2; --field-bg:#f5f5f5; --dark-card:#141414; }
   [data-theme="dark"]{ --ink:#f0f0f0; --muted:#9a9a9a; --line:#2a2a2a; --bg:#0f0f0f; --surface:#1c1c1c; --surface2:#262626; --field-bg:#262626; }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{font-family:'Inter',sans-serif; height:100vh; overflow:hidden; -webkit-tap-highlight-color:transparent;}
+  body{font-family:'Inter',sans-serif; height:100vh; overflow:hidden; -webkit-tap-highlight-color:transparent;
+    /* Matiin text-selection & long-press-menu bawaan Chrome secara global biar
+       berasa kayak app native (nggak ada popup "Terjemahkan/Salin/Bagikan" ala
+       browser pas nge-tap-lama UI). Kolom input & isi pesan chat di-whitelist
+       lagi di bawah, karena di situ select/copy teks emang perlu & wajar. */
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  .field, .wd-input, .wd-select, .email-input, .mem-input{
+    -webkit-user-select:text; user-select:text; -webkit-touch-callout:default;}
   .msg-ai, .msg-me, .h-title, .h-sub, .mode-opt, .sheet-row, .nav-item, .balance-card, .addr-card, .token-row, .conv-item{
     -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
   }
@@ -228,7 +235,7 @@
   .live-transcript{max-width:80%; text-align:center; font-size:15px; color:#fff; min-height:24px;}
   .live-close{position:absolute; top:24px; right:24px; background:#222; border:1px solid #333; color:#fff; border-radius:50%; width:40px; height:40px; font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
   .qr-box{display:flex; justify-content:center; background:#fff; padding:16px; border-radius:16px; margin:16px 0;}
-  .addr-full{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-family:monospace; font-size:12px; word-break:break-all; color:var(--ink); margin-bottom:14px;}
+  .addr-full{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-family:monospace; font-size:12px; word-break:break-all; color:var(--ink); margin-bottom:14px; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;}
   .wd-label{font-size:11.5px; color:var(--muted); font-weight:700; text-transform:uppercase; margin:14px 0 6px;}
   .wd-input, .wd-select{width:100%; background:var(--field-bg); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--ink);}
   .wd-select{display:flex; align-items:center; justify-content:space-between; cursor:pointer;}
