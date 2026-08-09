@@ -537,7 +537,8 @@ async function getMarketData(symbol, assetType) {
 
 // ---- CoinGecko: cakupan token jauh lebih luas dari Polygon. Gratis, gak
 // perlu API key sama sekali. Alur: cari coin id via /search, lalu ambil
-// detail harga/market cap via /coins/markets. ----
+// detail harga/market cap via /coins/markets. Kalau CoinGecko gagal/nggak
+// ketemu, otomatis coba CoinMarketCap sebagai cadangan (butuh API key). ----
 async function getCoinInfo(query) {
   const cacheKey = `coininfo:${query.toLowerCase()}`;
   const cached = await redisGet(cacheKey);
@@ -549,28 +550,72 @@ async function getCoinInfo(query) {
     );
     const searchData = await searchRes.json();
     const coin = searchData?.coins?.[0];
-    if (!coin) return `Koin "${query}" tidak ditemukan di CoinGecko.`;
 
-    const marketRes = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}&price_change_percentage=24h`
-    );
-    const marketData = await marketRes.json();
-    const m = marketData?.[0];
-    if (!m) return `Data harga untuk "${coin.name}" tidak tersedia saat ini.`;
+    if (coin) {
+      const marketRes = await fetch(
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}&price_change_percentage=24h`
+      );
+      const marketData = await marketRes.json();
+      const m = marketData?.[0];
 
-    const result =
-      `COIN: ${m.name} (${(m.symbol || "").toUpperCase()})\n` +
-      `Harga: $${m.current_price}\n` +
-      `Perubahan 24 jam: ${m.price_change_percentage_24h?.toFixed(2) ?? "?"}%\n` +
-      `Market cap: $${m.market_cap?.toLocaleString?.() ?? m.market_cap} (ranking #${m.market_cap_rank ?? "?"})\n` +
-      `Volume 24 jam: $${m.total_volume?.toLocaleString?.() ?? m.total_volume}\n` +
-      `All-time high: $${m.ath} (${m.ath_change_percentage?.toFixed(2) ?? "?"}% dari ATH)`;
-
-    await redisSet(cacheKey, result, 120);
-    return result;
+      if (m) {
+        const result =
+          `COIN: ${m.name} (${(m.symbol || "").toUpperCase()})\n` +
+          `Harga: $${m.current_price}\n` +
+          `Perubahan 24 jam: ${m.price_change_percentage_24h?.toFixed(2) ?? "?"}%\n` +
+          `Market cap: $${m.market_cap?.toLocaleString?.() ?? m.market_cap} (ranking #${m.market_cap_rank ?? "?"})\n` +
+          `Volume 24 jam: $${m.total_volume?.toLocaleString?.() ?? m.total_volume}\n` +
+          `All-time high: $${m.ath} (${m.ath_change_percentage?.toFixed(2) ?? "?"}% dari ATH)\n` +
+          `[Sumber: CoinGecko]`;
+        await redisSet(cacheKey, result, 120);
+        return result;
+      }
+    }
   } catch (e) {
-    console.error("CoinGecko error:", e);
-    return `Gagal mengambil data dari CoinGecko: ${e.message}`;
+    console.error("CoinGecko error, coba fallback ke CoinMarketCap:", e);
+  }
+
+  // CoinGecko gagal atau koinnya nggak ketemu di sana -> coba CoinMarketCap.
+  const cmcResult = await getCoinInfoFromCMC(query);
+  if (cmcResult) {
+    await redisSet(cacheKey, cmcResult, 120);
+    return cmcResult;
+  }
+
+  return `Koin "${query}" tidak ditemukan di CoinGecko maupun CoinMarketCap.`;
+}
+
+// ---- CoinMarketCap: dipakai sebagai CADANGAN kalau CoinGecko gagal/nggak
+// nemu koinnya. Butuh COINMARKETCAP_API_KEY (gratis, daftar di
+// coinmarketcap.com/api -- paket Basic: 10,000 panggilan/bulan, data
+// real-time doang tanpa historis). ----
+async function getCoinInfoFromCMC(query) {
+  const apiKey = process.env.COINMARKETCAP_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const symbol = query.trim().toUpperCase();
+    const res = await fetch(
+      `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(symbol)}`,
+      { headers: { "X-CMC_PRO_API_KEY": apiKey, Accept: "application/json" } }
+    );
+    const data = await res.json();
+    const entry = data?.data?.[symbol];
+    const coin = Array.isArray(entry) ? entry[0] : entry;
+    if (!coin || !coin.quote?.USD) return null;
+
+    const q = coin.quote.USD;
+    return (
+      `COIN: ${coin.name} (${coin.symbol})\n` +
+      `Harga: $${q.price?.toFixed?.(6) ?? q.price}\n` +
+      `Perubahan 24 jam: ${q.percent_change_24h?.toFixed(2) ?? "?"}%\n` +
+      `Market cap: $${q.market_cap?.toLocaleString?.() ?? q.market_cap} (ranking #${coin.cmc_rank ?? "?"})\n` +
+      `Volume 24 jam: $${q.volume_24h?.toLocaleString?.() ?? q.volume_24h}\n` +
+      `[Sumber: CoinMarketCap]`
+    );
+  } catch (e) {
+    console.error("CoinMarketCap error:", e);
+    return null;
   }
 }
 
