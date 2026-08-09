@@ -176,7 +176,6 @@ const SYSTEM_PROMPT =
   "Kamu punya beberapa tool buat ambil data pasar real-time, jangan pernah menebak dari ingatan kamu untuk data yang bisa berubah setiap hari:\n" +
   "- 'get_market_data': harga terkini + berita & sentiment dari Polygon/Massive, buat aset besar (crypto utama & saham).\n" +
   "- 'get_coin_info': harga, market cap, dan perubahan 24 jam dari CoinGecko, buat cakupan token yang lebih luas termasuk token kecil/long-tail yang nggak ada di Polygon.\n" +
-  "- 'get_crypto_news': berita kripto terbaru dari CryptoPanic, bisa difilter per koin.\n" +
   "- 'get_fear_greed_index': indeks sentimen pasar kripto keseluruhan (Fear & Greed Index), 0-100.\n" +
   "- 'get_wallet_activity': aktivitas on-chain (transaksi terbaru + saldo) sebuah alamat wallet Ethereum, kalau user kasih alamat wallet spesifik atau nanya soal 'whale'/transaksi besar pada alamat tertentu.";
 
@@ -265,7 +264,11 @@ const FEAR_GREED_TOOL = {
 const GEMINI_FEAR_GREED_TOOL = {
   name: "get_fear_greed_index",
   description: FEAR_GREED_TOOL.description,
-  parameters: { type: "OBJECT", properties: {}, required: [] },
+  // PENTING: Gemini nolak seluruh request (400 INVALID_ARGUMENT) kalau ada
+  // function declaration dengan "parameters.properties" kosong buat tipe
+  // OBJECT. Buat function tanpa parameter, field "parameters"-nya harus
+  // dihilangkan total (bukan diisi objek kosong) -- ini yang kemarin bikin
+  // SEMUA chat di tier Gratis Online (Gemini) gagal total ("Koneksi bermasalah").
 };
 
 // ---- Tool baru #4: Etherscan -- aktivitas on-chain wallet Ethereum tertentu
@@ -313,8 +316,14 @@ async function runTool(name, args) {
   }
 }
 
-const ALL_TOOLS_CLAUDE = [MARKET_DATA_TOOL, COIN_INFO_TOOL, CRYPTO_NEWS_TOOL, FEAR_GREED_TOOL, WALLET_ACTIVITY_TOOL];
-const ALL_TOOLS_GEMINI = [GEMINI_MARKET_TOOL, GEMINI_COIN_INFO_TOOL, GEMINI_CRYPTO_NEWS_TOOL, GEMINI_FEAR_GREED_TOOL, GEMINI_WALLET_ACTIVITY_TOOL];
+// CRYPTO_NEWS_TOOL sengaja TIDAK dimasukin ke daftar tool aktif -- CryptoPanic
+// (dan alternatif sejenis: CryptoCompare/CoinDesk Data, endpoint berita
+// CoinGecko) semuanya udah jadi berbayar penuh per pertengahan 2026, gak ada
+// tier gratis lagi. Fungsi & definisinya dibiarin ada di file ini (siap
+// dipakai lagi kapan aja kalau nanti langganan salah satu provider itu),
+// tapi gak diaktifin dulu biar AI gak nyoba manggil tool yang pasti gagal.
+const ALL_TOOLS_CLAUDE = [MARKET_DATA_TOOL, COIN_INFO_TOOL, FEAR_GREED_TOOL, WALLET_ACTIVITY_TOOL];
+const ALL_TOOLS_GEMINI = [GEMINI_MARKET_TOOL, GEMINI_COIN_INFO_TOOL, GEMINI_FEAR_GREED_TOOL, GEMINI_WALLET_ACTIVITY_TOOL];
 
 // Loop function-calling buat Gemini: mirip callClaudeWithTools, tapi format
 // request/response beda (functionCall/functionResponse, bukan tool_use/tool_result).
@@ -612,9 +621,10 @@ async function getWalletActivity(address) {
   if (cached) return cached;
 
   try {
+    const base = "https://api.etherscan.io/v2/api?chainid=1"; // chainid=1 = Ethereum mainnet (Etherscan V2 API, satu key buat 50+ chain)
     const [balRes, txRes] = await Promise.all([
-      fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${apiKey}`),
-      fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${address}&sort=desc&page=1&offset=5&apikey=${apiKey}`),
+      fetch(`${base}&module=account&action=balance&address=${address}&tag=latest&apikey=${apiKey}`),
+      fetch(`${base}&module=account&action=txlist&address=${address}&sort=desc&page=1&offset=5&apikey=${apiKey}`),
     ]);
     const balData = await balRes.json();
     const txData = await txRes.json();
