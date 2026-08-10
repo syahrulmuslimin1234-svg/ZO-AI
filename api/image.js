@@ -104,30 +104,37 @@ export default async function handler(req, res) {
       });
     }
 
-    const response = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt: prompt.trim(),
-        size: "1024x1024",
-        n: 1,
-      }),
-    });
+    // Pakai Gemini (gemini-2.5-flash-image, alias "Nano Banana") -- jauh lebih
+    // murah dari gpt-image-1 (~$0.039/gambar vs OpenAI) dan numpang API key
+    // GEMINI_API_KEY yang sama kayak dipakai buat chat tier gratis, jadi gak
+    // perlu billing/API key terpisah lagi.
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt.trim() }] }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        }),
+      }
+    );
 
     const data = await response.json();
     if (data.error) {
-      console.error("OpenAI image error:", data.error.message);
+      console.error("Gemini image error:", data.error.message);
       return res.status(503).json({
         error: "Image generation is busy or our server quota is exhausted. Please try again in a few minutes.",
       });
     }
 
-    const base64 = data.data?.[0]?.b64_json;
+    // Respons Gemini isinya campuran part teks & gambar -- cari part yang
+    // punya inlineData (gambar base64-nya di situ), abaikan part teks kalau ada.
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find((p) => p.inlineData?.data);
+    const base64 = imagePart?.inlineData?.data;
     if (!base64) {
+      console.error("Gemini image: tidak ada gambar di respons.", JSON.stringify(data).slice(0, 500));
       return res.status(500).json({ error: "No image was returned. Please try again." });
     }
 
