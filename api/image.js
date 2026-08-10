@@ -104,12 +104,13 @@ export default async function handler(req, res) {
       });
     }
 
-    // Pakai Gemini (gemini-2.5-flash-image, alias "Nano Banana") -- jauh lebih
-    // murah dari gpt-image-1 (~$0.039/gambar vs OpenAI) dan numpang API key
-    // GEMINI_API_KEY yang sama kayak dipakai buat chat tier gratis, jadi gak
-    // perlu billing/API key terpisah lagi.
+    // Pakai Gemini (gemini-3.1-flash-lite-image, alias "Nano Banana 2 Lite")
+    // -- model terbaru yang direkomendasikan resmi Google buat gantiin versi
+    // legacy gemini-2.5-flash-image: lebih murah (~$0.034/gambar), lebih
+    // cepat (~4 detik), dan numpang API key GEMINI_API_KEY yang sama kayak
+    // dipakai buat chat tier gratis, jadi gak perlu billing/API key terpisah.
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
