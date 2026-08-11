@@ -2278,7 +2278,7 @@
         label.textContent = modeLabels[currentMode] || 'ZO AI';
         div.appendChild(label);
         const img = document.createElement('img');
-        img.src = 'data:image/png;base64,' + data.image;
+        img.src = 'data:' + (data.mimeType || 'image/jpeg') + ';base64,' + data.image;
         img.style.cssText = 'max-width:100%; border-radius:14px; margin-top:4px; display:block;';
         div.appendChild(img);
         messagesBox.appendChild(div);
