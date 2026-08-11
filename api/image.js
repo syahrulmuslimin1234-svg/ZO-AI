@@ -104,43 +104,34 @@ export default async function handler(req, res) {
       });
     }
 
-    // Pakai Gemini (gemini-3.1-flash-lite-image, alias "Nano Banana 2 Lite")
-    // -- model terbaru yang direkomendasikan resmi Google buat gantiin versi
-    // legacy gemini-2.5-flash-image: lebih murah (~$0.034/gambar), lebih
-    // cepat (~4 detik), dan numpang API key GEMINI_API_KEY yang sama kayak
-    // dipakai buat chat tier gratis, jadi gak perlu billing/API key terpisah.
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt.trim() }] }],
-          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-        }),
-      }
-    );
+    // Pakai Pollinations.ai (model Flux) -- gratis TANPA BATAS dan TANPA API
+    // KEY sama sekali, tinggal request satu URL. Nggak numpang kuota Gemini
+    // ataupun perlu billing apa pun. Endpoint klasiknya balikin bytes gambar
+    // langsung (bukan JSON), jadi kita fetch terus encode ke base64 sendiri.
+    const encodedPrompt = encodeURIComponent(prompt.trim());
+    const seed = Math.floor(Math.random() * 1e9); // biar tiap generate hasilnya beda walau prompt sama
+    const pollinationsUrl =
+      `https://image.pollinations.ai/prompt/${encodedPrompt}` +
+      `?width=1024&height=1024&model=flux&seed=${seed}&nologo=true`;
 
-    const data = await response.json();
-    if (data.error) {
-      console.error("Gemini image error:", data.error.message);
+    const response = await fetch(pollinationsUrl);
+    if (!response.ok) {
+      console.error("Pollinations image error:", response.status, response.statusText);
       return res.status(503).json({
         error: "Image generation is busy or our server quota is exhausted. Please try again in a few minutes.",
       });
     }
 
-    // Respons Gemini isinya campuran part teks & gambar -- cari part yang
-    // punya inlineData (gambar base64-nya di situ), abaikan part teks kalau ada.
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find((p) => p.inlineData?.data);
-    const base64 = imagePart?.inlineData?.data;
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const mimeType = response.headers.get("content-type") || "image/jpeg";
     if (!base64) {
-      console.error("Gemini image: tidak ada gambar di respons.", JSON.stringify(data).slice(0, 500));
+      console.error("Pollinations image: respons kosong.");
       return res.status(500).json({ error: "No image was returned. Please try again." });
     }
 
     const remaining = Math.max(IMAGE_LIMIT - new_count, 0);
-    return res.status(200).json({ image: base64, remaining, limit: IMAGE_LIMIT });
+    return res.status(200).json({ image: base64, mimeType, remaining, limit: IMAGE_LIMIT });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Something went wrong on our server." });
