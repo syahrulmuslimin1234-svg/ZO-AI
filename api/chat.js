@@ -174,16 +174,18 @@ export default async function handler(req, res) {
 const SYSTEM_PROMPT =
   "Kamu adalah ZO AI, asisten yang fokus membantu analisis kripto, berita ekonomi, dan strategi trading. Berikan info yang akurat, berimbang, dan berdasarkan data terkini soal market crypto dan makroekonomi. Jangan berikan saran finansial personal (bukan financial advisor), dan selalu ingatkan bahwa keputusan investasi tetap di tangan user. Kamu juga tetap bisa bantu topik umum lain di luar crypto kalau user tanya. " +
   "Kamu punya beberapa tool buat ambil data pasar real-time, jangan pernah menebak dari ingatan kamu untuk data yang bisa berubah setiap hari:\n" +
-  "- 'get_market_data': harga terkini + berita & sentiment dari Polygon/Massive, buat aset besar (crypto utama & saham).\n" +
-  "- 'get_coin_info': harga, market cap, dan perubahan 24 jam dari CoinGecko, buat cakupan token yang lebih luas termasuk token kecil/long-tail yang nggak ada di Polygon.\n" +
+  "- 'get_market_data': harga terkini + berita & sentiment untuk aset besar (crypto utama & saham).\n" +
+  "- 'get_coin_info': harga, market cap, dan perubahan 24 jam, cakupan token yang lebih luas termasuk token kecil/long-tail.\n" +
   "- 'get_fear_greed_index': indeks sentimen pasar kripto keseluruhan (Fear & Greed Index), 0-100.\n" +
   "- 'get_wallet_activity': aktivitas on-chain (transaksi terbaru + saldo) sebuah alamat wallet Ethereum, kalau user kasih alamat wallet spesifik atau nanya soal 'whale'/transaksi besar pada alamat tertentu.\n" +
-  "- 'get_etf_flow_data': data arus dana (inflow/outflow) harian ETF spot Bitcoin/Ethereum/Solana dari Farside Investors, buat nanya soal sentimen institusi/uang institusional masuk-keluar.";
+  "- 'get_etf_flow_data': data arus dana (inflow/outflow) harian ETF spot Bitcoin/Ethereum/Solana, buat nanya soal sentimen institusi/uang institusional masuk-keluar.\n\n" +
+  "PENTING: kalau user nanya 'data ini dari mana', 'sumbernya apa', atau semacamnya, JANGAN sebutin nama penyedia data/API/vendor pihak ketiga spesifik apa pun (jangan sebut nama provider dalam bentuk apa pun). Cukup jelasin secara umum bahwa datanya diambil secara real-time dari sistem/tool internal ZO AI yang terhubung ke sumber data pasar terpercaya, tanpa merinci nama layanannya.";
+
 
 const MARKET_DATA_TOOL = {
   name: "get_market_data",
   description:
-    "Ambil harga terkini (atau harga penutupan terakhir) dan berita terbaru beserta sentiment analysis (positif/negatif/netral) untuk sebuah aset crypto atau saham dari Polygon/Massive API.",
+    "Ambil harga terkini (atau harga penutupan terakhir) dan berita terbaru beserta sentiment analysis (positif/negatif/netral) untuk sebuah aset crypto atau saham.",
   input_schema: {
     type: "object",
     properties: {
@@ -226,7 +228,7 @@ const GEMINI_MARKET_TOOL = {
 const COIN_INFO_TOOL = {
   name: "get_coin_info",
   description:
-    "Cari harga, market cap, ranking, dan perubahan 24 jam sebuah cryptocurrency dari CoinGecko. Cakupannya jauh lebih luas dari Polygon (17,000+ koin termasuk token kecil/long-tail), tapi TIDAK menyediakan berita/sentiment -- pakai get_market_data dulu untuk koin besar (BTC, ETH, dll), pakai ini kalau koinnya nggak ketemu di sana atau untuk token yang lebih kecil.",
+    "Cari harga, market cap, ranking, dan perubahan 24 jam sebuah cryptocurrency. Cakupannya jauh lebih luas dari get_market_data (17,000+ koin termasuk token kecil/long-tail), tapi TIDAK menyediakan berita/sentiment -- pakai get_market_data dulu untuk koin besar (BTC, ETH, dll), pakai ini kalau koinnya nggak ketemu di sana atau untuk token yang lebih kecil.",
   input_schema: {
     type: "object",
     properties: {
@@ -298,7 +300,7 @@ const GEMINI_FEAR_GREED_TOOL = {
 const WALLET_ACTIVITY_TOOL = {
   name: "get_wallet_activity",
   description:
-    "Ambil saldo ETH dan daftar transaksi terbaru sebuah alamat wallet Ethereum tertentu dari Etherscan. Pakai ini kalau user kasih alamat wallet spesifik (0x...) dan nanya soal aktivitas/transaksinya. Bukan untuk mendeteksi whale transaction di seluruh jaringan secara otomatis.",
+    "Ambil saldo ETH dan daftar transaksi terbaru sebuah alamat wallet Ethereum tertentu. Pakai ini kalau user kasih alamat wallet spesifik (0x...) dan nanya soal aktivitas/transaksinya. Bukan untuk mendeteksi whale transaction di seluruh jaringan secara otomatis.",
   input_schema: {
     type: "object",
     properties: {
@@ -323,7 +325,7 @@ const GEMINI_WALLET_ACTIVITY_TOOL = {
 const ETF_FLOW_TOOL = {
   name: "get_etf_flow_data",
   description:
-    "Ambil data arus dana harian (inflow/outflow) ETF spot dari Farside Investors, dalam satuan US$ juta. Pakai ini kalau user nanya soal 'ETF flow', 'inflow/outflow ETF Bitcoin', institutional money masuk/keluar, atau sentimen institusi lewat ETF.",
+    "Ambil data arus dana harian (inflow/outflow) ETF spot, dalam satuan US$ juta. Pakai ini kalau user nanya soal 'ETF flow', 'inflow/outflow ETF Bitcoin', institutional money masuk/keluar, atau sentimen institusi lewat ETF.",
   input_schema: {
     type: "object",
     properties: {
@@ -603,8 +605,7 @@ async function getCoinInfo(query) {
           `Perubahan 24 jam: ${m.price_change_percentage_24h?.toFixed(2) ?? "?"}%\n` +
           `Market cap: $${m.market_cap?.toLocaleString?.() ?? m.market_cap} (ranking #${m.market_cap_rank ?? "?"})\n` +
           `Volume 24 jam: $${m.total_volume?.toLocaleString?.() ?? m.total_volume}\n` +
-          `All-time high: $${m.ath} (${m.ath_change_percentage?.toFixed(2) ?? "?"}% dari ATH)\n` +
-          `[Sumber: CoinGecko]`;
+          `All-time high: $${m.ath} (${m.ath_change_percentage?.toFixed(2) ?? "?"}% dari ATH)`;
         await redisSet(cacheKey, result, 120);
         return result;
       }
@@ -648,8 +649,7 @@ async function getCoinInfoFromCMC(query) {
       `Harga: $${q.price?.toFixed?.(6) ?? q.price}\n` +
       `Perubahan 24 jam: ${q.percent_change_24h?.toFixed(2) ?? "?"}%\n` +
       `Market cap: $${q.market_cap?.toLocaleString?.() ?? q.market_cap} (ranking #${coin.cmc_rank ?? "?"})\n` +
-      `Volume 24 jam: $${q.volume_24h?.toLocaleString?.() ?? q.volume_24h}\n` +
-      `[Sumber: CoinMarketCap]`
+      `Volume 24 jam: $${q.volume_24h?.toLocaleString?.() ?? q.volume_24h}`
     );
   } catch (e) {
     console.error("CoinMarketCap error:", e);
@@ -799,12 +799,12 @@ async function getEtfFlowData(asset) {
     if (dateRows.length === 0) return `Gagal membaca tabel ETF flow dari Farside (format tabel mungkin berubah).`;
 
     const assetLabel = { bitcoin: "Bitcoin", ethereum: "Ethereum", solana: "Solana" }[key] || "Bitcoin";
-    let summary = `ETF FLOW harian (US$ juta) -- ${assetLabel} spot ETF, sumber: Farside Investors (farside.co.uk/${path}/):\n\n`;
+    let summary = `ETF FLOW harian (US$ juta) -- ${assetLabel} spot ETF:\n\n`;
     dateRows.slice(-7).forEach((r) => {
       summary += `${r[0]}: ${r[r.length - 1]} juta\n`;
     });
     if (totalRow) summary += `\nTotal kumulatif sejak ETF ini pertama diluncurkan: ${totalRow[totalRow.length - 1]} juta`;
-    summary += `\n\n(Angka negatif dalam kurung/tanda minus = net outflow/dana keluar. Data buat semua fund digabung jadi satu kolom Total per hari -- kalau butuh rincian per fund seperti IBIT/FBTC/GBTC, arahkan user cek langsung ke farside.co.uk/${path}/)`;
+    summary += `\n\n(Angka negatif dalam kurung/tanda minus = net outflow/dana keluar. Data buat semua fund digabung jadi satu kolom Total per hari.)`;
 
     await redisSet(cacheKey, summary, 900); // 15 menit -- data ini update harian, gak perlu sering2 amat
     return summary;
