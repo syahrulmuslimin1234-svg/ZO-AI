@@ -280,6 +280,12 @@
   .model-btn-danger{color:#e3242b; border-color:rgba(227,36,43,0.35);}
   .model-card-note{font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5;}
 
+  .gen-img{max-width:100%; border-radius:14px; margin-top:4px; display:block; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+  .gen-img-actions{display:flex; gap:6px; margin-top:8px;}
+  .gen-img-actions button{display:flex; align-items:center; gap:5px; background:var(--surface2); color:var(--ink); border:1px solid var(--line); border-radius:100px; padding:7px 13px; font-size:11.5px; font-weight:600; cursor:pointer;}
+  .gen-img-actions button:active{background:var(--field-bg);}
+  .gen-img-actions svg{flex-shrink:0;}
+
   .conv-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
   .conv-item.active{color:var(--red);}
   .conv-title{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:600;}
@@ -720,6 +726,9 @@
       modelDelete: 'Hapus',
       modelCancel: 'Batal',
       modelNote: 'Model lain (Gemma, Bonsai, LFM, dll) segera hadir. Untuk sekarang ZO AI Offline pakai Qwen3 0.6B.',
+      copyImg: 'Salin',
+      saveImg: 'Simpan',
+      shareImg: 'Bagikan',
       connecting: 'Menghubungkan...',
       connectionFailed: 'Koneksi gagal.',
       via: 'via',
@@ -796,6 +805,9 @@
       modelDelete: 'Delete',
       modelCancel: 'Cancel',
       modelNote: 'More models (Gemma, Bonsai, LFM, etc.) coming soon. For now ZO AI Offline uses Qwen3 0.6B.',
+      copyImg: 'Copy',
+      saveImg: 'Save',
+      shareImg: 'Share',
       connecting: 'Connecting...',
       connectionFailed: 'Connection failed.',
       via: 'via',
@@ -872,6 +884,9 @@
       modelDelete: 'Eliminar',
       modelCancel: 'Cancelar',
       modelNote: 'Más modelos (Gemma, Bonsai, LFM, etc.) próximamente. Por ahora ZO AI Offline usa Qwen3 0.6B.',
+      copyImg: 'Copiar',
+      saveImg: 'Guardar',
+      shareImg: 'Compartir',
       connecting: 'Conectando...',
       connectionFailed: 'Fallo de conexión.',
       via: 'vía',
@@ -948,6 +963,9 @@
       modelDelete: 'Excluir',
       modelCancel: 'Cancelar',
       modelNote: 'Mais modelos (Gemma, Bonsai, LFM, etc.) em breve. Por enquanto, o ZO AI Offline usa o Qwen3 0.6B.',
+      copyImg: 'Copiar',
+      saveImg: 'Salvar',
+      shareImg: 'Compartilhar',
       connecting: 'Conectando...',
       connectionFailed: 'Falha na conexão.',
       via: 'via',
@@ -1024,6 +1042,9 @@
       modelDelete: 'Supprimer',
       modelCancel: 'Annuler',
       modelNote: "D'autres modèles (Gemma, Bonsai, LFM, etc.) arrivent bientôt. Pour l'instant, ZO AI Offline utilise Qwen3 0.6B.",
+      copyImg: 'Copier',
+      saveImg: 'Enregistrer',
+      shareImg: 'Partager',
       connecting: 'Connexion en cours...',
       connectionFailed: 'Échec de la connexion.',
       via: 'via',
@@ -1100,6 +1121,9 @@
       modelDelete: 'Löschen',
       modelCancel: 'Abbrechen',
       modelNote: 'Weitere Modelle (Gemma, Bonsai, LFM usw.) folgen bald. Derzeit nutzt ZO AI Offline Qwen3 0.6B.',
+      copyImg: 'Kopieren',
+      saveImg: 'Speichern',
+      shareImg: 'Teilen',
       connecting: 'Verbinde...',
       connectionFailed: 'Verbindung fehlgeschlagen.',
       via: 'über',
@@ -1176,6 +1200,9 @@
       modelDelete: '削除',
       modelCancel: 'キャンセル',
       modelNote: '他のモデル(Gemma、Bonsai、LFMなど)は近日追加予定です。現在ZO AIオフラインはQwen3 0.6Bを使用しています。',
+      copyImg: 'コピー',
+      saveImg: '保存',
+      shareImg: '共有',
       connecting: '接続中...',
       connectionFailed: '接続に失敗しました。',
       via: '経由',
@@ -1252,6 +1279,9 @@
       modelDelete: '삭제',
       modelCancel: '취소',
       modelNote: '다른 모델(Gemma, Bonsai, LFM 등)은 곧 추가됩니다. 현재 ZO AI 오프라인은 Qwen3 0.6B를 사용합니다.',
+      copyImg: '복사',
+      saveImg: '저장',
+      shareImg: '공유',
       connecting: '연결 중...',
       connectionFailed: '연결 실패.',
       via: '경유',
@@ -1328,6 +1358,9 @@
       modelDelete: '删除',
       modelCancel: '取消',
       modelNote: '更多模型（Gemma、Bonsai、LFM 等）即将推出。目前 ZO AI 离线版使用 Qwen3 0.6B。',
+      copyImg: '复制',
+      saveImg: '保存',
+      shareImg: '分享',
       connecting: '连接中...',
       connectionFailed: '连接失败。',
       via: '通过',
@@ -1404,6 +1437,9 @@
       modelDelete: 'حذف',
       modelCancel: 'إلغاء',
       modelNote: 'نماذج أخرى (Gemma وBonsai وLFM وغيرها) ستتوفر قريبًا. حاليًا يستخدم وضع ZO AI غير المتصل نموذج Qwen3 0.6B.',
+      copyImg: 'نسخ',
+      saveImg: 'حفظ',
+      shareImg: 'مشاركة',
       connecting: 'جارٍ الاتصال...',
       connectionFailed: 'فشل الاتصال.',
       via: 'عبر',
@@ -1480,6 +1516,9 @@
       modelDelete: 'हटाएं',
       modelCancel: 'रद्द करें',
       modelNote: 'अन्य मॉडल (Gemma, Bonsai, LFM, आदि) जल्द आ रहे हैं। फ़िलहाल ZO AI ऑफ़लाइन Qwen3 0.6B इस्तेमाल करता है।',
+      copyImg: 'कॉपी',
+      saveImg: 'सेव करें',
+      shareImg: 'शेयर करें',
       connecting: 'कनेक्ट हो रहा है...',
       connectionFailed: 'कनेक्शन विफल।',
       via: 'के ज़रिए',
@@ -2271,19 +2310,7 @@
       if (data.error) {
         addNote(data.error);
       } else {
-        const div = document.createElement('div');
-        div.className = 'msg-ai';
-        const label = document.createElement('div');
-        label.className = 'label';
-        label.textContent = modeLabels[currentMode] || 'ZO AI';
-        div.appendChild(label);
-        const img = document.createElement('img');
-        img.src = 'data:' + (data.mimeType || 'image/jpeg') + ';base64,' + data.image;
-        img.style.cssText = 'max-width:100%; border-radius:14px; margin-top:4px; display:block;';
-        div.appendChild(img);
-        messagesBox.appendChild(div);
-        messagesBox.scrollTop = messagesBox.scrollHeight;
-        updateChatEmptyState();
+        renderGeneratedImage('data:' + (data.mimeType || 'image/jpeg') + ';base64,' + data.image);
         if (typeof data.remaining === 'number') quotaLine.textContent = data.remaining + ' gambar gratis tersisa hari ini';
       }
     } catch (e) {
@@ -2342,6 +2369,83 @@
     toast.style.left = rect.left + 'px';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 1200);
+  }
+
+  function showImgToast(anchorEl, text){
+    const toast = document.createElement('div');
+    toast.textContent = text;
+    toast.style.cssText = 'position:absolute; background:var(--dark-card); color:#fff; font-size:11px; padding:6px 12px; border-radius:100px; z-index:60; pointer-events:none;';
+    const rect = anchorEl.getBoundingClientRect();
+    toast.style.top = (rect.top - 30 + window.scrollY) + 'px';
+    toast.style.left = rect.left + 'px';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 1200);
+  }
+
+  // Render gambar hasil generate + tombol aksi custom (Salin/Simpan/Bagikan)
+  // ala ChatGPT, sekaligus matiin menu tap-lama bawaan Chrome ("Buka di tab
+  // baru/Telusuri dengan Google Lens/dll") yang bikin app kerasa kayak
+  // browser biasa, bukan app native.
+  function renderGeneratedImage(dataUrl){
+    const div = document.createElement('div');
+    div.className = 'msg-ai';
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = modeLabels[currentMode] || 'ZO AI';
+    div.appendChild(label);
+
+    const img = document.createElement('img');
+    img.className = 'gen-img';
+    img.src = dataUrl;
+    img.draggable = false;
+    img.addEventListener('contextmenu', (e) => e.preventDefault()); // matiin menu tap-lama bawaan browser
+    div.appendChild(img);
+
+    const actions = document.createElement('div');
+    actions.className = 'gen-img-actions';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ' + t('copyImg');
+    copyBtn.addEventListener('click', async () => {
+      try {
+        const blob = await (await fetch(dataUrl)).blob();
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        showImgToast(copyBtn, t('copied'));
+      } catch (e) {
+        showImgToast(copyBtn, 'Gagal menyalin gambar.');
+      }
+    });
+    actions.appendChild(copyBtn);
+
+    const saveBtn = document.createElement('button');
+    saveBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ' + t('saveImg');
+    saveBtn.addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'zo-ai-' + Date.now() + '.jpg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+    actions.appendChild(saveBtn);
+
+    if (navigator.share) {
+      const shareBtn = document.createElement('button');
+      shareBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg> ' + t('shareImg');
+      shareBtn.addEventListener('click', async () => {
+        try {
+          const blob = await (await fetch(dataUrl)).blob();
+          const file = new File([blob], 'zo-ai.jpg', { type: blob.type });
+          await navigator.share({ files: [file] });
+        } catch (e) {} // dibatalkan user atau gak didukung -- diemin aja
+      });
+      actions.appendChild(shareBtn);
+    }
+
+    div.appendChild(actions);
+    messagesBox.appendChild(div);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    updateChatEmptyState();
   }
 
   sendBtn.addEventListener('click', send);
