@@ -108,15 +108,33 @@ export default async function handler(req, res) {
     // KEY sama sekali, tinggal request satu URL. Nggak numpang kuota Gemini
     // ataupun perlu billing apa pun. Endpoint klasiknya balikin bytes gambar
     // langsung (bukan JSON), jadi kita fetch terus encode ke base64 sendiri.
+    //
+    // safe=true ngaktifin filter NSFW bawaan Pollinations (deteksi AI, bukan
+    // cuma daftar kata terlarang) -- PENTING buat kepatuhan kebijakan konten
+    // Google Play sebelum rilis, biar app nggak generate gambar yang bisa
+    // bikin app ditolak/di-suspend pas review.
     const encodedPrompt = encodeURIComponent(prompt.trim());
     const seed = Math.floor(Math.random() * 1e9); // biar tiap generate hasilnya beda walau prompt sama
     const pollinationsUrl =
       `https://image.pollinations.ai/prompt/${encodedPrompt}` +
-      `?width=1024&height=1024&model=flux&seed=${seed}&nologo=true`;
+      `?width=1024&height=1024&model=flux&seed=${seed}&nologo=true&safe=true`;
 
     const response = await fetch(pollinationsUrl);
     if (!response.ok) {
-      console.error("Pollinations image error:", response.status, response.statusText);
+      const bodyText = await response.text().catch(() => "");
+      console.error("Pollinations image error:", response.status, response.statusText, bodyText.slice(0, 300));
+
+      // Bedain pesan buat kasus "diblokir filter konten" vs error server biasa,
+      // biar user ngerti kenapa gagal dan gak nyoba berkali-kali sia-sia.
+      const looksLikeSafetyBlock =
+        response.status === 400 ||
+        /nsfw|unsafe|safety|inappropriate|blocked/i.test(bodyText);
+
+      if (looksLikeSafetyBlock) {
+        return res.status(400).json({
+          error: "Deskripsi gambar ini terdeteksi melanggar kebijakan konten (misalnya konten dewasa/kekerasan). Coba ubah deskripsinya ya.",
+        });
+      }
       return res.status(503).json({
         error: "Image generation is busy or our server quota is exhausted. Please try again in a few minutes.",
       });
