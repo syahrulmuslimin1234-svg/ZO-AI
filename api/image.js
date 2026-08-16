@@ -3,6 +3,25 @@
 const IMAGE_LIMIT_FREE = 3;
 const IMAGE_LIMIT_PAID = 10;
 
+// ---- Filter kata kunci buat nolak prompt yang mengarah ke konten dewasa/
+// kekerasan SEBELUM request ke Pollinations dibikin sama sekali. Ini
+// pre-check di level teks doang -- nggak nyentuh parameter generate gambar
+// (width/height/model/dll), jadi TIDAK mempengaruhi kualitas hasil gambar
+// yang lolos filter. Daftar ini nggak bakal sempurna (filter kata kunci
+// selalu bisa disiasati), tapi cukup buat nyaring kasus paling jelas/kasar
+// sebelum rilis Play Store. ----
+const BLOCKED_IMAGE_TERMS = [
+  "nude", "naked", "nsfw", "porn", "sex", "sexual", "explicit", "erotic",
+  "telanjang", "bugil", "seks", "seksual", "porno", "cabul", "vulgar",
+  "gore", "torture", "mutilat", "beheading", "child abuse", "underage",
+  "loli", "shota",
+];
+
+function containsBlockedTerm(text) {
+  const normalized = text.toLowerCase();
+  return BLOCKED_IMAGE_TERMS.some((term) => normalized.includes(term));
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -12,6 +31,12 @@ export default async function handler(req, res) {
     const { prompt } = req.body;
     if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
       return res.status(400).json({ error: "Invalid prompt" });
+    }
+
+    if (containsBlockedTerm(prompt)) {
+      return res.status(400).json({
+        error: "Deskripsi gambar ini terdeteksi melanggar kebijakan konten. Coba ubah deskripsinya ya.",
+      });
     }
 
     // ---- Wajib login. Tidak ada fallback ke IP address lagi. ----
@@ -104,37 +129,20 @@ export default async function handler(req, res) {
       });
     }
 
-    // Pakai Pollinations.ai (model Flux) -- gratis TANPA BATAS dan TANPA API
-    // KEY sama sekali, tinggal request satu URL. Nggak numpang kuota Gemini
-    // ataupun perlu billing apa pun. Endpoint klasiknya balikin bytes gambar
-    // langsung (bukan JSON), jadi kita fetch terus encode ke base64 sendiri.
-    //
-    // safe=true ngaktifin filter NSFW bawaan Pollinations (deteksi AI, bukan
-    // cuma daftar kata terlarang) -- PENTING buat kepatuhan kebijakan konten
-    // Google Play sebelum rilis, biar app nggak generate gambar yang bisa
-    // bikin app ditolak/di-suspend pas review.
+    // CATATAN: sempat nyoba parameter safe=true (filter NSFW bawaan Pollinations)
+    // tapi ternyata bikin KUALITAS GAMBAR TURUN/BLUR buat SEMUA prompt (bukan
+    // cuma yang sensitif) -- jadi dilepas lagi. Filter konten sekarang pakai
+    // pre-check kata kunci di prompt SEBELUM dikirim ke Pollinations (lihat di
+    // atas), jadi nggak ngutak-atik parameter generate/kualitas gambarnya sama sekali.
     const encodedPrompt = encodeURIComponent(prompt.trim());
     const seed = Math.floor(Math.random() * 1e9); // biar tiap generate hasilnya beda walau prompt sama
     const pollinationsUrl =
       `https://image.pollinations.ai/prompt/${encodedPrompt}` +
-      `?width=1024&height=1024&model=flux&seed=${seed}&nologo=true&safe=true`;
+      `?width=1024&height=1024&model=flux&seed=${seed}&nologo=true`;
 
     const response = await fetch(pollinationsUrl);
     if (!response.ok) {
-      const bodyText = await response.text().catch(() => "");
-      console.error("Pollinations image error:", response.status, response.statusText, bodyText.slice(0, 300));
-
-      // Bedain pesan buat kasus "diblokir filter konten" vs error server biasa,
-      // biar user ngerti kenapa gagal dan gak nyoba berkali-kali sia-sia.
-      const looksLikeSafetyBlock =
-        response.status === 400 ||
-        /nsfw|unsafe|safety|inappropriate|blocked/i.test(bodyText);
-
-      if (looksLikeSafetyBlock) {
-        return res.status(400).json({
-          error: "Deskripsi gambar ini terdeteksi melanggar kebijakan konten (misalnya konten dewasa/kekerasan). Coba ubah deskripsinya ya.",
-        });
-      }
+      console.error("Pollinations image error:", response.status, response.statusText);
       return res.status(503).json({
         error: "Image generation is busy or our server quota is exhausted. Please try again in a few minutes.",
       });
